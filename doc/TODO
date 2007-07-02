@@ -1,0 +1,43 @@
+Meson
+* Optimization: reordering rules and literals either statically or dynamically.
+
+Resolution
+* Ordered resolution
+  * Clause splitting
+* Ordered paramodulation
+  * Make equality literals the smallest kind of literal
+  - Try out simultaneous paramodulation
+  - Basic strategy, via extra constraints tracking equality?
+  - Set constant weight to balance definitions, if possible.
+* Track ordering constraints of variables
+  - Find good problems where this constraint tracking pays off
+    - Try combinatory logic using mapping from HOL
+  - Use Omega to do subsumption checking?
+  - Only keep equations between two variables (and use DDD?)
+- Picking good clauses from the passive set
+  * Derivation trees for clauses
+    - Look for good collocations in the derivation trees (regexps?)
+  * Use finite models to guide clause selection
+    - More expressive models (must still be quick to check)
+- Use SAT techniques to eliminate large numbers of irrelevant clauses?
+  - Use congruence closure with optimistic rewriting to handle equations?
+- Simplification
+  - Simplify clauses using (L ==> C) ==> (L \/ C <=> C)
+  - Custom simplification clauses A1 /\ ... /\ An ==> C for backchaining
+    - Predicate subtyping
+
+System
+- Backport definitional CNF from HOL Metis.
+- Sharing unit equalities between resolution provers (somehow!)
+- Graded option printing: brief; expert options; manpage style with examples
+
+Extensions
+- Mike's linear arithmetic unification
+  - Resolving |- p n and |- ~p (m + X) generates |- n <= m
+    - Perhaps simply by adding suitable arithmetic theorems
+  - Demodulation using linear arithmetic prover
+    - Need good caching of success and failure (see Don's simp library)
+  - Look at Harald Ganzinger's CADE 2002 paper
+- Combinator pattern unification for 'higher-order' proof
+- Always-resolve rules for implementing predicate subtyping
+- Maintain a graph representing clauses with 2 literals, and look for cycles

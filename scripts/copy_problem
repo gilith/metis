@@ -1,0 +1,95 @@
+#!/usr/bin/perl
+
+# Copyright (c) 2007 Joe Hurd, All Rights Reserved
+
+use strict;
+use warnings;
+use Pod::Usage;
+use Getopt::Std;
+
+use vars qw($opt_h $opt_l);
+
+getopts('hl');
+
+if ($opt_h or scalar @ARGV != 2)
+{
+    pod2usage({-exitval => 2,
+	       -verbose => 2});
+}
+
+# Autoflush STDIN
+$|++;
+
+my $src = $ARGV[0];
+my $dest = $ARGV[1];
+
+$dest =~ s/\/$//;
+[-d $dest] or die "copy_problem: destination is not a directory: $dest\n";
+
+my $dest_problems = `ls $dest | wc -l`;
+chomp($dest_problems);
+
+my $src_name = $src;
+$src_name =~ s/^.*\///;
+$src_name = sprintf("%04d", ($dest_problems + 1)) . '-' . $src_name;
+
+if ($opt_l) {
+    [-e "$dest/$src"] or
+        die "copy_problem: source is not a file: $dest/$src\n";
+    (system ("ln -s $src $dest/$src_name") == 0) or
+        die "couldn't copy $src to $dest: $!\n";
+}
+else {
+    [-e $src] or die "copy_problem: source is not a file: $src\n";
+    (system ("cp $src $dest/$src_name") == 0) or
+        die "couldn't copy $src to $dest: $!\n";
+}
+
+print "$dest/$src_name\n";
+
+__END__
+
+=pod
+
+=head1 NAME
+
+copy_problem - copies problem files
+
+=head1 SYNOPSIS
+
+copy_problem [-h] [-l] problem.tptp <dir>
+
+=head1 ARGUMENTS
+
+The recognized flags are described below:
+
+=over 2
+
+=item B<-h>
+
+Produce this documentation.
+
+=item B<-l>
+
+Make a symbolic link instead of a copy
+
+=back
+
+=head1 DESCRIPTION
+
+Copies problem files into directories, and adds a number to the start of
+their name so that a set of problems can be tackled in a fixed order.
+
+=head1 BUGS
+
+Waiting to rear their ugly heads.
+
+=head1 AUTHORS
+
+Joe Hurd <joe@gilith.com>
+
+=head1 SEE ALSO
+
+Perl(1).
+
+=cut

@@ -1,0 +1,78 @@
+<HR><!------------------------------------------------------------------------>
+<H2>Metis 2.0</H2>
+J. Hurd<BR>
+Oxford University, UK<BR>
+<tt>joe[@]gilith.com</tt>
+
+<H3>Architecture</H3>
+
+<p>Metis 2.0 [<a href="#References">Hur03</A>] is a proof tactic used
+in the
+<a href="http://hol.sourceforge.net/">HOL4</a> interactive theorem
+prover. It works by converting a higher order logic goal to a set of
+clauses in first order logic, with the property that a refutation of
+the clause set can be translated to a higher order logic proof of the
+original goal.</p>
+
+<p>Experiments with various first order calculi
+[<a href="#References">Hur03</a>] have shown a <em>given clause
+algorithm</em> and ordered resolution to best suit this application,
+and that is what Metis 2.0 implements. Since equality often appears in
+higher order logic goals, Metis 2.0 also implements the ordered
+paramodulation calculus.</p>
+
+<H3>Implementation</H3>
+
+<p>Metis 2.0 is written in Standard ML, for ease of integration with
+HOL4. It uses indexes for resolution, paramodulation, (forward)
+subsumption and demodulation. It keeps the <em>Active</em> clause set
+reduced with respect to all the unit equalities so far derived.</p>
+
+<p>In addition to standard size and distance measures, Metis 2.0 uses
+finite models to weight clauses in the <em>Waiting</em> set. When
+integrated with higher order logic, a finite model is manually
+constructed to interpret standard functions and relations in such a
+way as to make many standard axioms true and negated goals false.
+Non-standard functions and relations are interpreted randomly. Since
+it is part of the CASC competition rules that standard functions and
+relations are obfuscated, Metis 2.0 will back-off to interpreting all
+functions and relations randomly (except equality).</p>
+
+<p>Metis 2.0 is free software, released under the GPL. It can be
+downloaded from
+<PRE>
+    <A HREF="http://www.gilith.com/software/metis">http://www.gilith.com/software/metis</A></PRE></p>
+
+<H3>Strategies</H3>
+
+<p>Metis 2.0 uses a fixed strategy for every input problem. Negative
+literals are always chosen in favour of positive literals, and terms
+are ordered using the Knuth-Bendix ordering with uniform symbol weight
+and precedence favouring reduced arity.</p>
+
+<H3>Expected Competition Performance</H3>
+
+<p>Running previous versions of Metis on previous MIX problem sets has
+scored in the bottom half of the table, so that is the expected
+performance. Metis 2.0 always keeps proofs, so the performance will be
+no different in the proof classes.</p>
+
+<p>Testing on previous UEQ problem sets has shown Metis to be weak on
+equality problems, so I expect Metis 2.0 to perform relatively worse
+on the equality divisions, particularly UEQ.</p>
+
+<a name="References"><H3>References</H3></a>
+<dl>
+<dt>Hur03</dt>
+<dd> Hurd J. (September 2003),
+     <STRONG><a href="http://www.cl.cam.ac.uk/~jeh1004/research/papers/metis.html">First-Order Proof Tactics in Higher-Order Logic Theorem Provers</a></STRONG>,
+     Archer M., Di Vito B., Mu&ntilde;oz C.,
+     <EM>Design and Application of Strategies/Tactics in Higher Order Logics (STRATA 2003)</EM>
+     (Rome, Italy),
+     pp.56-68,
+     NASA Technical Report CP-2003-212448,
+     NASA.</dd>
+</DL>
+<P>
+
+<HR><!------------------------------------------------------------------------>

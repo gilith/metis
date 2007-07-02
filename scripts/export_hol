@@ -1,0 +1,210 @@
+#!/usr/bin/perl
+
+# Copyright (c) 2007 Joe Hurd, All Rights Reserved
+
+use strict;
+use warnings;
+use Pod::Usage;
+use Getopt::Std;
+
+use vars qw($opt_h $opt_d);
+
+getopts('hd:');
+
+if ($opt_h or scalar @ARGV == 0)
+{
+    pod2usage({-exitval => 2,
+	       -verbose => 2});
+}
+
+if (!$opt_d) { die "export_hol: you must specify a target directory\n"; }
+if (! [-d $opt_d]) { die "export_hol: bad target directory\n"; }
+if ($opt_d !~ /\/$/) { $opt_d .= '/'; }
+
+# Autoflush STDIN
+$|++;
+
+my %modules = ();
+my %functors = ();
+
+sub export_module {
+    my ($module) = @_;
+
+    if (exists $modules{$module}) {
+        return $modules{$module};
+    }
+    else {
+        return $module;
+    }
+}
+
+sub export_file {
+    my ($src,$dest) = @_;
+
+    open INPUT, $src or
+        die "export_hol: couldn't open $src for reading: $!\n";
+    open OUTPUT, ">$dest" or
+        die "export_hol: couldn't open $dest for writing: $!\n";
+
+    while (my $line = <INPUT>) {
+        chomp $line;
+
+        if ($line =~ / catch_interrupt /) {
+            next;
+        }
+        elsif ($line =~ /^signature ([[:alnum:]]+) =$/) {
+            print OUTPUT "signature ";
+            print OUTPUT (export_module $1);
+            print OUTPUT " =\n";
+        }
+        elsif ($line =~ /^structure ([[:alnum:]]+) =$/) {
+            print OUTPUT "structure ";
+            print OUTPUT (export_module $1);
+            print OUTPUT " =\n";
+        }
+        elsif ($line =~ /^structure ([[:alnum:]]+) :> ([[:alnum:]]+) =$/) {
+            print OUTPUT "structure ";
+            print OUTPUT (export_module $1);
+            print OUTPUT " :> ";
+            print OUTPUT (export_module $2);
+            print OUTPUT " =\n";
+        }
+        elsif ($line =~ /^structure ([[:alnum:]]+) = ([[:alnum:]]+);$/) {
+            print OUTPUT "structure ";
+            print OUTPUT (export_module $1);
+            print OUTPUT " = ";
+            print OUTPUT (export_module $2);
+            print OUTPUT ";\n";
+        }
+        elsif ($line =~ /^( *open )([[:alnum:]]+)(;?)$/) {
+            print OUTPUT $1;
+            print OUTPUT (export_module $2);
+            print OUTPUT $3;
+            print OUTPUT "\n";
+        }
+        elsif ($line =~ /^functor ([[:alnum:]]+) \(([[:alnum:]]+) : ([[:alnum:]]+)\) :> ([[:alnum:]]+)(.*)$/) {
+            my $new_functor = export_module $1;
+            $functors{$1} = $new_functor;
+            print OUTPUT "functor ";
+            print OUTPUT $new_functor;
+            print OUTPUT " (";
+            print OUTPUT (export_module $2);
+            print OUTPUT " : ";
+            print OUTPUT (export_module $3);
+            print OUTPUT ") :> ";
+            print OUTPUT (export_module $4);
+            print OUTPUT "$5\n";
+        }
+        elsif ($line =~ /^(.*?)([[:alnum:]]+) \(([[:alnum:]]+)\)(.*)$/ &&
+            exists $functors{$2}) {
+            print OUTPUT $1;
+            print OUTPUT $functors{$2};
+            print OUTPUT " (";
+            print OUTPUT (export_module $3);
+            print OUTPUT ")";
+            print OUTPUT "$4\n";
+        }
+        else {
+            while ($line =~ /^(.*?)([[:alnum:]]+)\.(.*)$/) {
+                print OUTPUT $1;
+                print OUTPUT (export_module $2);
+                print OUTPUT ".";
+                $line = $3;
+            }
+        
+            print OUTPUT "$line\n";
+        }
+    }
+
+    close OUTPUT;
+    close INPUT;
+}
+
+my %files = ();
+my @filel = ();
+
+my $Holmakefile = $opt_d . "Holmakefile";
+open HOLMAKEFILE, ">$Holmakefile" or
+    die "export_hol: couldn't open $Holmakefile for writing: $!\n";
+#print HOLMAKEFILE "OPTIONS = NO_OVERLAY\n";
+my $depend = "";
+while (my $object = shift @ARGV) {
+    $object =~ /^bin\/mosml\/(.*)\.ui$/ or die;
+    my $module = $1;
+    my $suffix = (($module =~ s/-sig$//) ? "-sig" : "");
+
+    if ($module eq "Options") { last; }
+
+    my $new_module = "mlib" . $module;
+    my $file = "bin/mosml/$module$suffix.sml";
+
+    $modules{$module} = $new_module;
+    $files{$file} = "$opt_d$new_module$suffix.sml";
+    push @filel, $file;
+
+    print HOLMAKEFILE "\n$new_module$suffix.ui $new_module$suffix.uo:$depend $new_module$suffix.sml\n";
+    print HOLMAKEFILE "\tHOLMOSMLC -c -toplevel$depend $new_module$suffix.sml\n";
+    $depend .= " $new_module$suffix.ui";
+}
+
+print HOLMAKEFILE "\nfolMapping.ui:$depend folMapping.sig\n";
+print HOLMAKEFILE "\tHOLMOSMLC -c -structure$depend folMapping.sig\n";
+print HOLMAKEFILE "\nfolMapping.uo:$depend folMapping.sml\n";
+print HOLMAKEFILE "\tHOLMOSMLC -c -structure$depend folMapping.sml\n";
+
+close HOLMAKEFILE;
+
+$modules{"LiteralSet"} = "mlibLiteralSet";
+
+for my $src (@filel) {
+    my $dest = $files{$src};
+    print STDOUT "$src -> $dest\n";
+    export_file $src, $dest;
+}
+
+__END__
+
+=pod
+
+=head1 NAME
+
+export_hol - exports the Metis prover to the HOL4 theorem prover
+
+=head1 SYNOPSIS
+
+export_hol [-h] [-d HOL4 metis directory] module-sig.ui module.ui ...
+
+=head1 ARGUMENTS
+
+The recognized flags are described below:
+
+=over 2
+
+=item B<-h>
+
+Produce this documentation.
+
+=item B<-d>
+
+The HOL4 Metis directory to export to.
+
+=back
+
+=head1 DESCRIPTION
+
+Exports the modules of the Metis prover to HOL4, renaming modules and
+creating a Holmakefile.
+
+=head1 BUGS
+
+Waiting to rear their ugly heads.
+
+=head1 AUTHORS
+
+Joe Hurd <joe@gilith.com>
+
+=head1 SEE ALSO
+
+Perl(1).
+
+=cut

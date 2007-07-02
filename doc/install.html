@@ -1,0 +1,70 @@
+<html>
+
+<head>
+<title>Install Metis</title>
+</head>
+
+<body>
+
+<p><a href="changelog.html">changelog</a>
+| <a href="download.html">download</a>
+| <a href="index.html">home</a>
+| <b>install</b>
+| <a href="notes.html">notes</a>
+| <a href="performance.html">performance</a></p>
+
+<hr />
+
+<h3>Installing Metis from Source</h3>
+
+<p>Compiling and running the interpreted version of Metis requires an
+installation of <a
+href="http://www.dina.dk/~sestoft/mosml.html">Moscow ML</a>.<br />
+
+Compiling and running the native code version of Metis requires an
+installation of <a href="http://www.mlton.org/">MLton</a>.<br />
+
+Both versions use GNU Make and Perl.
+
+<ol>
+
+<li><a href="download.html">Download</a> the <tt>metis.tar.gz</tt> file.</li>
+
+<li>Extract it with the command <tt>tar xvzf metis.tar.gz</tt></li>
+
+<li>There will be a new directory called <tt>metis</tt>. Change to
+this directory.</li>
+
+<li>Type <tt>make clean</tt> to clean out any object files, then
+<ul>
+
+<li><strong>either</strong> <tt>make mosml</tt> to build the Moscow ML version,
+
+<li><strong>or</strong> <tt>make mlton</tt> to build the MLton version.</li>
+
+</ul>
+</li>
+
+<li>Test your installation by executing
+<ul>
+
+<li><strong>either</strong> <tt>bin/mosml/metis --help</tt> to run
+the Moscow ML version,
+
+<li><strong>or</strong> <tt>bin/mlton/metis --help</tt> to run the
+MLton version.</li></li>
+
+</ul>
+</li>
+
+<li>If a usage message appears, the installation was successful.</li>
+
+</ol>
+</p>
+
+<hr />
+
+<img src="metis.jpg" alt="Metis the moon of Jupiter" />
+
+</body>
+</html>

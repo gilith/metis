@@ -1,0 +1,429 @@
+--------------------------------------------------------------------------
+The parser and pretty-printer
+
+3 = f x
+
+f x y = y
+
+P x y
+
+P (f x) y
+
+f x = 3
+
+!x. P x y
+
+!x y. P x y
+
+!x y z. P x y z
+
+x = y
+
+x = 3
+
+x + y = y
+
+x / y * z = w
+
+x * y * z = x * (y * z)
+
+!x. ?y. x <= y /\ y <= x
+
+?x. !y. x + y = y /\ y <= x
+
+p /\ q \/ r /\ p ==> q <=> p
+
+p
+
+~!x. bool x
+
+p ==> !x. bool x
+
+p ==> ~!x. bool x
+
+~!x. bool x
+
+~~!x. bool x
+
+hello + there <> everybody
+
+!x y. ?z. x < z /\ y < z
+
+~(!x. P x) <=> ?y. ~P y
+
+?y. x < y ==> !v. ?w. x * v < y * w
+
+(<=)
+
+(<=) <= b
+
+(<=) <= (+)
+
+(<=) x
+
+(<=) <= (+) x
+
+~B (P % ((,) % c_a % v_b))
+
+B ((<=) % 0 % (LENGTH % NIL))
+
+~(a = b)
+
+!x. p x ==> !y. p y
+
+(!x. p x) ==> !y. p y
+
+!x. ~~x = x
+
+x + (y + z) = a
+
+(x @ y) @ z = a
+
+p ((a @ a) @ a = a)
+
+!x y z. (x @ y) @ z = (x @ z) @ y @ z
+
+~(!x. q x) /\ p
+
+!x. f (~~x) b (~c)
+
+p ==> ~(a /\ b)
+
+!water. drinks (water)
+
+!vat water. drinks ((vat) p x (water))
+
+!x y. ~{x < y} /\ T
+
+[3]
+
+!x y z. ?x' y' z'.
+  P x y z ==> P x' y' z'
+
+(!x. P x ==> !x. Q x) /\
+((!x. Q x \/ R x) ==> ?x. Q x /\ R x) /\
+((?x. R x) ==> !x. L x ==> M x) ==>
+!x. P x /\ L x ==> M x
+
+!x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11
+  x12 x13 x14 x15 x16 x17 x18 x19 x20
+  x21 x22 x23 x24 x25 x26 x27 x28 x29
+  x30 x31 x32. ?y0 y1 y2 y3 y4 y5 y6 y7.
+  P
+
+!x x x x x x x x x x x x x x x x x x x x
+  x x x x x x x x x x. ?y y y y y y y y
+  y y y y y y y y y y y.
+  P (x, y) /\ P (x, y) /\ P (x, y) /\
+  P (x, y) /\ P (x, y) /\ P (x, y) /\
+  P (x, y) /\ P (x, y) /\ P (x, y) /\
+  P (x, y) /\ P (x, y) /\ P (x, y) /\
+  P (x, y) /\ P (x, y) /\
+  ~~~~~~~~~~~~~f
+                 (f (f (f x y) (f x y))
+                    (f (f x y) (f x y)))
+                 (f (f (f x y) (f x y))
+                    (f (f x y) (f x y)))
+
+(!x. x = x) /\
+(!x y. ~(x = y) \/ y = x) /\
+(!x y z.
+   ~(x = y) \/ ~(y = z) \/ x = z) /\
+(!x y z. b . x . y . z = x . (y . z)) /\
+(!x y. t . x . y = y . x) /\
+(!x y z. ~(x = y) \/ x . z = y . z) /\
+(!x y z. ~(x = y) \/ z . x = z . y) ==>
+~(b . (b . (t . b) . b) . t . x . y .
+  z = y . (x . z)) ==> F
+
+--------------------------------------------------------------------------
+Substitution
+
+x
+
+x'
+
+x''
+
+x
+
+x0
+
+x1
+
+!x. x = $z
+
+!x'. x' = $x
+
+!x' x''. x' = $x ==> x' = x''
+
+--------------------------------------------------------------------------
+Unification
+
+c
+
+c
+
+f c
+
+f 0 0 0
+
+<[]>
+
+<[x |-> c]>
+
+<[x |-> c_x]>
+
+<[x |-> $y, z |-> f $y]>
+
+--------------------------------------------------------------------------
+The logical kernel
+
+START OF PROOF
+(0) |- p \/ q  [Axiom]
+(1) |- ~p \/ r  [Axiom]
+(2) |- q \/ r  [Resolve {res = p, pos = (0), neg = (1)}]
+END OF PROOF
+
+
+START OF PROOF
+(0) |- $x = $x  [Refl $x]
+(1) |- ~($x0 = $x1) \/ $x0 = $x1  [Assume $x0 = $x1]
+(2) |- ~($x0 = $y0) \/ ~($y0 = $x1) \/ $x0 = $x1
+    [Equality {lit = ~($x0 = $x1), path = [0], res = $y0}]
+(3) |- ~($x1 = $y1) \/ ~($y0 = $y1) \/ $y0 = $x1
+    [Equality {lit = ~($y0 = $x1), path = [1], res = $y1}]
+(4) |- ~($x0 = $y0) \/ ~($x1 = $y1) \/ ~($y0 = $y1) \/ $x0 = $x1
+    [Resolve {res = $y0 = $x1, pos = (3), neg = (2)}]
+(5) |- ~($x = $x) \/ ~($x = $y) \/ ~($z = $y) \/ $x = $z
+    [Subst {sub = <[x0 |-> $x, x1 |-> $z, y0 |-> $x, y1 |-> $y]>, thm = (4)}]
+(6) |- ~($x = $y) \/ ~($z = $y) \/ $x = $z
+    [Resolve {res = $x = $x, pos = (0), neg = (5)}]
+(7) |- ~($x = $x) \/ ~($x = $y) \/ $y = $x
+    [Equality {lit = $x = $x, path = [0], res = $y}]
+(8) |- ~($x = $y) \/ $y = $x  [Resolve {res = $x = $x, pos = (0), neg = (7)}]
+(9) |- ~($y = $z) \/ $z = $y  [Subst {sub = <[x |-> $y, y |-> $z]>, thm = (8)}]
+(10) |- ~($x = $y) \/ ~($y = $z) \/ $x = $z
+     [Resolve {res = $z = $y, pos = (9), neg = (6)}]
+END OF PROOF
+
+
+START OF PROOF
+(0) |- $x = $x  [Refl $x]
+(1) |- f c = f c  [Subst {sub = <[x |-> f c]>, thm = (0)}]
+END OF PROOF
+
+
+--------------------------------------------------------------------------
+Derived rules of inference
+
+|- ~(a = b) \/ ~(b = a) \/ $x = a \/ a = $x \/ f a = $x
+
+|- ~(a = b) \/ $x = a \/ f a = $x
+
+|- ~(a = b) \/ ~(b = a) \/ $x = a \/ f a = $x
+
+|- ~(a = b) \/ ~(b = a) \/ $x = a \/ $x = f a \/ a = $x
+
+|- ~(b = a) \/ $x = a \/ a = $x \/ f a = $x
+
+|- e * (i $z * $z) = e
+
+|- f (e * (i $z * $z)) = f e
+
+--------------------------------------------------------------------------
+Discrimination nets for literals
+
+[] + NEGATIVE []
+
+[P (f c $ a) |-> 1] + NEGATIVE []
+
+[P (f c $ a) |-> 1, P (f c $ a) |-> 2] + NEGATIVE []
+
+[P (f c $ a) |-> 1, P (f c $ a) |-> 2, P (f c a a) |-> 3] + NEGATIVE []
+
+[P (f c $ a) |-> 1, P (f c $ a) |-> 2, P (f c a a) |-> 3,
+ P (f c b a) |-> 4] + NEGATIVE []
+
+[P (f c $ a) |-> 1, P (f c $ a) |-> 2, P (f c a a) |-> 3,
+ P (f c b a) |-> 4] + NEGATIVE [Q |-> 5]
+
+[P (f c $ a) |-> 1, P (f c $ a) |-> 2, P (f c a a) |-> 3,
+ P (f c b a) |-> 4] + NEGATIVE [Q |-> 5, Q |-> 6]
+
+[P (f c $ a) |-> 1, P (f c $ a) |-> 2, P (f c a a) |-> 3,
+ P (f c b a) |-> 4] + NEGATIVE [Q |-> 5, Q |-> 6, Q |-> 7]
+
+[P (f c $ a) |-> 1, P (f c $ a) |-> 2, P (f c a a) |-> 3,
+ P (f c b a) |-> 4] + NEGATIVE [Q |-> 5, Q |-> 6, Q |-> 7, Q |-> 8]
+
+--------------------------------------------------------------------------
+The Knuth-Bendix ordering on terms
+
+SOME LESS
+
+SOME GREATER
+
+NONE
+
+SOME GREATER
+
+SOME LESS
+
+SOME EQUAL
+
+NONE
+
+NONE
+
+SOME GREATER
+
+NONE
+
+NONE
+
+SOME LESS
+
+SOME LESS
+
+SOME LESS
+
+NONE
+
+NONE
+
+--------------------------------------------------------------------------
+Rewriting
+
+|- e * (i $z * $z) = i e * e
+
+|- e = e
+
+[|- e * $x = $x, |- $x * e = $x, |- i $x * $x = e, |- $x * i $x = e]
+
+|- e * e = e
+
+|- e * (i $z * $z) = e
+
+|- e = e
+
+|- ~(f a = a) \/ ~(g (f a) = b)
+
+|- ~(a = a) \/ ~(g a = b)
+
+|- a <= f (f a)
+
+|- a <= a
+
+|- ~(f a = f a)
+
+|- ~(b = b)
+
+|- ~(a = b) \/ P a \/ P b
+
+|- ~(a = b) \/ P a
+
+|- ~(f $x = $x) \/ P (f $x) \/ P (f $y) \/ P (f a)
+
+|- ~(f $x = $x) \/ P $x \/ P (f $y) \/ P (f a)
+
+|- ~(f (f (f (f (f $x)))) = $x) \/ ~(f (f (f (f (f (f (f (f $x))))))) = $x) \/
+   P (f $x)
+
+|- ~($x = $x) \/ ~(f $x = $x) \/ P $x
+
+|- ~(a = b) \/ b = a
+
+|- ~(a = b) \/ a = a
+
+|- ~(a = b) \/ ~(b = c) \/ a = c
+
+|- ~(a = b) \/ ~(a = c) \/ a = a
+
+|- ~(a = b) \/ ~(b = c) \/ ~(c = d) \/ a = d
+
+|- ~(a = b) \/ ~(a = c) \/ ~(a = d) \/ a = a
+
+--------------------------------------------------------------------------
+Unit cache
+
+U{1}
+
+U{3}
+
+|- F
+
+--------------------------------------------------------------------------
+Negation normal form
+
+F
+
+((?y. Q y) <=> ?z. P z /\ Q z) \/ ?x. ~P x
+
+T
+
+--------------------------------------------------------------------------
+Conjunctive normal form
+
+[]
+
+[p /\ (~q \/ ~s) /\ (q \/ r) /\ (q \/ s)]
+
+[p /\ (~q \/ ~s) /\ (q \/ r) /\ (q \/ s)]
+
+[]
+
+[]
+
+[~($x < skolem_y $x) \/ $x * $v < skolem_y_1 $x * skolem_w $v $x]
+
+[~P $x \/ ~P $z \/ ~Q $z \/ Q skolem_y_2]
+
+[skolem_x + skolem_y_3 = 2]
+
+[~M skolem_x_1 /\ L skolem_x_1 /\ P skolem_x_1 /\ (~P $x \/ Q $x') /\
+ (~Q skolem_x_2 \/ Q skolem_x_3) /\ (~Q skolem_x_2 \/ R skolem_x_3) /\
+ (~R skolem_x_2 \/ Q skolem_x_3) /\ (~R skolem_x_2 \/ R skolem_x_3) /\
+ (~L $x' \/ ~R $x \/ M $x')]
+
+--------------------------------------------------------------------------
+Syntax checking the problem sets
+
+ok
+
+--------------------------------------------------------------------------
+Parsing TPTP problems
+
+lives agatha /\ lives butler /\ lives charles /\
+(~killed $X $Y \/ ~richer $X $Y) /\ (~hates agatha $X \/ ~hates charles $X) /\
+(~hates $X agatha \/ ~hates $X butler \/ ~hates $X charles) /\
+hates agatha agatha /\ hates agatha charles /\
+(~killed $X $Y \/ hates $X $Y) /\ (~hates agatha $X \/ hates butler $X) /\
+(~lives $X \/ hates butler $X \/ richer $X agatha) /\
+(killed butler agatha \/ killed charles agatha)
+
+--------------------------------------------------------------------------
+Clauses
+
+|- P $x \/ P $y
+
+{P $x, P $y}
+
+[|- P $y]
+
+|- $x = $y \/ f $y = f $x
+
+{f $y = f $x}
+
+|- $x = f $y \/ f $x = $y
+
+{$x = f $y, f $x = $y}
+
+|- s = a \/ s = b \/ h b c
+
+{h b c}
+
+|- a = a \/ a = b \/ h b c
+
+{h b c}
+

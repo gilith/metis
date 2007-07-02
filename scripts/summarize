@@ -1,0 +1,187 @@
+#!/usr/bin/perl
+
+# Copyright (c) 2007 Joe Hurd, All Rights Reserved
+
+use strict;
+use warnings;
+use Pod::Usage;
+use Getopt::Std;
+
+use vars qw($opt_h $opt_l);
+
+getopts('hl');
+
+if ($opt_h or scalar @ARGV != 0)
+{
+    pod2usage({-exitval => 2,
+	       -verbose => 2});
+}
+
+# Autoflush STDIN
+$|++;
+
+sub timewise {
+    my $at = $a; $at =~ s/^[^ ]* //;
+    my $bt = $b; $bt =~ s/^[^ ]* //;
+    return $at <=> $bt;
+}
+
+my $state = 'init';
+my $name;
+my $status;
+my $time;
+
+my %summary = ();
+
+while (my $line = <STDIN>) {
+    chomp $line;
+
+    if ($line =~/WARN|ERROR/) {
+        print STDERR "$line\n";
+    }
+
+    if ($line =~ /^------------+$/) {
+        ($state eq 'init') or die;
+        $state = 'name';
+        $status = 'Unknown';
+    }
+
+    if ($line =~ /^Problem: (.*)$/) {
+        $name = $1;
+        ($state eq 'name') or die;
+        $state = 'status';
+    }
+
+    if ($line =~ /^SZS output start Saturated for (.*)$/) {
+        ($1 eq $name) or die;
+        ($1 eq $name) or die;
+        ($state eq 'status' or $state eq 'time') or die;
+        $state = 'saturated.' . $state;
+    }
+
+    if ($line =~ /^SZS output end Saturated for (.*)$/) {
+        ($1 eq $name) or die;
+        ($state =~ /^saturated\.([[:alpha:]]+)$/) or die;
+        $state = $1;
+    }
+
+    if ($line =~ /^SZS output start CNFRefutation for (.*)$/) {
+        ($1 eq $name) or die;
+        ($state eq 'status' or $state eq 'time') or die;
+        $state = 'proof.' . $state;
+    }
+
+    if ($line =~ /^SZS output end CNFRefutation for (.*)$/) {
+        ($1 eq $name) or die;
+        ($state =~ /^proof\.([[:alpha:]]+)$/) or die;
+        $state = $1;
+    }
+
+    if ($line =~ /^SZS status ([[:alpha:]]+) for (.*)$/) {
+        $status = $1;
+        ($2 eq $name) or die;
+        ($state eq 'status') or die;
+        $state = 'time';
+    }
+
+    if ($line eq 'Command terminated abnormally.') {
+        ($state eq 'status') or ($state =~ /^saturated\./) or
+        ($state =~ /^proof\./) or die;
+        $status = 'ResourceOut';
+        $state = 'time';
+    }
+
+    if ($line =~ /^ *([0-9.]+) real +[0-9.]+ user +[0-9.]+ sys *$/) {
+        ($state eq 'time') or die;
+        $time = $1;
+        $state = 'finished';
+    }
+
+    if ($state eq 'finished') {
+        if ($opt_l) {
+            print STDOUT "$name $status $time\n";
+        }
+        else {
+            if (!exists $summary{$status}) { $summary{$status} = []; }
+            push @{$summary{$status}}, "$name $time";
+        }
+        $state = 'init';
+    }
+}
+
+($state eq 'init') or
+    warn "WARNING: summarize state was '$state' at end of log file.\n";
+
+if (!$opt_l) {
+    my $total = 0;
+    for my $status (sort keys %summary) {
+        my @arr = sort timewise @{$summary{$status}};
+        my $n = scalar @arr;
+        $total += $n;
+        print STDOUT
+            ("Status $status: $n problem" . (($n == 1) ? '' : 's') . "\n");
+        if ($n <= 10) {
+            for (my $i = 0; $i < $n; ++$i) {
+                print STDOUT (($i + 1) . ". " . $arr[$i] . "\n");
+            }
+        }
+        else {
+            for (my $i = 0; $i < 5; ++$i) {
+                print STDOUT (($i + 1) . ". " . $arr[$i] . "\n");
+            }
+            print STDOUT ("..." . ($n - 10) . " problem" .
+                          (($n - 10 == 1) ? '' : 's') . " omitted...\n");
+            for (my $i = $n - 5; $i < $n; ++$i) {
+                print STDOUT (($i + 1) . ". " . $arr[$i] . "\n");
+            }
+        }
+        print STDOUT "\n";
+    }
+    print STDOUT ("Total: $total problem" . (($total == 1) ? '' : 's') . "\n");
+}
+
+__END__
+
+=pod
+
+=head1 NAME
+
+summarize - summarizes a metis log file
+
+=head1 SYNOPSIS
+
+summarize [-h] [-l] < metis-log-file
+
+=head1 ARGUMENTS
+
+The recognized flags are described below:
+
+=over 2
+
+=item B<-h>
+
+Produce this documentation.
+
+=item B<-l>
+
+Make a list of all problems attempted with their status and time.
+
+=back
+
+=head1 DESCRIPTION
+
+Summarizes the number of problems proved, together with times.
+
+=head1 BUGS
+
+Waiting to rear their ugly heads.
+
+=head1 AUTHORS
+
+Joe Hurd <joe@gilith.com>
+
+=head1 SEE ALSO
+
+Perl(1).
+
+=cut

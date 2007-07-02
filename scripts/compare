@@ -1,0 +1,310 @@
+#!/usr/bin/perl
+
+# Copyright (c) 2007 Joe Hurd, All Rights Reserved
+
+use strict;
+use warnings;
+use Pod::Usage;
+use Getopt::Std;
+
+use vars qw($opt_h);
+
+getopts('h');
+
+if ($opt_h or scalar @ARGV != 2)
+{
+    pod2usage({-exitval => 2,
+	       -verbose => 2});
+}
+
+# Autoflush STDIN
+$|++;
+
+sub arithmetic_mean {
+    my @list = @_;
+    my $n = 0;
+    my $sum = 0;
+
+    for my $x (@list) {
+        $sum += $x;
+        ++$n;
+    }
+
+    return $sum / $n;
+}
+
+sub geometric_mean {
+    my @list = @_;
+
+    my @ts = ();
+    for my $t (@list) {
+        if ($t >= 0.1) {
+            my $lt = log $t;
+            push @ts, $lt;
+        }
+    }
+
+    return exp (arithmetic_mean @ts);
+}
+
+sub median {
+    my @list = @_;
+    (2 < scalar @list) or die;
+    my $lower = shift @list;
+    my $upper = pop @list;
+    my $ret;
+    @list = sort { $a <=> $b } @list;
+
+    while ($lower > $upper) {
+        if (scalar @list == 1) { return "-infty"; }
+        else { ++$upper; pop @list; }
+    }
+
+    while ($upper > $lower) {
+        if (scalar @list == 1) { return "+infty"; }
+        else { ++$lower; shift @list; }
+    }
+
+    while (2 < scalar @list) { pop @list; shift @list; }
+
+    if (scalar @list == 1) { $ret = $list[0]; }
+    else { $ret = ($list[0] + $list[1]) / 2; }
+
+    return sprintf ("%.2f", $ret);
+}
+
+sub read_log {
+    my ($input, $result) = @_;
+
+    open INPUT, "cat $input | scripts/summarize -l |" or
+        die "compare: couldn't open $input: $!\n";
+    while (my $line = <INPUT>) {
+        chomp $line;
+        $line =~ /^[^ ]*\/[0-9]+-([[:alnum:]+._-]+)\.tptp ([[:alnum:]]+) ([[:digit:].]+)$/ or
+            die "compare: bad input line:\n$line\n";
+        my $name = $1;
+        my $status = $2;
+        my $time = $3;
+        if (exists ${$result}{$name}) {
+            die "compare: duplicate problem names: $name\n";
+        }
+        my $time_str = sprintf ("%.2f",$time);
+        ${$result}{$name} = [$time,$time_str,$status];
+    }
+    close INPUT;
+}
+
+sub prettify {
+    my ($text, $names, $result, $max) = @_;
+
+    my @orderedNames =
+        sort { ${${$result}{$a}}[0] <=> ${$${result}{$b}}[0]; } @{$names};
+
+    print STDOUT "\n$text:";
+
+    my $col = 1 + length $text;
+
+    my $n = 0;
+    for my $name (@orderedNames) {
+        my $str;
+        if (defined($max) && ++$n > $max) {
+            $str = "...";
+        }
+        else {
+            $str = $name . "(" . ${${$result}{$name}}[1] . ")";
+        }
+
+        $col += 1 + length($str);
+        if ($col < 80) {
+            print STDOUT " ";
+        }
+        else {
+            print STDOUT "\n  ";
+            $col = 2 + length $str;
+        }
+        print STDOUT $str;
+
+        if ($str eq "...") { last; }
+    }
+    print STDOUT "\n";
+}
+
+sub statistics {
+    my ($probs, $result) = @_;
+
+    my @times = ();
+    for my $name (@{$probs}) {
+        push @times, ${${$result}{$name}}[0];
+    }
+
+    my $a = arithmetic_mean @times;
+    my $m = median (0, @times, 0);
+    my $g = geometric_mean @times;
+
+    return sprintf ("a=%.2f|m=%s|g=%.2f", $a, $m, $g);
+}
+
+my %result1 = ();
+my %result2 = ();
+
+read_log $ARGV[0], \%result1;
+read_log $ARGV[1], \%result2;
+
+my @problems = ();
+for my $name (keys %result1) {
+    if (exists $result2{$name}) { push @problems, $name; }
+}
+
+if (scalar @problems == 0) {
+    print STDOUT "compare: no problems in common.\n";
+    exit 0;
+}
+
+my @lost = ();
+my @common = ();
+my @gained = ();
+my %best = ();
+my %worst = ();
+
+for my $name (@problems) {
+    my $r1 = $result1{$name};
+    my $r2 = $result2{$name};
+    my $t1 = ${$r1}[0];
+    my $t2 = ${$r2}[0];
+    my $a1 = ${$r1}[1];
+    my $a2 = ${$r2}[1];
+    my $s1 = (${$r1}[2] =~ /^(Theorem|Unsatisfiable)$/);
+    my $s2 = (${$r2}[2] =~ /^(Theorem|Unsatisfiable)$/);
+
+    if ($s1) {
+        if ($s2) {
+            push @common, $name;
+            $best{$name} = [$t2 - $t1, "$a1/$a2"];
+            $worst{$name} = [$t1 - $t2, "$a1/$a2"];
+        }
+        else { push @lost, $name; }
+    }
+    elsif ($s2) { push @gained, $name; }
+}
+
+my $number = (scalar @problems);
+my $minus = (scalar @lost);
+my $both = (scalar @common);
+my $plus = (scalar @gained);
+my $then = $minus + $both;
+my $now = $both + $plus;
+my $missing1 = (scalar (keys %result2) - $number);
+my $missing2 = (scalar (keys %result1) - $number);
+
+if ($plus > 0) {
+    prettify "Gained problems", \@gained, \%result2;
+}
+
+if ($minus > 0) {
+    prettify "Lost problems", \@lost, \%result1;
+}
+
+if ($both > 0) {
+    prettify "Best problems", \@common, \%best, 10;
+
+    prettify "Worst problems", \@common, \%worst, 10;
+}
+else {
+    print STDOUT "[no proved problems in common]\n";
+}
+
+my $verdict;
+
+if ($plus > $minus) { $verdict = "Up " . ($plus - $minus); }
+elsif ($plus < $minus) { $verdict = "Down " . ($minus - $plus); }
+elsif ($plus == 0) { $verdict = "Identical"; }
+else { $verdict = "Same"; }
+
+print STDOUT
+  ("\nVerdict: $verdict. Proved $now" .
+   (($then == $now) ? "" : " instead of $then") . " out of $number");
+print STDOUT " [+$plus =$both -$minus]\n";
+
+print STDOUT "Time 1: ";
+if ($then > 0) {
+    if ($both > 0) { print STDOUT (statistics (\@common, \%result1)); }
+    else { print STDOUT "[no proved problems in common]"; }
+    print STDOUT " ";
+    if ($minus > 0) { print STDOUT (statistics (\@lost, \%result1)); }
+    else { print STDOUT "[no lost problems]"; }
+}
+else {
+    print STDOUT "[no proved problems in first log file]";
+}
+print STDOUT "\n";
+
+print STDOUT "Time 2: ";
+if ($now > 0) {
+    if ($both > 0) { print STDOUT (statistics (\@common, \%result2)); }
+    else { print STDOUT "[no proved problems in common]"; }
+    print STDOUT " ";
+    if ($plus > 0) { print STDOUT (statistics (\@gained, \%result2)); }
+    else { print STDOUT "[no gained problems]"; }
+}
+else {
+    print STDOUT "[no proved problems in second log file]";
+}
+print STDOUT "\n";
+
+if ($missing1 > 0) {
+    my $sing = ($missing1 == 1);
+    print STDOUT ("\nThere " . ($sing ? "was" : "were") . " " . $missing1 .
+                  " problem" . ($sing ? "" : "s") .
+                  " missing from the first log file.\n");
+}
+
+if ($missing2 > 0) {
+    my $sing = ($missing2 == 1);
+    print STDOUT ("\nThere " . ($sing ? "was" : "were") . " " . $missing2 .
+                  " problem" . ($sing ? "" : "s") .
+                  " missing from the second log file.\n");
+}
+
+print STDOUT "\n";
+
+__END__
+
+=pod
+
+=head1 NAME
+
+compare - compares two metis log files
+
+=head1 SYNOPSIS
+
+compare [-h] metis-log-file-1 metis-log-file-2
+
+=head1 ARGUMENTS
+
+The recognized flags are described below:
+
+=over 2
+
+=item B<-h>
+
+Produce this documentation.
+
+=back
+
+=head1 DESCRIPTION
+
+Analyzes two metis logs, and prints a summary of their difference.
+
+=head1 BUGS
+
+Waiting to rear their ugly heads.
+
+=head1 AUTHORS
+
+Joe Hurd <joe@gilith.com>
+
+=head1 SEE ALSO
+
+Perl(1).
+
+=cut

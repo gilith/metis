@@ -1,0 +1,458 @@
+###############################################################################
+# METIS DEVELOPMENT MAKEFILE
+# Copyright (c) 2001-2007 Joe Hurd, distributed under the GNU GPL version 2
+###############################################################################
+
+###############################################################################
+# Cleaning temporary files.
+###############################################################################
+
+TEMPFILE = Makefile-temp-file
+
+TEMP += $(TEMPFILE) \
+        metis.tgz \
+        benchmark* mlmon.out \
+        cnf.tptp
+
+###############################################################################
+# The ML preprocessor.
+###############################################################################
+
+#MLPP_OPTS += -r 'DEBUG'
+#MLPP_OPTS += -r 'DEBUG|TRACE[0-1]'
+#MLPP_OPTS += -r 'DEBUG|TRACE[0-2]'
+#MLPP_OPTS += -r 'DEBUG|TRACE[0-3]'
+#MLPP_OPTS += -r 'DEBUG|TRACE[0-4]'
+#MLPP_OPTS += -r 'DEBUG|TRACE[0-5]'
+#MLPP_OPTS += -r 'DEBUG|TRACE[0-6]'
+
+###############################################################################
+# Automatically generated dependencies.
+###############################################################################
+
+MOSML_DEP = scripts/mosml_dep
+
+bin/mosml/Makefile.src: Makefile Makefile.dev $(MOSML_DEP) $(MLPP)
+	@echo
+	@echo '****************************************************'
+	@echo '* Regenerating the Moscow ML makefile dependencies *'
+	@echo '****************************************************'
+	@echo
+	@$(MOSML_DEP) $(MOSML_SRC) $(MOSML_TARGETS) > $@
+
+###############################################################################
+# Counting the number of lines of code.
+###############################################################################
+
+LINES = scripts/ml_lines
+
+.PHONY: lines
+lines:
+	@echo
+	@echo -n 'Metis '
+	@$(LINES) $(SRC) src/metis.sml
+	@echo
+
+###############################################################################
+# Moving source files around.
+###############################################################################
+
+src/ElementSet.sig: ../basic/src/ElementSet.sig $(COPY) ; @$(COPY) $< $@
+src/ElementSet.sml: ../basic/src/ElementSet.sml $(COPY) ; @$(COPY) $< $@
+src/Heap.sig: ../basic/src/Heap.sig $(COPY) ; @$(COPY) $< $@
+src/Heap.sml: ../basic/src/Heap.sml $(COPY) ; @$(COPY) $< $@
+src/KeyMap.sig: ../basic/src/KeyMap.sig $(COPY) ; @$(COPY) $< $@
+src/KeyMap.sml: ../basic/src/KeyMap.sml $(COPY) ; @$(COPY) $< $@
+src/Lazy.sig: ../basic/src/Lazy.sig $(COPY) ; @$(COPY) $< $@
+src/Lazy.sml: ../basic/src/Lazy.sml $(COPY) ; @$(COPY) $< $@
+src/Map.sig: ../basic/src/Map.sig $(COPY) ; @$(COPY) $< $@
+src/Map.sml: ../basic/src/Map.sml $(COPY) ; @$(COPY) $< $@
+src/Options.sig: ../basic/src/Options.sig $(COPY) ; @$(COPY) $< $@
+src/Options.sml: ../basic/src/Options.sml $(COPY) ; @$(COPY) $< $@
+src/Ordered.sig: ../basic/src/Ordered.sig $(COPY) ; @$(COPY) $< $@
+src/Ordered.sml: ../basic/src/Ordered.sml $(COPY) ; @$(COPY) $< $@
+src/Parser.sig: ../basic/src/Parser.sig $(COPY) ; @$(COPY) $< $@
+src/Parser.sml: ../basic/src/Parser.sml $(COPY) ; @$(COPY) $< $@
+src/Portable.sig: ../basic/src/Portable.sig $(COPY) ; @$(COPY) $< $@
+src/PortableMosml.sml: ../basic/src/PortableMosml.sml $(COPY) ; @$(COPY) $< $@
+src/PortableMlton.sml: ../basic/src/PortableMlton.sml $(COPY) ; @$(COPY) $< $@
+src/PP.sig: ../basic/src/PP.sig $(COPY) ; @$(COPY) $< $@
+src/PP.sml: ../basic/src/PP.sml $(COPY) ; @$(COPY) $< $@
+src/Random.sig: ../basic/src/Random.sig $(COPY) ; @$(COPY) $< $@
+src/Random.sml: ../basic/src/Random.sml $(COPY) ; @$(COPY) $< $@
+src/RandomMap.sml: ../basic/src/RandomMap.sml $(COPY) ; @$(COPY) $< $@
+src/RandomSet.sml: ../basic/src/RandomSet.sml $(COPY) ; @$(COPY) $< $@
+src/Set.sig: ../basic/src/Set.sig $(COPY) ; @$(COPY) $< $@
+src/Set.sml: ../basic/src/Set.sml $(COPY) ; @$(COPY) $< $@
+src/Sharing.sig: ../basic/src/Sharing.sig $(COPY) ; @$(COPY) $< $@
+src/Sharing.sml: ../basic/src/Sharing.sml $(COPY) ; @$(COPY) $< $@
+src/Stream.sig: ../basic/src/Stream.sig $(COPY) ; @$(COPY) $< $@
+src/Stream.sml: ../basic/src/Stream.sml $(COPY) ; @$(COPY) $< $@
+src/Useful.sig: ../basic/src/Useful.sig $(COPY) ; @$(COPY) $< $@
+src/Useful.sml: ../basic/src/Useful.sml $(COPY) ; @$(COPY) $< $@
+
+src/selftest.sml: test/test.sml $(COPY) ; @$(COPY) $< $@
+
+###############################################################################
+# The build scripts.
+###############################################################################
+
+COPY = scripts/copy_src
+
+$(COPY): ../basic/scripts/copy_src
+	@cp -fv $< $@
+	@chmod -w $@
+
+$(MLPP): ../basic/scripts/mlpp $(COPY) ; @$(COPY) $< $@
+
+$(MOSML_DEP): ../basic/scripts/mosml_dep $(COPY) ; @$(COPY) $< $@
+
+$(LINES): ../basic/scripts/ml_lines $(COPY) ; @$(COPY) $< $@
+
+.PHONY: build-scripts
+build-scripts: $(COPY) $(MLPP) $(MOSML_DEP) $(LINES)
+
+###############################################################################
+# Generating the problem sets.
+###############################################################################
+
+PROBLEM_DIR = data/problems
+TPTP_PROBLEM_DIR = $(HOME)/ptr/tptp/tptp
+PROBLEMS2TPTP = bin/mosml/problems2tptp
+COPY_PROBLEM = scripts/copy_problem
+ALL_SET = $(PROBLEM_DIR)/all
+INSTANT_SET = $(PROBLEM_DIR)/instant
+NONEQUALITY_SET = $(PROBLEM_DIR)/nonequality
+EQUALITY_SET = $(PROBLEM_DIR)/equality
+TPTP_SET = $(PROBLEM_DIR)/tptp
+HOL_SET = $(PROBLEM_DIR)/hol
+BENCHMARK_SET = $(PROBLEM_DIR)/benchmark
+MLTON_BENCHMARK_SET = $(PROBLEM_DIR)/mlton-benchmark-20020924
+SATISFIABLE_SET = $(PROBLEM_DIR)/satisfiable
+TPTP_CNF_SET = $(PROBLEM_DIR)/tptp-cnf
+TPTP_FOF_SET = $(PROBLEM_DIR)/tptp-fof
+
+.PHONY: problems
+problems: $(PROBLEMS2TPTP)
+	if test -d $(PROBLEM_DIR) ; then rm -r $(PROBLEM_DIR)/ ; fi ; mkdir $(PROBLEM_DIR)
+	mkdir $(ALL_SET)
+	$(PROBLEMS2TPTP) --output $(ALL_SET)
+	@cp $(TPTP_PROBLEM_DIR)/BOO/BOO021-1.tptp $(ALL_SET)
+	@cp $(TPTP_PROBLEM_DIR)/COL/COL058-2.tptp $(ALL_SET)
+	@cp $(TPTP_PROBLEM_DIR)/COL/COL060-3.tptp $(ALL_SET)
+	@cp $(TPTP_PROBLEM_DIR)/LCL/LCL009-1.tptp $(ALL_SET)
+	@cp $(TPTP_PROBLEM_DIR)/LCL/LCL107-1.tptp $(ALL_SET)
+	@cp $(TPTP_PROBLEM_DIR)/PUZ/PUZ001-1.tptp $(ALL_SET)
+	@cp $(TPTP_PROBLEM_DIR)/SYN/SYN075-1.tptp $(ALL_SET)
+	@cp $(TPTP_PROBLEM_DIR)/SYN/SYN075+1.tptp $(ALL_SET)
+	mkdir $(INSTANT_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/TRUE.tptp $(INSTANT_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/SIMPLE.tptp $(INSTANT_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/CYCLIC.tptp $(INSTANT_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/MICHAEL_NORRISH_BUG.tptp $(INSTANT_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_6.tptp $(INSTANT_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/MATHS4_EXAMPLE.tptp $(INSTANT_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P18.tptp $(INSTANT_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P39.tptp $(INSTANT_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P59.tptp $(INSTANT_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/BAD_CONNECTIONS.tptp $(INSTANT_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/TRANS_SYMM.tptp $(INSTANT_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/CYCLIC_SUBSTITUTION_BUG.tptp $(INSTANT_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P48.tptp $(INSTANT_SET)
+	mkdir $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/TRUE.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/SIMPLE.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/CYCLIC.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/MICHAEL_NORRISH_BUG.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/RELATION_COMPOSITION.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_1.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_2.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_3.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_4.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_5.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_6.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_7.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_8.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_9.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_10.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_11.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_12.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_13.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_14.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_15.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_16.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PROP_17.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/MATHS4_EXAMPLE.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/LOGICPROOF_1996.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/XOR_ASSOC.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/ALL_3_CLAUSES.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/CLAUSE_SIMP.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P18.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P19.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P20.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P21.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P22.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P23.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P24.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P25.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P26.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P27.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P28.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P29.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P30.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P31.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P32.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P33.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P34.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P35.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P36.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P37.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P38.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P39.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P40.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P41.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P42.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P43.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P44.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P45.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P46.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P50.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/LOGICPROOF_L10.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/BARBER.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P55.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P57.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P58.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P59.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P60.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_1.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_3.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_4.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_5.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_6.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_7.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_8.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_9.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_9a.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/BAD_CONNECTIONS.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/LOS.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/STEAM_ROLLER.tptp $(NONEQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/MODEL_COMPLETENESS.tptp $(NONEQUALITY_SET)
+	mkdir $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/REFLEXIVITY.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/SYMMETRY.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/TRANSITIVITY.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/TRANS_SYMM.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/SUBSTITUTIVITY.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/CYCLIC_SUBSTITUTION_BUG.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/JUDITA_1.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/JUDITA_2.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/JUDITA_3.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/JUDITA_4.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/JUDITA_5.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/INJECTIVITY_1.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/INJECTIVITY_2.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/SELF_REWRITE.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/EQUALITY_ORDERING.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P48.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P49.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P51.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P52.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/UNSKOLEMIZED_MELHAM.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/CONGRUENCE_CLOSURE_EXAMPLE.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/EWD_1.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/EWD_2.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/JIA.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/AGATHA.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GROUP_INVERSE_INVERSE.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GROUP_RIGHT_INVERSE.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GROUP_RIGHT_IDENTITY.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GROUP_IDENTITY_EQUIV.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/KLEIN_GROUP_COMMUTATIVE.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/DIVIDES_9_1.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/DIVIDES_9_2.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/WISHNU.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/JACOBSON_2.tptp $(EQUALITY_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/JACOBSON_3.tptp $(EQUALITY_SET)
+	mkdir $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/ALG005-1.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/ALG006-1.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/BOO021-1.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/COL058-2.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/COL060-3.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GEO002-4.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GEO036-2.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GRP010-4.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GRP057-1.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GRP086-1.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GRP104-1.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GRP128-4.003.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/HEN006-3.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/LAT005-3.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/LCL009-1.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/LCL087-1.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/LCL107-1.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/LCL187-1.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/LDA007-3.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/NUM001-1.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/NUM014-1.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PUZ001-1.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PUZ011-1.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/PUZ020-1.tptp $(TPTP_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/ROB002-1.tptp $(TPTP_SET)
+	mkdir $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/Coder_4_0.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/DeepSyntax_47.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/divides_9.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/Encode_28.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/euclid_4.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/euclid_8.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/extra_arith_6.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/extra_real_5.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/gcd_19.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/gcd_20.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/gcd_21.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/int_arith_6.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/int_arith_139.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/llist_69.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/MachineTransition_0.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/MachineTransition_2_1.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/MachineTransition_52.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/measure_138.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/Omega_13.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/Omega_71.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/pred_set_1.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/pred_set_54_1.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/prob_44.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/prob_53.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/prob_extra_22.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/root2_2.tptp $(HOL_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/TermRewriting_13.tptp $(HOL_SET)
+	mkdir $(BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/LOS.tptp $(BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/STEAM_ROLLER.tptp $(BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_9.tptp $(BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/AGATHA.tptp $(BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/JACOBSON_2.tptp $(BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/WISHNU.tptp $(BENCHMARK_SET)
+	mkdir $(MLTON_BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P26.tptp $(MLTON_BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P46.tptp $(MLTON_BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_1.tptp $(MLTON_BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/LOS.tptp $(MLTON_BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/STEAM_ROLLER.tptp $(MLTON_BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P48.tptp $(MLTON_BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/P49.tptp $(MLTON_BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/AGATHA.tptp $(MLTON_BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/LCL009-1.tptp $(MLTON_BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/COL060-3.tptp $(MLTON_BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/COL058-2.tptp $(MLTON_BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/LCL107-1.tptp $(MLTON_BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/BOO021-1.tptp $(MLTON_BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GRP128-4.003.tptp $(MLTON_BENCHMARK_SET)
+	mkdir $(SATISFIABLE_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/LOGICPROOF_1999.tptp $(SATISFIABLE_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_2.tptp $(SATISFIABLE_SET)
+	mkdir $(TPTP_CNF_SET)
+	@tptp1T CNF Unsatisfiable Rating 0.0 0.0 | perl -n -e '$$l = $$_; chomp $$l; $$l =~ s/[[:space:]].*$$//; $$l =~ s/^([A-Z]*)/\1\/\1/; (system ("$(COPY_PROBLEM) -l $(TPTP_PROBLEM_DIR)/$$l.tptp $(TPTP_CNF_SET)") == 0) or die;'
+	mkdir $(TPTP_FOF_SET)
+	@tptp1T FOF Theorem Rating 0.0 0.0 | perl -n -e '$$l = $$_; chomp $$l; $$l =~ s/[[:space:]].*$$//; $$l =~ s/^([A-Z]*)/\1\/\1/; (system ("$(COPY_PROBLEM) -l $(TPTP_PROBLEM_DIR)/$$l.tptp $(TPTP_FOF_SET)") == 0) or die;'
+
+###############################################################################
+# Testing Metis on the problem sets.
+###############################################################################
+
+TEST_TIME_LIMIT = 60
+
+.PHONY: status-test
+status-test: $(METIS)
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/SYN/SYN075+1.tptp | grep '^SZS status Theorem for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/MGT/MGT019+2.tptp | grep '^SZS status CounterSatisfiable for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/KRS/KRS063+1.tptp | grep '^SZS status Unsatisfiable for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/KRS/KRS018+1.tptp | grep '^SZS status Satisfiable for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/SYN/SYN075-1.tptp | grep '^SZS status Unsatisfiable for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/MGT/MGT031-1.tptp | grep '^SZS status Satisfiable for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/MGT/MGT041-2.tptp | grep '^SZS status Unsatisfiable for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/NLP/NLP114-1.tptp | grep '^SZS status Satisfiable for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/BOO/BOO003-4.tptp | grep '^SZS status Unsatisfiable for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/BOO/BOO001-1.tptp | grep '^SZS status Unsatisfiable for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/BOO/BOO027-1.tptp | grep '^SZS status Satisfiable for'
+#	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/BOO/BOO036-1.tptp | grep '^SZS status Satisfiable for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/KRS/KRS174+1.tptp | grep '^SZS status Theorem for'
+
+.PHONY: std-test
+std-test: $(METIS)
+	ulimit -t $(TEST_TIME_LIMIT) ; find $(NONEQUALITY_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show goal --show clauses --show size --show category --show proof --show saturated $$_");' 2>&1 | tee std-log
+	ulimit -t $(TEST_TIME_LIMIT) ; find $(EQUALITY_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show goal --show clauses --show size --show category --show proof --show saturated $$_");' 2>&1 | tee -a std-log
+
+.PHONY: tptp-test
+tptp-test: $(METIS)
+	ulimit -t $(TEST_TIME_LIMIT) ; find $(TPTP_CNF_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show proof --show saturated $$_");' 2>&1 | tee tptp-log
+	ulimit -t $(TEST_TIME_LIMIT) ; find $(TPTP_FOF_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show proof --show saturated $$_");' 2>&1 | tee -a tptp-log
+
+.PHONY: tests
+tests: status-test std-test tptp-test
+
+###############################################################################
+# Profiling using MLton.
+###############################################################################
+
+DROP = <main>
+
+KEEP = <main>
+
+benchmark: $(MLTON_SRC) src/metis.sml
+	@echo
+	@echo '***************************************************************'
+	@echo '* Compile a MLton version of the metis program with profiling *'
+	@echo '***************************************************************'
+	@echo
+	@echo $@
+	@$(MLPP) $(MLPP_OPTS) -c mlton $^ >benchmark.sml
+	echo '$$(SML_LIB)/basis/basis.mlb $$(SML_LIB)/basis/mlton.mlb benchmark.sml' > benchmark.mlb
+	$(MLTONC) -profile time -profile-stack true benchmark.mlb
+	rm benchmark.mlb benchmark.sml
+	@echo
+
+.PHONY: benchmark-test
+benchmark-test: benchmark
+	time ./benchmark --show name $(BENCHMARK_SET)/*.tptp | tee benchmark-log
+
+benchmark.tab benchmark.dot: mlmon.out Makefile
+	mlprof -call-graph benchmark.dot -keep '(and (thresh-stack 4) (or (not "$(DROP)") "$(KEEP)"))' -split '.*' benchmark mlmon.out >benchmark.tab
+
+.PHONY: profile
+profile: benchmark-test benchmark.tab
+
+###############################################################################
+# Releasing.
+###############################################################################
+
+RELEASE_DIR = release
+HOL_RELEASE_DIR = $(HOME)/dev/metis/hol
+
+.PHONY: release-stamp
+release-stamp:
+	scripts/release_stamp doc/*.html src/metis.sml
+
+doc/example-cnf-proof.txt: data/problems/all/SYN075-1.tptp $(METIS)
+	$(METIS) --show name --show clauses --show proof $< > $@
+
+doc/logical-kernel.txt: src/Thm.sig Makefile.dev
+	perl -n -e 'if (defined($$a)) { if ($$a++ > 0) { print STDOUT $$_; } } elsif ($$_ =~ /Primitive rules of inference/) { $$a = 0; print STDOUT "signature Thm =\n\ntype clause = LiteralSet.set\n\ntype thm\n\nval clause : thm -> clause\n"; }' < $< > $@
+
+.PHONY: documentation
+documentation: doc/example-cnf-proof.txt doc/logical-kernel.txt
+
+.PHONY: tarball
+tarball: clean doc/DONT-RELEASE Makefile.dev
+	cd .. ; tar cvzhf metis/release/metis.tar.gz --exclude-from metis/doc/DONT-RELEASE metis
+
+.PHONY: release
+release: release-stamp mosml mlton documentation tarball
+	rm -f $(RELEASE_DIR)/*.html $(RELEASE_DIR)/*.jpg $(RELEASE_DIR)/*.txt
+	cp -v doc/*.html doc/*.jpg doc/*.txt $(RELEASE_DIR)/
+	rsync -azv --delete --checksum --size-only --exclude=.cvsignore --exclude=CVS -e ssh release/ gilith@gilith.com:public_html/software/metis
+
+.PHONY: hol-release
+hol-release: mosml
+	scripts/export_hol -d $(HOL_RELEASE_DIR) $(MOSML_OBJ)
