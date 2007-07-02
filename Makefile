@@ -16,7 +16,7 @@ default: mosml
 # Cleaning temporary files.
 ###############################################################################
 
-TEMP = $(MOSML_TARGETS) bin/mosml/a.out \
+TEMP = $(MOSML_TARGETS) \
        bin/mosml/*.sml bin/mosml/*.ui bin/mosml/*.uo bin/mosml/a.out \
        $(MLTON_TARGETS) t.mlb t.sml t
 

@@ -41,19 +41,6 @@ bin/mosml/Makefile.src: Makefile Makefile.dev $(MOSML_DEP) $(MLPP)
 	@$(MOSML_DEP) $(MOSML_SRC) $(MOSML_TARGETS) > $@
 
 ###############################################################################
-# Counting the number of lines of code.
-###############################################################################
-
-LINES = scripts/ml_lines
-
-.PHONY: lines
-lines:
-	@echo
-	@echo -n 'Metis '
-	@$(LINES) $(SRC) src/metis.sml
-	@echo
-
-###############################################################################
 # Moving source files around.
 ###############################################################################
 
@@ -92,6 +79,19 @@ src/Useful.sig: ../basic/src/Useful.sig $(COPY) ; @$(COPY) $< $@
 src/Useful.sml: ../basic/src/Useful.sml $(COPY) ; @$(COPY) $< $@
 
 src/selftest.sml: test/test.sml $(COPY) ; @$(COPY) $< $@
+
+###############################################################################
+# Counting the number of lines of code.
+###############################################################################
+
+LINES = scripts/ml_lines
+
+.PHONY: lines
+lines: $(LINES)
+	@echo
+	@echo -n 'Metis '
+	@$(LINES) $(SRC) src/metis.sml
+	@echo
 
 ###############################################################################
 # The build scripts.
