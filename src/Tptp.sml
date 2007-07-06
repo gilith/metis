@@ -956,7 +956,7 @@ local
   fun ppAtomInfo pp atm =
       case total Atom.destEq atm of
         SOME (a,b) => ppAtom pp ("$equal",[a,b])
-      | NONE => ppAtom pp atm
+      | NONE => ppAtom pp atm;
 
   fun ppLiteralInfo pp (pol,atm) =
       if pol then ppAtomInfo pp atm
@@ -967,14 +967,21 @@ local
          ppAtomInfo pp atm;
          Parser.endBlock pp);
 
-  val ppSubst =
+  val ppAssumeInfo = Parser.ppBracket "(" ")" ppAtomInfo;
+
+  val ppSubstInfo =
       Parser.ppMap
         Subst.toList
         (Parser.ppSequence ","
-           (Parser.ppBracket "[" "]" (Parser.ppBinop "," ppVar ppTerm)));
+           (Parser.ppBracket "[" "]"
+              (Parser.ppBinop "," ppVar (Parser.ppBracket "(" ")" ppTerm))));
+
+  val ppResolveInfo = Parser.ppBracket "(" ")" ppAtomInfo;
+
+  val ppReflInfo = Parser.ppBracket "(" ")" ppTerm;
         
-  fun ppEquality pp (lit,path,res) =
-      (ppLiteralInfo pp lit;
+  fun ppEqualityInfo pp (lit,path,res) =
+      (Parser.ppBracket "(" ")" ppLiteralInfo pp lit;
        Parser.addString pp ",";
        Parser.addBreak pp (1,0);
        Term.ppPath pp path;
@@ -985,11 +992,11 @@ local
   fun ppInfInfo pp inf =
       case inf of
         Proof.Axiom _ => raise Bug "ppInfInfo"
-      | Proof.Assume atm => ppAtomInfo pp atm
-      | Proof.Subst (sub,_) => ppSubst pp sub
-      | Proof.Resolve (res,_,_) => ppAtomInfo pp res
-      | Proof.Refl tm => ppTerm pp tm
-      | Proof.Equality x => ppEquality pp x;
+      | Proof.Assume atm => ppAssumeInfo pp atm
+      | Proof.Subst (sub,_) => ppSubstInfo pp sub
+      | Proof.Resolve (res,_,_) => ppResolveInfo pp res
+      | Proof.Refl tm => ppReflInfo pp tm
+      | Proof.Equality x => ppEqualityInfo pp x;
 in
   fun ppProof p prf =
       let
