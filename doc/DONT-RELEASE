@@ -16,6 +16,7 @@ metis/scripts/compare
 metis/scripts/copy_problem
 metis/scripts/copy_src
 metis/scripts/export_hol
+metis/scripts/extract_proof
 metis/scripts/mosml_dep
 metis/scripts/release_stamp
 metis/scripts/summarize
