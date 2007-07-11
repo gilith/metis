@@ -10,9 +10,8 @@
 TEMPFILE = Makefile-temp-file
 
 TEMP += $(TEMPFILE) \
-        metis.tgz \
         benchmark* mlmon.out \
-        cnf.tptp
+        cnf.tptp saturated.tptp
 
 ###############################################################################
 # The ML preprocessor.
@@ -92,25 +91,6 @@ lines: $(LINES)
 	@echo -n 'Metis '
 	@$(LINES) $(SRC) src/metis.sml
 	@echo
-
-###############################################################################
-# The build scripts.
-###############################################################################
-
-COPY = scripts/copy_src
-
-$(COPY): ../basic/scripts/copy_src
-	@cp -fv $< $@
-	@chmod -w $@
-
-$(MLPP): ../basic/scripts/mlpp $(COPY) ; @$(COPY) $< $@
-
-$(MOSML_DEP): ../basic/scripts/mosml_dep $(COPY) ; @$(COPY) $< $@
-
-$(LINES): ../basic/scripts/ml_lines $(COPY) ; @$(COPY) $< $@
-
-.PHONY: build-scripts
-build-scripts: $(COPY) $(MLPP) $(MOSML_DEP) $(LINES)
 
 ###############################################################################
 # Generating the problem sets.
@@ -428,11 +408,14 @@ profile: benchmark-test benchmark.tab
 ###############################################################################
 
 RELEASE_DIR = release
+
 HOL_RELEASE_DIR = $(HOME)/dev/metis/hol
 
+RELEASE_STAMP = scripts/release_stamp
+
 .PHONY: release-stamp
-release-stamp:
-	scripts/release_stamp doc/*.html src/metis.sml
+release-stamp: $(RELEASE_STAMP)
+	 $(RELEASE_STAMP) -p metis doc/*.html src/metis.sml
 
 doc/example-cnf-proof.txt: data/problems/all/SYN075-1.tptp $(METIS)
 	$(METIS) --show name --show clauses --show proof $< > $@
@@ -456,3 +439,24 @@ release: release-stamp mosml mlton documentation tarball
 .PHONY: hol-release
 hol-release: mosml
 	scripts/export_hol -d $(HOL_RELEASE_DIR) $(MOSML_OBJ)
+
+###############################################################################
+# The build scripts.
+###############################################################################
+
+COPY = scripts/copy_src
+
+$(COPY): ../basic/scripts/copy_src
+	@cp -fv $< $@
+	@chmod -w $@
+
+$(MLPP): ../basic/scripts/mlpp $(COPY) ; @$(COPY) $< $@
+
+$(MOSML_DEP): ../basic/scripts/mosml_dep $(COPY) ; @$(COPY) $< $@
+
+$(LINES): ../basic/scripts/ml_lines $(COPY) ; @$(COPY) $< $@
+
+$(RELEASE_STAMP): ../basic/scripts/release_stamp $(COPY) ; @$(COPY) $< $@
+
+.PHONY: build-scripts
+build-scripts: $(COPY) $(MLPP) $(MOSML_DEP) $(LINES)

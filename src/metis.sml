@@ -77,16 +77,16 @@ end;
 
 val VERSION = "2.0";
 
-val versionString = PROGRAM^" version "^VERSION^" (release 20070709)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20070711)"^"\n";
 
 val programOptions =
-    {name    = PROGRAM,
+    {name = PROGRAM,
      version = versionString,
-     header  = "usage: "^PROGRAM^" [option ...] problem.tptp ...\n" ^
-               "Proves the input TPTP problem files.\n",
-     footer  = "Possible ITEMs are {" ^ join "," ITEMS ^ "}.\n" ^
-               "Problems can be read from standard input using the " ^
-               "special - filename.\n",
+     header = "usage: "^PROGRAM^" [option ...] problem.tptp ...\n" ^
+              "Proves the input TPTP problem files.\n",
+     footer = "Possible ITEMs are {" ^ join "," ITEMS ^ "}.\n" ^
+              "Problems can be read from standard input using the " ^
+              "special - filename.\n",
      options = specialOptions @ Options.basicOptions};
 
 fun exit x : unit = Options.exit programOptions x;
