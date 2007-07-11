@@ -415,7 +415,7 @@ RELEASE_STAMP = scripts/release_stamp
 
 .PHONY: release-stamp
 release-stamp: $(RELEASE_STAMP)
-	 $(RELEASE_STAMP) -p metis doc/*.html src/metis.sml
+	 $(RELEASE_STAMP) -p Metis doc/*.html src/metis.sml
 
 doc/example-cnf-proof.txt: data/problems/all/SYN075-1.tptp $(METIS)
 	$(METIS) --show name --show clauses --show proof $< > $@
@@ -459,4 +459,4 @@ $(LINES): ../basic/scripts/ml_lines $(COPY) ; @$(COPY) $< $@
 $(RELEASE_STAMP): ../basic/scripts/release_stamp $(COPY) ; @$(COPY) $< $@
 
 .PHONY: build-scripts
-build-scripts: $(COPY) $(MLPP) $(MOSML_DEP) $(LINES)
+build-scripts: $(COPY) $(MLPP) $(MOSML_DEP) $(LINES) $(RELEASE_STAMP)
