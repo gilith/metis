@@ -23,8 +23,6 @@ PortableMlton.sml
 PortableMosml.sml
 PP.sig
 PP.sml
-Random.sig
-Random.sml
 RandomMap.sml
 RandomSet.sml
 Set.sig

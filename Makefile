@@ -128,7 +128,6 @@ MLTONC = mlton -verbose 1 -runtime 'ram-slop 0.4'
 
 MLTON_SRC = \
   src/PP.sig src/PP.sml \
-  src/Random.sig src/Random.sml \
   src/Portable.sig src/PortableMlton.sml \
   $(SRC)
 
