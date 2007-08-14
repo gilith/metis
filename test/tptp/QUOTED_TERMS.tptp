@@ -1,7 +1,7 @@
 % -----------------------------------------------------------------------------
-% Name: GEOFF
+% Name: QUOTED TERMS
 %
-% The quoted dollar notation is difficult to parse.
+% Predicate, function and constant names can be single quoted.
 % -----------------------------------------------------------------------------
 
 fof(a,axiom,! [X] : '$s'(X)).

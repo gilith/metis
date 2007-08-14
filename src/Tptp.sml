@@ -554,6 +554,9 @@ local
     fun symbolParser s = f (map punctParser (explode s));
   end;
 
+  val definedParser =
+      exact (Punct #"$") ++ someAlphaNum (K true) >> (fn (_,s) => "$" ^ s)
+
   val quotedParser =
       let
         val escapeParser =
@@ -592,11 +595,12 @@ local
        punctParser #"]") >>
       (fn ((),(h,(t,()))) => h :: t);
 
-  val functionParser = lowerParser || quotedParser;
+  val functionParser = lowerParser || definedParser || quotedParser;
 
-  val constantParser = lowerParser || numberParser || quotedParser;
+  val constantParser =
+      lowerParser || numberParser || definedParser || quotedParser;
 
-  val propositionParser = lowerParser || quotedParser;
+  val propositionParser = lowerParser || definedParser || quotedParser;
 
   val booleanParser =
       (punctParser #"$" ++
@@ -637,8 +641,11 @@ local
        (fn n => (true,(n,[]))));
 
   val atomParser =
-      (booleanParser >> Boolean) ||
-      (literalAtomParser >> Literal);
+      literalAtomParser >>
+      (fn (pol,("$true",[])) => Boolean pol
+        | (pol,("$false",[])) => Boolean (not pol)
+        | (pol,("$equal",[a,b])) => Literal (pol, Atom.mkEq (a,b))
+        | lit => Literal lit);
 
   val literalParser =
       ((punctParser #"~" ++ atomParser) >> (negate o snd)) ||
