@@ -345,6 +345,7 @@ TEST_TIME_LIMIT = 60
 
 .PHONY: status-test
 status-test: $(METIS)
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) test/tptp/GEOFF.tptp | grep '^SZS status Theorem for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/SYN/SYN075+1.tptp | grep '^SZS status Theorem for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/MGT/MGT019+2.tptp | grep '^SZS status CounterSatisfiable for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/KRS/KRS063+1.tptp | grep '^SZS status Unsatisfiable for'

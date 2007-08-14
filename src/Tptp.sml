@@ -1,5 +1,5 @@
 (* ========================================================================= *)
-(* INTERFACE TO TPTP PROBLEM FILES                                           *)
+(* THE TPTP PROBLEM FILE FORMAT (TPTP v2)                                    *)
 (* Copyright (c) 2001-2007 Joe Hurd, distributed under the GNU GPL version 2 *)
 (* ========================================================================= *)
 
@@ -514,11 +514,9 @@ local
 
     val punctToken =
         let
-          val punctChars = explode "<>=-*+/\\?@|!$%&#^:;~()[]{}.,"
-
-          fun isPunctChar c = mem c punctChars
+          val punctChars = "<>=-*+/\\?@|!$%&#^:;~()[]{}.,'"
         in
-          some isPunctChar >> Punct
+          some (Char.contains punctChars) >> Punct
         end;
 
     val lexToken = alphaNumToken || punctToken;
@@ -533,7 +531,9 @@ local
 
   fun alphaNumParser s = someAlphaNum (equal s) >> K ();
 
-  val lowerParser = someAlphaNum (fn s => Char.isLower (String.sub (s,0)));
+  fun isLower s = Char.isLower (String.sub (s,0));
+
+  val lowerParser = someAlphaNum isLower;
 
   val upperParser = someAlphaNum (fn s => Char.isUpper (String.sub (s,0)));
 
@@ -554,6 +554,36 @@ local
     fun symbolParser s = f (map punctParser (explode s));
   end;
 
+  val quotedParser =
+      let
+        val escapeParser =
+            exact (Punct #"'") >> singleton ||
+            exact (Punct #"\\") >> singleton
+
+        fun stopOn (Punct #"'") = true
+          | stopOn _ = false
+
+        val lexParser =
+            exact (Punct #"\\") ++ escapeParser >> op:: ||
+            some (not o stopOn) >> singleton
+
+        fun join l =
+            let
+              fun f (AlphaNum s) = s
+                | f (Punct c) = str c
+
+              fun p (AlphaNum _) = true
+                | p _ = false
+
+              val s = String.concat (map f l)
+            in
+              if List.all p l andalso isLower s then s else "'" ^ s ^ "'"
+            end
+      in
+        punctParser #"'" ++ many lexParser ++ punctParser #"'" >>
+        (fn ((),(l,())) => join (List.concat l))
+      end;
+
   val varParser = upperParser;
 
   val varListParser =
@@ -562,11 +592,11 @@ local
        punctParser #"]") >>
       (fn ((),(h,(t,()))) => h :: t);
 
-  val functionParser = lowerParser;
+  val functionParser = lowerParser || quotedParser;
 
-  val constantParser = lowerParser || numberParser;
+  val constantParser = lowerParser || numberParser || quotedParser;
 
-  val propositionParser = lowerParser;
+  val propositionParser = lowerParser || quotedParser;
 
   val booleanParser =
       (punctParser #"$" ++
