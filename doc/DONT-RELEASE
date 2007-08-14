@@ -21,3 +21,4 @@ metis/scripts/mosml_dep
 metis/scripts/release_stamp
 metis/scripts/summarize
 metis/scripts/unproved
+metis/test/tptp
