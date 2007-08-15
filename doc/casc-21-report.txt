@@ -1,0 +1,27 @@
+Metis 2.0 [Hur03] is a proof tactic used in the HOL4 interactive
+theorem prover. Metis 2.0 is written in Standard ML for ease of
+integration with HOL4, and keeps very detailed proof information to
+simplify the task of translating first order refutations to higher
+order logic proofs. There is a strict adherence to standards: problems
+are input in the TPTP format; and statuses and proofs are output in
+the SZS and TSTP formats. Metis 2.0 implements a complete ordered
+resolution and ordered paramodulation calculus, and uses a fixed
+strategy on every input problem. In addition to standard size and
+distance measures, finite models are used to weight clauses, although
+by necessity in the CASC competition the finite models were
+constructed by randomly interpreting all functions and relations
+(except equality). No version of Metis had previously been entered
+into CASC, and for its inaugural competition Metis 2.0 was entered
+into every division of CASC 21. Its performance was worse than
+expected---previous versions of Metis have out-performed the baseline
+Otter entry---but one pleasant surprise was that its CNF normalization
+was powerful enough to completely solve 28 of the FOF competition
+problems.
+
+References
+
+[Hur03] Hurd J. (September 2003), First-Order Proof Tactics in
+Higher-Order Logic Theorem Provers, Archer M., Di Vito B., Muñoz C.,
+Design and Application of Strategies/Tactics in Higher Order Logics
+(STRATA 2003) (Rome, Italy), pp.56-68, NASA Technical Report
+CP-2003-212448, NASA.
