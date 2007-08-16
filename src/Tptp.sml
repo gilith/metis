@@ -557,6 +557,10 @@ local
   val definedParser =
       exact (Punct #"$") ++ someAlphaNum (K true) >> (fn (_,s) => "$" ^ s)
 
+  val systemParser =
+      exact (Punct #"$") ++ exact (Punct #"$") ++ someAlphaNum (K true) >>
+      (fn (_,(_,s)) => "$$" ^ s)
+
   val quotedParser =
       let
         val escapeParser =
@@ -595,17 +599,17 @@ local
        punctParser #"]") >>
       (fn ((),(h,(t,()))) => h :: t);
 
-  val functionParser = lowerParser || definedParser || quotedParser;
+  val functionParser =
+      lowerParser ||
+      definedParser || systemParser || quotedParser;
 
   val constantParser =
-      lowerParser || numberParser || definedParser || quotedParser;
+      lowerParser || numberParser ||
+      definedParser || systemParser || quotedParser;
 
-  val propositionParser = lowerParser || definedParser || quotedParser;
-
-  val booleanParser =
-      (punctParser #"$" ++
-       ((alphaNumParser "true" >> K true) ||
-        (alphaNumParser "false" >> K false))) >> snd;
+  val propositionParser =
+      lowerParser ||
+      definedParser || systemParser || quotedParser;
 
   fun termParser input =
       ((functionArgumentsParser >> Term.Fn) ||
