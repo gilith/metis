@@ -4,6 +4,14 @@
 % Predicate, function and constant names can be single quoted.
 % -----------------------------------------------------------------------------
 
+fof('A quoted formula name',axiom,P(a)).
+
 fof(a,axiom,! [X] : '$s'(X)).
 
-fof(b,conjecture,'$s'(a)).
+fof(b,axiom,'$s'(a)).
+
+fof(c,axiom,P('quoted function'(a))).
+
+fof(d,axiom,P('quoted constant')).
+
+fof(2,conjecture,P(a)).

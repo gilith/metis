@@ -591,6 +591,8 @@ local
         (fn ((),(l,())) => join (List.concat l))
       end;
 
+  val nameParser = stringParser || quotedParser || numberParser;
+
   val varParser = upperParser;
 
   val varListParser =
@@ -604,7 +606,7 @@ local
       definedParser || systemParser || quotedParser;
 
   val constantParser =
-      lowerParser || numberParser ||
+      lowerParser || (***numberParser ||***)
       definedParser || systemParser || quotedParser;
 
   val propositionParser =
@@ -789,7 +791,7 @@ local
 
   val cnfParser =
       (alphaNumParser "cnf" ++ punctParser #"(" ++
-       stringParser ++ punctParser #"," ++
+       nameParser ++ punctParser #"," ++
        stringParser ++ punctParser #"," ++
        clauseParser ++ punctParser #")" ++
        punctParser #".") >>
@@ -798,7 +800,7 @@ local
 
   val fofParser =
       (alphaNumParser "fof" ++ punctParser #"(" ++
-       stringParser ++ punctParser #"," ++
+       nameParser ++ punctParser #"," ++
        stringParser ++ punctParser #"," ++
        fofFormulaParser ++ punctParser #")" ++
        punctParser #".") >>

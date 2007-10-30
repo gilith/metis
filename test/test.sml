@@ -678,6 +678,9 @@ fun tptp f =
       Tptp.Fof goal => pvFm goal
     | Tptp.Cnf prob => pvFm (Problem.toClauses prob);
 
+val _ = Tptp.read {filename = "tptp/DEFINED_TERMS.tptp"};
+val _ = Tptp.read {filename = "tptp/QUOTED_TERMS.tptp"};
+
 val Agatha = tptp "PUZ001-1.tptp";
 
 (* ------------------------------------------------------------------------- *)
