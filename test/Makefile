@@ -41,7 +41,7 @@ mosml-diff:
 	@diff -c $(TMPFILE1) $(TMPFILE2)
 	@rm -f $(TMPFILE1) $(TMPFILE2)
 
-mosml-result: test.sml ../src/problems.sml ../bin/mosml/Waiting.uo
+mosml-result: test.sml ../src/problems.sml ../bin/mosml/Options.uo
 	rm -f $@
 	echo "quit();" | $(MOSML) $< 2>&1 | tee $@
 

@@ -673,15 +673,24 @@ val () = check_syntax problems;
 val () = SAY "Parsing TPTP problems";
 (* ------------------------------------------------------------------------- *)
 
-fun tptp f =
-    case Tptp.toGoal (Tptp.read {filename = "../data/problems/all/" ^ f}) of
-      Tptp.Fof goal => pvFm goal
-    | Tptp.Cnf prob => pvFm (Problem.toClauses prob);
+val TPTP_DIR = "../data/problems/all";
 
-val _ = Tptp.read {filename = "tptp/DEFINED_TERMS.tptp"};
-val _ = Tptp.read {filename = "tptp/QUOTED_TERMS.tptp"};
+fun tptp d f =
+    let
+      val () = print ("parsing " ^ f ^ "... ")
+      val goal =
+          case Tptp.toGoal (Tptp.read {filename = d ^ "/" ^ f}) of
+            Tptp.Fof goal => pvFm goal
+          | Tptp.Cnf prob => pvFm (Problem.toClauses prob)
+      val () = print "ok\n"
+    in
+      goal
+    end;
 
-val Agatha = tptp "PUZ001-1.tptp";
+val _ = tptp "tptp" "DEFINED_TERMS.tptp";
+val _ = tptp "tptp" "QUOTED_TERMS.tptp";
+
+val Agatha = tptp TPTP_DIR "PUZ001-1.tptp";
 
 (* ------------------------------------------------------------------------- *)
 val () = SAY "Clauses";

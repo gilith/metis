@@ -504,7 +504,7 @@ local
   infixr 7 >>
   infixr 6 ||
 
-  datatype token = AlphaNum of string | Punct of char;
+  datatype token = AlphaNum of string | Punct of char | Quote of string;
 
   local
     fun isAlphaNum #"_" = true
@@ -519,7 +519,25 @@ local
           some (Char.contains punctChars) >> Punct
         end;
 
-    val lexToken = alphaNumToken || punctToken;
+    val quoteToken =
+        let
+          val escapeParser =
+              exact #"'" >> singleton ||
+              exact #"\\" >> singleton
+
+          fun stopOn #"'" = true
+            | stopOn #"\n" = true
+            | stopOn _ = false
+
+          val quotedParser =
+              exact #"\\" ++ escapeParser >> op:: ||
+              some (not o stopOn) >> singleton
+        in
+          exact #"'" ++ many quotedParser ++ exact #"'" >>
+          (fn (_,(l,_)) => Quote (implode (List.concat l)))
+        end;
+
+    val lexToken = alphaNumToken || punctToken || quoteToken;
 
     val space = many (some Char.isSpace);
   in
@@ -546,6 +564,11 @@ local
 
   fun punctParser c = somePunct (equal c) >> K ();
 
+  fun someQuote p =
+      maybe (fn Quote s => if p s then SOME s else NONE | _ => NONE);
+
+  val quoteParser = someQuote (K true);
+
   local
     fun f [] = raise Bug "symbolParser"
       | f [x] = x
@@ -555,43 +578,15 @@ local
   end;
 
   val definedParser =
-      exact (Punct #"$") ++ someAlphaNum (K true) >> (fn (_,s) => "$" ^ s)
+      punctParser #"$" ++ someAlphaNum (K true) >> (fn ((),s) => "$" ^ s)
 
   val systemParser =
-      exact (Punct #"$") ++ exact (Punct #"$") ++ someAlphaNum (K true) >>
-      (fn (_,(_,s)) => "$$" ^ s)
+      punctParser #"$" ++ punctParser #"$" ++ someAlphaNum (K true) >>
+      (fn ((),((),s)) => "$$" ^ s)
 
-  val quotedParser =
-      let
-        val escapeParser =
-            exact (Punct #"'") >> singleton ||
-            exact (Punct #"\\") >> singleton
+  val nameParser = stringParser || numberParser || quoteParser;
 
-        fun stopOn (Punct #"'") = true
-          | stopOn _ = false
-
-        val lexParser =
-            exact (Punct #"\\") ++ escapeParser >> op:: ||
-            some (not o stopOn) >> singleton
-
-        fun join l =
-            let
-              fun f (AlphaNum s) = s
-                | f (Punct c) = str c
-
-              fun p (AlphaNum _) = true
-                | p _ = false
-
-              val s = String.concat (map f l)
-            in
-              if List.all p l andalso isLower s then s else "'" ^ s ^ "'"
-            end
-      in
-        punctParser #"'" ++ many lexParser ++ punctParser #"'" >>
-        (fn ((),(l,())) => join (List.concat l))
-      end;
-
-  val nameParser = stringParser || quotedParser || numberParser;
+  val roleParser = lowerParser;
 
   val varParser = upperParser;
 
@@ -603,15 +598,15 @@ local
 
   val functionParser =
       lowerParser ||
-      definedParser || systemParser || quotedParser;
+      definedParser || systemParser || quoteParser;
 
   val constantParser =
       lowerParser || (***numberParser ||***)
-      definedParser || systemParser || quotedParser;
+      definedParser || systemParser || quoteParser;
 
   val propositionParser =
       lowerParser ||
-      definedParser || systemParser || quotedParser;
+      definedParser || systemParser || quoteParser;
 
   fun termParser input =
       ((functionArgumentsParser >> Term.Fn) ||
@@ -792,7 +787,7 @@ local
   val cnfParser =
       (alphaNumParser "cnf" ++ punctParser #"(" ++
        nameParser ++ punctParser #"," ++
-       stringParser ++ punctParser #"," ++
+       roleParser ++ punctParser #"," ++
        clauseParser ++ punctParser #")" ++
        punctParser #".") >>
       (fn ((),((),(n,((),(r,((),(c,((),())))))))) =>
@@ -801,7 +796,7 @@ local
   val fofParser =
       (alphaNumParser "fof" ++ punctParser #"(" ++
        nameParser ++ punctParser #"," ++
-       stringParser ++ punctParser #"," ++
+       roleParser ++ punctParser #"," ++
        fofFormulaParser ++ punctParser #")" ++
        punctParser #".") >>
       (fn ((),((),(n,((),(r,((),(f,((),())))))))) =>
