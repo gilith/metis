@@ -687,10 +687,13 @@ fun tptp d f =
       goal
     end;
 
-val _ = tptp "tptp" "DEFINED_TERMS.tptp";
-val _ = tptp "tptp" "QUOTED_TERMS.tptp";
-
 val Agatha = tptp TPTP_DIR "PUZ001-1.tptp";
+val _ = tptp "tptp" "NUMBERED_FORMULAS.tptp";
+val _ = tptp "tptp" "DEFINED_TERMS.tptp";
+val _ = tptp "tptp" "SYSTEM_TERMS.tptp";
+val _ = tptp "tptp" "QUOTED_TERMS.tptp";
+val _ = tptp "tptp" "QUOTED_TERMS_IDENTITY.tptp";
+val _ = tptp "tptp" "QUOTED_TERMS_SPECIAL.tptp";
 
 (* ------------------------------------------------------------------------- *)
 val () = SAY "Clauses";

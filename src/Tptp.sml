@@ -349,8 +349,8 @@ local
       in
         String.translate tr
       end;
-
-  fun mkTptpName a n =
+in
+  fun mkTptpName n =
       let
         val n' = mkTptpString n
 
@@ -367,6 +367,10 @@ local
       end
       handle Error err => raise Error ("bad name \"" ^ n ^ "\": " ^ err);
 
+  fun isTptpName n = mkTptpName n = n;
+end;
+
+local
   fun mkMap set mapping =
       let
         val mapping = mappingToTptp mapping
@@ -376,7 +380,8 @@ local
               SOME t => (a, NameArityMap.insert m ((n,r),t))
             | NONE =>
               let
-                val t = mkTptpName a n
+                val t = mkTptpName n
+                val t = if t = n then n else Term.variantNum a t
               in
                 (NameSet.add a t, NameArityMap.insert m ((n,r),t))
               end
@@ -504,7 +509,10 @@ local
   infixr 7 >>
   infixr 6 ||
 
-  datatype token = AlphaNum of string | Punct of char | Quote of string;
+  datatype token =
+      AlphaNum of string
+    | Punct of char
+    | Quote of string;
 
   local
     fun isAlphaNum #"_" = true
@@ -514,7 +522,7 @@ local
 
     val punctToken =
         let
-          val punctChars = "<>=-*+/\\?@|!$%&#^:;~()[]{}.,'"
+          val punctChars = "<>=-*+/\\?@|!$%&#^:;~()[]{}.,"
         in
           some (Char.contains punctChars) >> Punct
         end;
@@ -539,9 +547,9 @@ local
 
     val lexToken = alphaNumToken || punctToken || quoteToken;
 
-    val space = many (some Char.isSpace);
+    val space = many (some Char.isSpace) >> K ();
   in
-    val lexer = (space ++ lexToken ++ space) >> (fn (_,(tok,_)) => tok);
+    val lexer = (space ++ lexToken ++ space) >> (fn ((),(tok,())) => tok);
   end;
 
   fun someAlphaNum p =
@@ -564,10 +572,12 @@ local
 
   fun punctParser c = somePunct (equal c) >> K ();
 
-  fun someQuote p =
-      maybe (fn Quote s => if p s then SOME s else NONE | _ => NONE);
-
-  val quoteParser = someQuote (K true);
+  fun quoteParser p =
+      let
+        fun q s = if p s then "'" ^ s ^ "'" else s
+      in
+        maybe (fn Quote s => SOME (q s) | _ => NONE)
+      end;
 
   local
     fun f [] = raise Bug "symbolParser"
@@ -578,15 +588,27 @@ local
   end;
 
   val definedParser =
-      punctParser #"$" ++ someAlphaNum (K true) >> (fn ((),s) => "$" ^ s)
+      punctParser #"$" ++ someAlphaNum (K true) >> (fn ((),s) => "$" ^ s);
 
   val systemParser =
       punctParser #"$" ++ punctParser #"$" ++ someAlphaNum (K true) >>
-      (fn ((),((),s)) => "$$" ^ s)
+      (fn ((),((),s)) => "$$" ^ s);
 
-  val nameParser = stringParser || numberParser || quoteParser;
+  val nameParser = stringParser || numberParser || quoteParser (K true);
 
   val roleParser = lowerParser;
+
+  val propositionParser =
+      lowerParser ||
+      definedParser || systemParser || quoteParser;
+
+  val functionParser =
+      lowerParser ||
+      definedParser || systemParser || quoteParser;
+
+  val constantParser =
+      lowerParser || numberParser ||
+      definedParser || systemParser || quoteParser;
 
   val varParser = upperParser;
 
@@ -595,18 +617,6 @@ local
        many ((punctParser #"," ++ varParser) >> snd) ++
        punctParser #"]") >>
       (fn ((),(h,(t,()))) => h :: t);
-
-  val functionParser =
-      lowerParser ||
-      definedParser || systemParser || quoteParser;
-
-  val constantParser =
-      lowerParser || (***numberParser ||***)
-      definedParser || systemParser || quoteParser;
-
-  val propositionParser =
-      lowerParser ||
-      definedParser || systemParser || quoteParser;
 
   fun termParser input =
       ((functionArgumentsParser >> Term.Fn) ||
