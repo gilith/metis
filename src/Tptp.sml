@@ -339,6 +339,32 @@ val formulasRelations =
 fun formulaIsConjecture (CnfFormula {role,...}) = role = ROLE_NEGATED_CONJECTURE
   | formulaIsConjecture (FofFormula {role,...}) = role = ROLE_CONJECTURE;
 
+fun isAlphaNum #"_" = true
+  | isAlphaNum c = Char.isAlphaNum c;
+
+local
+  fun check hp tp s =
+      let
+        fun ct 0 = true
+          | ct i = tp (String.sub (s,i)) andalso ct (i - 1)
+
+        val n = size s
+      in
+        n > 0 andalso hp (String.sub (s,0)) andalso ct (n - 1)
+      end
+in
+  fun isAlphaNumRelation s = check Char.isLower isAlphaNum s;
+
+  fun isAlphaNumProposition s = isAlphaNumRelation s;
+
+  (* Parsing relies on isAlphaNumRelation = isAlphaNumFunction *)
+  fun isAlphaNumFunction s = isAlphaNumRelation s;
+
+  fun isAlphaNumConstant s =
+      isAlphaNumFunction s orelse
+      check Char.isDigit Char.isDigit s;
+end;
+
 local
   val mkTptpString =
       let
@@ -515,9 +541,6 @@ local
     | Quote of string;
 
   local
-    fun isAlphaNum #"_" = true
-      | isAlphaNum c = Char.isAlphaNum c;
-
     val alphaNumToken = atLeastOne (some isAlphaNum) >> (AlphaNum o implode);
 
     val punctToken =
@@ -574,7 +597,7 @@ local
 
   fun quoteParser p =
       let
-        fun q s = if p s then "'" ^ s ^ "'" else s
+        fun q s = if p s then s else "'" ^ s ^ "'"
       in
         maybe (fn Quote s => SOME (q s) | _ => NONE)
       end;
@@ -594,21 +617,21 @@ local
       punctParser #"$" ++ punctParser #"$" ++ someAlphaNum (K true) >>
       (fn ((),((),s)) => "$$" ^ s);
 
-  val nameParser = stringParser || numberParser || quoteParser (K true);
+  val nameParser = stringParser || numberParser || quoteParser (K false);
 
   val roleParser = lowerParser;
 
   val propositionParser =
-      lowerParser ||
-      definedParser || systemParser || quoteParser;
+      someAlphaNum isAlphaNumProposition ||
+      definedParser || systemParser || quoteParser isAlphaNumProposition;
 
   val functionParser =
-      lowerParser ||
-      definedParser || systemParser || quoteParser;
+      someAlphaNum isAlphaNumFunction ||
+      definedParser || systemParser || quoteParser isAlphaNumFunction;
 
   val constantParser =
-      lowerParser || numberParser ||
-      definedParser || systemParser || quoteParser;
+      someAlphaNum isAlphaNumConstant ||
+      definedParser || systemParser || quoteParser isAlphaNumConstant;
 
   val varParser = upperParser;
 
