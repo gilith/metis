@@ -394,6 +394,7 @@ ok
 --------------------------------------------------------------------------
 Parsing TPTP problems
 
+parsing PUZ001-1.tptp... ok
 lives agatha /\ lives butler /\ lives charles /\
 (~killed $X $Y \/ ~richer $X $Y) /\ (~hates agatha $X \/ ~hates charles $X) /\
 (~hates $X agatha \/ ~hates $X butler \/ ~hates $X charles) /\
@@ -401,6 +402,25 @@ hates agatha agatha /\ hates agatha charles /\
 (~killed $X $Y \/ hates $X $Y) /\ (~hates agatha $X \/ hates butler $X) /\
 (~lives $X \/ hates butler $X \/ richer $X agatha) /\
 (killed butler agatha \/ killed charles agatha)
+
+parsing NUMBERED_FORMULAS.tptp... ok
+p ==> p
+
+parsing DEFINED_TERMS.tptp... ok
+six = $times_int 2 3 ==> six = 6
+
+parsing SYSTEM_TERMS.tptp... ok
+six = $$times_int 2 3 ==> six = 6
+
+parsing QUOTED_TERMS.tptp... ok
+p 'quoted constant' /\ p ('quoted function' a) /\ 'quoted proposition' /\
+(!X. 'quoted predicate' X) /\ p a ==> p a
+
+parsing QUOTED_TERMS_IDENTITY.tptp... ok
+p ==> p
+
+parsing QUOTED_TERMS_SPECIAL.tptp... ok
+'$times_int' 2 3 = six ==> $times_int 2 3 = six
 
 --------------------------------------------------------------------------
 Clauses

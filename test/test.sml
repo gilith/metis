@@ -680,11 +680,11 @@ fun tptp d f =
       val () = print ("parsing " ^ f ^ "... ")
       val goal =
           case Tptp.toGoal (Tptp.read {filename = d ^ "/" ^ f}) of
-            Tptp.Fof goal => pvFm goal
-          | Tptp.Cnf prob => pvFm (Problem.toClauses prob)
+            Tptp.Fof goal => goal
+          | Tptp.Cnf prob => Problem.toClauses prob
       val () = print "ok\n"
     in
-      goal
+      pvFm goal
     end;
 
 val Agatha = tptp TPTP_DIR "PUZ001-1.tptp";
