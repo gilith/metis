@@ -63,6 +63,8 @@ fun SAY s =
 
 fun printval p x = (print (PP.pp_to_string 79 p x ^ "\n\n"); x);
 
+fun mkCl p th = Clause.mk {parameters = p, id = Clause.newId (), thm = th};
+
 val pvBool = printval Parser.ppBool
 and pvPo = printval (Parser.ppMap partialOrderToString Parser.ppString)
 and pvFm = printval Formula.pp
@@ -82,8 +84,7 @@ and L = Literal.parse
 and F = Formula.parse
 and S = Subst.fromList;
 val AX = Thm.axiom o LiteralSet.fromList o map L;
-fun CL q =
-    Clause.mk {parameters = Clause.default, id = Clause.newId (), thm = AX q};
+val CL = mkCl Clause.default o AX;
 val Q = (fn th => (Thm.destUnitEq th, th)) o AX o singleton
 and U = (fn th => (Thm.destUnit th, th)) o AX o singleton;
 
@@ -709,6 +710,21 @@ val _ = pvLits (Clause.largestLiterals cl);
 val cl = pvCl (CL[`s = a`,`s = b`,`h b c`]);
 val _ = pvLits (Clause.largestLiterals cl);
 val cl = pvCl (CL[`a = a`,`a = b`,`h b c`]);
+val _ = pvLits (Clause.largestLiterals cl);
+
+(* Test cases contributed by Larry Paulson *)
+
+local
+  val lcpParm =
+      {ordering = KnuthBendixOrder.default,
+       orderLiterals = Clause.UnsignedLiteralOrder,
+       orderTerms = true};
+in
+  val LcpCL = mkCl lcpParm o AX;
+end;
+
+val cl = pvCl (LcpCL[`~($y <= (2 + (2 * $x + pow $x 2)) / 2)`, `~(0 <= $x)`,
+                     `$y <= exp $x`]);
 val _ = pvLits (Clause.largestLiterals cl);
 
 (* ------------------------------------------------------------------------- *)
