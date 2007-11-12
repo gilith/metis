@@ -124,7 +124,9 @@ mosml: mosml-info $(MOSML_OBJ) $(MOSML_TARGETS) test
 
 METIS = bin/mlton/metis
 
-MLTONC = mlton -verbose 1 -runtime 'ram-slop 0.4'
+MLTONC = mlton
+
+MLTONC_OPTS = -verbose 1 -runtime 'ram-slop 0.4'
 
 MLTON_SRC = \
   src/PP.sig src/PP.sml \
@@ -145,7 +147,7 @@ bin/mlton/%: $(MLTON_SRC) src/%.sml
 	@echo $@
 	@$(MLPP) $(MLPP_OPTS) -c mlton $^ >t.sml
 	echo '$$(SML_LIB)/basis/basis.mlb $$(SML_LIB)/basis/mlton.mlb t.sml' > t.mlb
-	$(MLTONC) t.mlb
+	$(MLTONC) $(MLTONC_OPTS) t.mlb
 	mv t $@
 	rm t.mlb t.sml
 	@echo

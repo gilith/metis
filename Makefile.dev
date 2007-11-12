@@ -14,7 +14,7 @@ TEMP += $(TEMPFILE) \
         cnf.tptp saturated.tptp
 
 ###############################################################################
-# The ML preprocessor.
+# Debugging options.
 ###############################################################################
 
 #MLPP_OPTS += -r 'DEBUG'
@@ -24,6 +24,8 @@ TEMP += $(TEMPFILE) \
 #MLPP_OPTS += -r 'DEBUG|TRACE[0-4]'
 #MLPP_OPTS += -r 'DEBUG|TRACE[0-5]'
 #MLPP_OPTS += -r 'DEBUG|TRACE[0-6]'
+
+#MLTONC_OPTS += -const 'Exn.keepHistory true'
 
 ###############################################################################
 # Automatically generated dependencies.
@@ -396,7 +398,7 @@ benchmark: $(MLTON_SRC) src/metis.sml
 	@echo $@
 	@$(MLPP) $(MLPP_OPTS) -c mlton $^ >benchmark.sml
 	echo '$$(SML_LIB)/basis/basis.mlb $$(SML_LIB)/basis/mlton.mlb benchmark.sml' > benchmark.mlb
-	$(MLTONC) -profile time -profile-stack true benchmark.mlb
+	$(MLTONC) $(MLTONC_OPTS) -profile time -profile-stack true benchmark.mlb
 	rm benchmark.mlb benchmark.sml
 	@echo
 
