@@ -16,16 +16,25 @@ type problem =
 (* Helper functions.                                                         *)
 (* ========================================================================= *)
 
-fun mkProblem description (problem : problem) : problem =
-    let
-      val {name,comments,goal} = problem
-      val comments = if null comments then [] else "" :: comments
-      val comments = "Collection: " ^ description :: comments
-    in
-      {name = name, comments = comments, goal = goal}
-    end;
+local
+  fun mkCollection collection = "Collection: " ^ collection;
 
-fun mkProblems description problems = map (mkProblem description) problems;
+  fun mkProblem collection description (problem : problem) : problem =
+      let
+        val {name,comments,goal} = problem
+        val comments = if null comments then [] else "" :: comments
+        val comments = "Description: " ^ description :: comments
+        val comments = mkCollection collection :: comments
+      in
+        {name = name, comments = comments, goal = goal}
+      end;
+in
+  fun isCollection collection {name = _, comments, goal = _} =
+      Useful.mem (mkCollection collection) comments;
+
+  fun mkProblems collection description problems =
+      map (mkProblem collection description) problems;
+end;
 
 (* ========================================================================= *)
 (* The collection of problems.                                               *)
@@ -37,7 +46,7 @@ val problems : problem list =
 (* Problems without equality.                                                *)
 (* ========================================================================= *)
 
-mkProblems "Problems without equality from various sources" [
+mkProblems "nonequality" "Problems without equality from various sources" [
 
 (* ------------------------------------------------------------------------- *)
 (* Trivia (some of which demonstrate ex-bugs in provers).                    *)
@@ -69,10 +78,10 @@ T`},
 (!x. ?y. p x y) /\ (!x. ?y. q x y) /\
 (!x y z. p x y /\ q y z ==> r x z) ==> !x. ?y. r x y`},
 
-{name = "TOBIAS_NIPKOW_TRIVIAL",
+{name = "TOBIAS_NIPKOW",
  comments = [],
  goal = `
-(!x y. P x y ==> f x = f y) /\ (!x. f (g x) = f x) /\ P (g a) (g b) ==>
+(!x y. p x y ==> f x = f y) /\ (!x. f (g x) = f x) /\ p (g a) (g b) ==>
 f a = f b`},
 
 (* ------------------------------------------------------------------------- *)
@@ -568,7 +577,7 @@ p (f a b) (f b c) /\ p (f b c) (f a c) /\
 (* Problems with equality.                                                   *)
 (* ========================================================================= *)
 
-mkProblems "Equality problems from various sources" [
+mkProblems "equality" "Equality problems from various sources" [
 
 (* ------------------------------------------------------------------------- *)
 (* Trivia (some of which demonstrate ex-bugs in the prover).                 *)
@@ -807,7 +816,7 @@ killed agatha agatha /\ ~killed butler agatha /\ ~killed charles agatha`},
 (* Note: for brevity some relation/function names have been shortened.       *)
 (* ========================================================================= *)
 
-mkProblems "Sample problems from the TPTP collection"
+mkProblems "tptp" "Sample problems from the TPTP collection"
 
 [
 
@@ -1225,7 +1234,7 @@ person wife /\ ~(husband = wife) /\ says husband (statement_by husband) /\
 (* Some problems from HOL.                                                   *)
 (* ========================================================================= *)
 
-mkProblems "HOL subgoals sent to MESON_TAC" [
+mkProblems "hol" "HOL subgoals sent to MESON_TAC" [
 
 {name = "Coder_4_0",
  comments = [],

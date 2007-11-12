@@ -39,6 +39,8 @@ fun checkProblems (problems : problem list) =
       dups names
     end;
 
+fun listProblem {name, comments = _, goal = _} = print (name ^ "\n");
+
 fun outputProblem outputDir {name,comments,goal} =
     let
       val filename = name ^ ".tptp"
@@ -71,13 +73,28 @@ fun outputProblem outputDir {name,comments,goal} =
 (* Program options.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
+datatype mode = OutputMode | ListMode;
+
+val MODE : mode ref = ref OutputMode;
+
+val COLLECTION : string option ref = ref NONE;
+
 val OUTPUT_DIRECTORY : string option ref = ref NONE;
 
 local
   open Useful Options;
 in
   val specialOptions =
-      [{switches = ["--output"], arguments = ["DIR"],
+      [{switches = ["--collection"], arguments = ["C"],
+        description = "restrict to the problems in collection C",
+        processor =
+          beginOpt
+            (stringOpt endOpt)
+            (fn _ => fn c => COLLECTION := SOME c)},
+       {switches = ["--list"], arguments = [],
+        description = "just list the problems",
+        processor = beginOpt endOpt (fn _ => MODE := ListMode)},
+       {switches = ["--output-dir"], arguments = ["DIR"],
         description = "the output directory",
         processor =
           beginOpt
@@ -112,9 +129,17 @@ val () = if null work then () else usage "too many arguments";
 
 val () =
 let
+  val problems =
+      case !COLLECTION of
+        NONE => problems
+      | SOME c => List.filter (isCollection c) problems
+
   val () = checkProblems problems
 
-  val () = app (outputProblem (!OUTPUT_DIRECTORY)) problems
+  val () =
+      case !MODE of
+        ListMode => app listProblem problems
+      | OutputMode => app (outputProblem (!OUTPUT_DIRECTORY)) problems
 in
   succeed ()
 end
