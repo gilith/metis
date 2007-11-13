@@ -727,55 +727,6 @@ val cl = pvCl (LcpCL[`~($y <= (2 + (2 * $x + pow $x 2)) / 2)`, `~(0 <= $x)`,
                      `$y <= exp $x`]);
 val _ = pvLits (Clause.largestLiterals cl);
 
-(* ------------------------------------------------------------------------- *)
-(* Exporting problems to an external FOL datatype.                           *)
-(* ------------------------------------------------------------------------- *)
-
-(*
-printDepth := 10000000;
-
-datatype xterm =
-  Fun of string * xterm list
-| Var of string;
-
-datatype xformula =
-  All of xterm list * xformula
-| Exi of xterm list * xformula
-| Iff of xformula * xformula
-| Imp of xformula * xformula
-| And of xformula * xformula
-| Or of xformula * xformula
-| Not of xformula
-| Tm of xterm
-| BoolT
-| BoolF
-| Box; (*which can be ignored entirely*)
-
-fun xterm (Term.Var v) = Var v
-  | xterm (Term.Fn (f,a)) = Fun (f, map xterm a);
-
-fun xformula Term.True = BoolT
-  | xformula Term.False = BoolF
-  | xformula (Term.Atom tm) = Tm (xterm tm)
-  | xformula (Term.Not p) = Not (xformula p)
-  | xformula (Term.And (p,q)) = And (xformula p, xformula q)
-  | xformula (Term.Or (p,q)) = Or (xformula p, xformula q)
-  | xformula (Term.Imp (p,q)) = Imp (xformula p, xformula q)
-  | xformula (Term.Iff (p,q)) = Iff (xformula p, xformula q)
-  | xformula fm =
-  (case strip_exists fm of ([],_) =>
-    (case strip_forall fm of ([],_) => raise Fail "xformula: can't identify"
-     | (vs,p) => All (map Var vs, xformula p))
-   | (vs,p) => Exi (map Var vs, xformula p));
-
-fun xproblem {name, goal : thing quotation} =
-  {name = name, goal = xformula (Syntax.parseFormula goal)};
-
-val xset = map xproblem;
-
-val xnonequality = xset Problem.nonequality;
-*)
-
 (***
 (* ------------------------------------------------------------------------- *)
 val () = SAY "Problems for provers";

@@ -46,14 +46,6 @@ val formulaFreeVars : formula -> NameSet.set
 
 val formulaIsConjecture : formula -> bool
 
-val ppFormula : formula Parser.pp
-
-val parseFormula : char Stream.stream -> formula Stream.stream
-
-val formulaToString : formula -> string
-
-val formulaFromString : string -> formula
-
 (* ------------------------------------------------------------------------- *)
 (* TPTP problems.                                                            *)
 (* ------------------------------------------------------------------------- *)
@@ -80,8 +72,6 @@ val prove : {filename : string} -> bool
 (* TSTP proofs.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-val ppProof : Proof.proof Parser.pp
-
-val proofToString : Proof.proof -> string
+val writeProof : {filename : string} -> Proof.proof -> unit
 
 end

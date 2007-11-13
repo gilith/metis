@@ -48,7 +48,6 @@ val functionMapping = ref
 
 val relationMapping = ref
     [(* Mapping TPTP relations to infix symbols *)
-     {name = "=", arity = 2, tptp = "="},
      {name = "==", arity = 2, tptp = "equalish"},
      {name = "<=", arity = 2, tptp = "less_equal"},
      {name = "<", arity = 2, tptp = "less_than"},
@@ -343,6 +342,31 @@ val formulasRelations =
 
 fun formulaIsConjecture (CnfFormula {role,...}) = role = ROLE_NEGATED_CONJECTURE
   | formulaIsConjecture (FofFormula {role,...}) = role = ROLE_CONJECTURE;
+
+(* Parsing and pretty-printing *)
+
+local
+  fun ppGen ppX pp (gen,name,role,x) =
+      (Parser.beginBlock pp Parser.Inconsistent (size gen + 1);
+       Parser.addString pp (gen ^ "(" ^ name ^ ",");
+       Parser.addBreak pp (1,0);
+       Parser.addString pp (role ^ ",");
+       Parser.addBreak pp (1,0);
+       Parser.beginBlock pp Parser.Consistent 1;
+       Parser.addString pp "(";
+       ppX pp x;
+       Parser.addString pp ")";
+       Parser.endBlock pp;
+       Parser.addString pp ").";
+       Parser.endBlock pp);
+in
+  fun ppFormula pp (CnfFormula {name,role,clause}) =
+      ppGen ppClause pp ("cnf",name,role,clause)
+    | ppFormula pp (FofFormula {name,role,formula}) =
+      ppGen ppFof pp ("fof",name,role,formula);
+end;
+
+val formulaToString = Parser.toString ppFormula;
 
 local
   open Parser;
@@ -695,10 +719,16 @@ in
   and isTptpConstant = canParseString constantParser;
 end;
 
+(***
 fun formulaFromString s =
     case Stream.toList (parseFormula (Stream.fromList (explode s))) of
       [fm] => fm
     | _ => raise Parser.NoParse;
+***)
+
+(* ------------------------------------------------------------------------- *)
+(* Converting to and from TPTP names.                                        *)
+(* ------------------------------------------------------------------------- *)
 
 local
   local
@@ -824,29 +854,6 @@ fun formulasFromTptp formulas =
       map (mapFormula maps) formulas
     end;
 
-local
-  fun ppGen ppX pp (gen,name,role,x) =
-      (Parser.beginBlock pp Parser.Inconsistent (size gen + 1);
-       Parser.addString pp (gen ^ "(" ^ name ^ ",");
-       Parser.addBreak pp (1,0);
-       Parser.addString pp (role ^ ",");
-       Parser.addBreak pp (1,0);
-       Parser.beginBlock pp Parser.Consistent 1;
-       Parser.addString pp "(";
-       ppX pp x;
-       Parser.addString pp ")";
-       Parser.endBlock pp;
-       Parser.addString pp ").";
-       Parser.endBlock pp);
-in
-  fun ppFormula pp (CnfFormula {name,role,clause}) =
-      ppGen ppClause pp ("cnf",name,role,clause)
-    | ppFormula pp (FofFormula {name,role,formula}) =
-      ppGen ppFof pp ("fof",name,role,formula);
-end;
-
-val formulaToString = Parser.toString ppFormula;
-
 (* ------------------------------------------------------------------------- *)
 (* TPTP problems.                                                            *)
 (* ------------------------------------------------------------------------- *)
@@ -883,17 +890,6 @@ in
         {comments = comments, formulas = formulas}
       end;
 end;
-
-(* Quick testing
-installPP Term.pp;
-installPP Formula.pp;
-val () = Term.isVarName := (fn s => Char.isUpper (String.sub (s,0)));
-val TPTP_DIR = "/Users/Joe/ptr/tptp/tptp/";
-val num1 = read {filename = TPTP_DIR ^ "NUM/NUM001-1.tptp"};
-val lcl9 = read {filename = TPTP_DIR ^ "LCL/LCL009-1.tptp"};
-val set11 = read {filename = TPTP_DIR ^ "SET/SET011+3.tptp"};
-val swc128 = read {filename = TPTP_DIR ^ "SWC/SWC128-1.tptp"};
-*)
 
 local
   fun mkCommentLine comment = mkComment comment ^ "\n";
@@ -1140,6 +1136,6 @@ in
 *)
 end;
 
-val proofToString = Parser.toString ppProof;
+fun writeProof filename = Stream.toTextFile filename o Parser.toStream ppProof;
 
 end

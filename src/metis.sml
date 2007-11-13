@@ -150,7 +150,7 @@ local
       if notshowing "proof" then ()
       else
         (print ("SZS output start CNFRefutation for " ^ filename ^ "\n");
-         print (Tptp.proofToString (Proof.proof th));
+         Tptp.writeProof {filename = "-"} (Proof.proof th);
          print ("SZS output end CNFRefutation for " ^ filename ^ "\n\n"));
 
   fun display_saturated filename ths =

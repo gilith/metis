@@ -751,6 +751,24 @@ killed agatha agatha /\ ~killed butler agatha /\ ~killed charles agatha`},
 (!x y. divides x y <=> ?z. z * x = y) ==>
 !x y z. divides x y ==> divides x (z * y)`},
 
+{name = "XOR_COUNT_COMMUTATIVE",
+ comments = ["The xor literal counting function in Normalize is commutative."],
+ goal = `
+(!x y. x + y = y + x) /\ (!x y z. x + (y + z) = x + y + z) /\
+(!x y. x * y = y * x) /\ (!x y z. x * (y * z) = x * y * z) /\
+pl = p1 * p2 + n1 * n2 /\ nl = p1 * n2 + n1 * p2 /\
+pr = p2 * p1 + n2 * n1 /\ nr = p2 * n1 + n2 * p1 ==> pl = pr /\ nl = nr`},
+
+{name = "XOR_COUNT_ASSOCIATIVE",
+ comments = ["The xor literal counting function in Normalize is associative."],
+ goal = `
+(!x y. x + y = y + x) /\ (!x y z. x + (y + z) = x + y + z) /\
+(!x y. x * y = y * x) /\ (!x y z. x * (y * z) = x * y * z) /\
+px = p1 * p2 + n1 * n2 /\ nx = p1 * n2 + n1 * p2 /\
+pl = px * p3 + nx * n3 /\ nl = px * n3 + nx * p3 /\
+py = p2 * p3 + n2 * n3 /\ ny = p2 * n3 + n2 * p3 /\
+pr = p1 * py + n1 * ny /\ nr = p1 * ny + n1 * py ==> pl = pr /\ nl = nr`},
+
 (* ------------------------------------------------------------------------- *)
 (* Group theory examples.                                                    *)
 (* ------------------------------------------------------------------------- *)
