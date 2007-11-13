@@ -715,12 +715,21 @@ val _ = pvLits (Clause.largestLiterals cl);
 (* Test cases contributed by Larry Paulson *)
 
 local
-  val lcpParm =
-      {ordering = KnuthBendixOrder.default,
+  fun weight ("ln",1)  = 500
+    | weight ("exp",1) = 500
+    | weight ("/",2) = 50
+    | weight ("<",2) = 20
+    | weight _ = 1;
+
+  val ordering =
+      {weight = weight, precedence = #precedence KnuthBendixOrder.default};
+
+  val clauseParameters =
+      {ordering = ordering,
        orderLiterals = Clause.UnsignedLiteralOrder,
        orderTerms = true};
 in
-  val LcpCL = mkCl lcpParm o AX;
+  val LcpCL = mkCl clauseParameters o AX;
 end;
 
 val cl = pvCl (LcpCL[`~($y <= (2 + (2 * $x + pow $x 2)) / 2)`, `~(0 <= $x)`,
