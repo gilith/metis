@@ -84,6 +84,15 @@ fun mapTerm functionMap =
 fun mapAtom {functionMap,relationMap} (p,a) =
     (findMapping relationMap (p, length a), map (mapTerm functionMap) a);
 
+fun mapLit maps (p,a) : Literal.literal = (p, mapAtom maps a);
+
+fun mapLitSet maps =
+    let
+      fun inc (lit,set) = LiteralSet.add set (mapLit maps lit)
+    in
+      LiteralSet.foldl inc LiteralSet.empty
+    end;
+
 fun mapFof maps =
     let
       open Formula
@@ -156,7 +165,7 @@ fun literalSubst sub lit =
 fun mapLiteral maps lit =
     case lit of
       Boolean _ => lit
-    | Literal (p,a) => Literal (p, mapAtom maps a);
+    | Literal l => Literal (mapLit maps l)
 
 fun destLiteral (Literal l) = l
   | destLiteral _ = raise Error "destLiteral";
@@ -731,25 +740,47 @@ fun formulaFromString s =
 (* ------------------------------------------------------------------------- *)
 
 local
-  local
-    fun explodeAlpha s = List.filter Char.isAlpha (explode s);
-  in
-    fun normTptpName s n =
-        case explodeAlpha n of
-          [] => s
-        | c :: cs => implode (Char.toLower c :: cs);
+  fun explodeAlpha s = List.filter Char.isAlpha (explode s);
+in
+  fun mkTptpName s n =
+      case explodeAlpha n of
+        [] => s
+      | c :: cs => implode (Char.toLower c :: cs);
 
-    fun normTptpVar s n =
-        case explodeAlpha n of
-          [] => s
-        | c :: cs => implode (Char.toUpper c :: cs);
-  end;
+  fun mkTptpVar n =
+      case explodeAlpha n of
+        [] => "X"
+      | c :: cs => implode (Char.toUpper c :: cs);
 
-  fun normTptpFunc (n,0) = if isTptpConstant n then n else normTptpName "c" n
-    | normTptpFunc (n,_) = if isTptpFunction n then n else normTptpName "f" n;
+  fun isTptpVar v = mkTptpVar v = v;
+end;
 
-  fun normTptpRel (n,0) = if isTptpProposition n then n else normTptpName "p" n
-    | normTptpRel (n,_) = if isTptpRelation n then n else normTptpName "r" n;
+fun mkAddTptpVar v (a,s) =
+    let
+      val v' = Term.variantNum a (mkTptpVar v)
+      val a = NameSet.add a v'
+      and s = if v = v' then s else Subst.insert s (v, Term.Var v')
+    in
+      (v',(a,s))
+    end
+
+local
+  fun addTptpVar (v,a_s) = snd (mkAddTptpVar v a_s)
+in                          
+  fun mkTptpVars vs =
+      let
+        val (avoid,vs) = NameSet.partition isTptpVar vs
+      in
+        NameSet.foldl addTptpVar (avoid,Subst.empty) vs
+      end;
+end;
+
+local
+  fun mkTptpFunc (n,0) = if isTptpConstant n then n else mkTptpName "c" n
+    | mkTptpFunc (n,_) = if isTptpFunction n then n else mkTptpName "f" n;
+
+  fun mkTptpRel (n,0) = if isTptpProposition n then n else mkTptpName "p" n
+    | mkTptpRel (n,_) = if isTptpRelation n then n else mkTptpName "r" n;
 
   fun mkMap set norm mapping =
       let
@@ -782,23 +813,8 @@ local
         snd (NameAritySet.foldl mk (avoid, NameArityMap.new ()) set)
       end;
 
-  fun mkTptpVar a v = Term.variantNum a (normTptpVar "V" v);
-
-  fun isTptpVar v = mkTptpVar NameSet.empty v = v;
-
   fun alphaFormula fm =
       let
-        fun addVar v a s =
-            let
-              val v' = mkTptpVar a v
-              val a = NameSet.add a v'
-              and s = if v = v' then s else Subst.insert s (v, Term.Var v')
-            in
-              (v',(a,s))
-            end
-
-        fun initVar (v,(a,s)) = snd (addVar v a s)
-
         open Formula
 
         fun alpha _ _ True = True
@@ -809,23 +825,28 @@ local
           | alpha a s (Or (p,q)) = Or (alpha a s p, alpha a s q)
           | alpha a s (Imp (p,q)) = Imp (alpha a s p, alpha a s q)
           | alpha a s (Iff (p,q)) = Iff (alpha a s p, alpha a s q)
-          | alpha a s (Forall (v,p)) =
-            let val (v,(a,s)) = addVar v a s in Forall (v, alpha a s p) end
-          | alpha a s (Exists (v,p)) =
-            let val (v,(a,s)) = addVar v a s in Exists (v, alpha a s p) end
+          | alpha a s (Forall (v,p)) = alphaQuant Forall a s v p
+          | alpha a s (Exists (v,p)) = alphaQuant Exists a s v p
 
-        val fvs = formulaFreeVars fm
-        val (avoid,fvs) = NameSet.partition isTptpVar fvs
-        val (avoid,sub) = NameSet.foldl initVar (avoid,Subst.empty) fvs
+        and alphaQuant quant a s v p =
+            let
+              val (v,(a,s)) = mkAddTptpVar v (a,s)
+            in
+              quant (v, alpha a s p)
+            end
+
+        val (avoid,sub) = mkTptpVars (formulaFreeVars fm)
 (*TRACE5
         val () = Parser.ppTrace Subst.pp "Tptp.alpha: sub" sub
 *)
       in
         case fm of
           CnfFormula {name,role,clause} =>
-          CnfFormula {name = name, role = role, clause = clauseSubst sub clause}
+          CnfFormula
+            {name = name, role = role, clause = clauseSubst sub clause}
         | FofFormula {name,role,formula} =>
-          FofFormula {name = name, role = role, formula = alpha avoid sub formula}
+          FofFormula
+            {name = name, role = role, formula = alpha avoid sub formula}
       end;
 
   fun formulaToTptp maps fm = alphaFormula (mapFormula maps fm);
@@ -834,9 +855,9 @@ in
       let
         val funcs = formulasFunctions formulas
         and rels = formulasRelations formulas
-                   
-        val functionMap = mkMap funcs normTptpFunc (!functionMapping)
-        and relationMap = mkMap rels normTptpRel (!relationMapping)
+
+        val functionMap = mkMap funcs mkTptpFunc (!functionMapping)
+        and relationMap = mkMap rels mkTptpRel (!relationMapping)
 
         val maps = {functionMap = functionMap, relationMap = relationMap}
       in
@@ -1010,6 +1031,36 @@ end;
 (* ------------------------------------------------------------------------- *)
 
 local
+  fun mapSubstTerm maps sub tm =
+      let
+        val {functionMap, relationMap = _} = maps
+      in
+        Subst.subst sub (mapTerm functionMap tm)
+      end;
+
+  fun mapSubstAtom maps sub atm = Atom.subst sub (mapAtom maps atm);
+
+  fun mapSubstSubst maps sub =
+      let
+        fun inc (v,tm,s) =
+            let
+              val v =
+                  case Subst.peek sub v of
+                    NONE => v
+                  | SOME vt => Term.destVar vt
+
+              val tm = mapSubstTerm maps sub tm
+            in
+              Subst.insert s (v,tm)
+            end
+      in
+        Subst.foldl inc Subst.empty
+      end;
+
+  fun mapSubstLiteral maps sub lit = Literal.subst sub (mapLit maps lit);
+
+  fun mapSubstClause maps sub cl = clauseSubst sub (mapClause maps cl);
+
   fun ppAtomInfo pp atm =
       case total Atom.destEq atm of
         SOME (a,b) => ppAtom pp ("$equal",[a,b])
@@ -1046,19 +1097,31 @@ local
        Parser.addBreak pp (1,0);
        Parser.ppBracket "(" ")" ppTerm pp res);
 
-  fun ppInfInfo pp inf =
+  fun ppInfInfo maps sub pp inf =
       case inf of
         Proof.Axiom _ => raise Bug "ppInfInfo"
-      | Proof.Assume atm => ppAssumeInfo pp atm
-      | Proof.Subst (sub,_) => ppSubstInfo pp sub
-      | Proof.Resolve (res,_,_) => ppResolveInfo pp res
-      | Proof.Refl tm => ppReflInfo pp tm
-      | Proof.Equality x => ppEqualityInfo pp x;
+      | Proof.Assume a => ppAssumeInfo pp (mapSubstAtom maps sub a)
+      | Proof.Subst (s,_) => ppSubstInfo pp (mapSubstSubst maps sub s)
+      | Proof.Resolve (r,_,_) => ppResolveInfo pp (mapSubstAtom maps sub r)
+      | Proof.Refl t => ppReflInfo pp (mapSubstTerm maps sub t)
+      | Proof.Equality (l,p,t) =>
+        let
+          val l = mapSubstLiteral maps sub l
+          and t = mapSubstTerm maps sub t
+        in
+          ppEqualityInfo pp (l,p,t)
+        end;
 in
   fun ppProof p prf =
       let
         fun thmString n = Int.toString n
-                          
+
+        val maps =
+            {functionMap = mappingToTptp (!functionMapping),
+             relationMap = mappingToTptp (!relationMapping)}
+
+        val (_,sub) = mkTptpVars (Proof.freeVars prf)
+
         val prf = enumerate prf
 
         fun ppThm p th =
@@ -1079,7 +1142,7 @@ in
             in
               Parser.addString p (name ^ ",");
               Parser.addBreak p (1,0);
-              Parser.ppBracket "[" "]" ppInfInfo p inf;
+              Parser.ppBracket "[" "]" (ppInfInfo maps sub) p inf;
               case Proof.parents inf of
                 [] => ()
               | ths =>
@@ -1087,7 +1150,7 @@ in
                  Parser.addBreak p (1,0);
                  Parser.ppList ppThm p ths)
             end
-              
+
         fun ppTaut p inf =
             (Parser.addString p "tautology,";
              Parser.addBreak p (1,0);
@@ -1101,7 +1164,7 @@ in
                   if is_axiom then "axiom"
                   else if Thm.isContradiction th then "theorem"
                   else "plain"
-              val cl = clauseFromThm th
+              val cl = mapSubstClause maps sub (clauseFromThm th)
             in
               Parser.addString p (name ^ ",");
               Parser.addBreak p (1,0);

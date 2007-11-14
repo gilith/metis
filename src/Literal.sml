@@ -227,6 +227,8 @@ struct
         foldl f NameAritySet.empty
       end;
 
+  fun freeIn v = exists (Literal.freeIn v);
+
   val freeVars =
       let
         fun f (lit,set) = NameSet.union set (Literal.freeVars lit)

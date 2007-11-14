@@ -85,13 +85,9 @@ fun equal th1 th2 = LiteralSet.equal (clause th1) (clause th2);
 (* Free variables.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
-fun freeIn v (Thm (cl,_)) = LiteralSet.exists (Literal.freeIn v) cl;
+fun freeIn v (Thm (cl,_)) = LiteralSet.freeIn v cl;
 
-local
-  fun free (lit,set) = NameSet.union (Literal.freeVars lit) set;
-in
-  fun freeVars (Thm (cl,_)) = LiteralSet.foldl free NameSet.empty cl;
-end;
+fun freeVars (Thm (cl,_)) = LiteralSet.freeVars cl;
 
 (* ------------------------------------------------------------------------- *)
 (* Pretty-printing.                                                          *)

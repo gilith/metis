@@ -386,4 +386,39 @@ in
       end;
 end;
 
+(* ------------------------------------------------------------------------- *)
+(* Free variables.                                                           *)
+(* ------------------------------------------------------------------------- *)
+
+fun freeIn v =
+    let
+      fun free th_inf =
+          case th_inf of
+            (_, Axiom lits) => LiteralSet.freeIn v lits
+          | (_, Assume atm) => Atom.freeIn v atm
+          | (th, Subst _) => Thm.freeIn v th
+          | (_, Resolve _) => false
+          | (_, Refl tm) => Term.freeIn v tm
+          | (_, Equality (lit,_,tm)) =>
+            Literal.freeIn v lit orelse Term.freeIn v tm
+    in
+      List.exists free
+    end;
+
+val freeVars =
+    let
+      fun inc (th_inf,set) =
+          NameSet.union set
+          (case th_inf of
+             (_, Axiom lits) => LiteralSet.freeVars lits
+           | (_, Assume atm) => Atom.freeVars atm
+           | (th, Subst _) => Thm.freeVars th
+           | (_, Resolve _) => NameSet.empty
+           | (_, Refl tm) => Term.freeVars tm
+           | (_, Equality (lit,_,tm)) =>
+             NameSet.union (Literal.freeVars lit) (Term.freeVars tm))
+    in
+      List.foldl inc NameSet.empty
+    end;
+
 end
