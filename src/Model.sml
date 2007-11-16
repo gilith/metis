@@ -62,8 +62,8 @@ fun projection (_,[]) = NONE
 (* ------------------------------------------------------------------------- *)
 
 type fixedModel =
-     {functions : (Term.functionName * int list) -> int option,
-      relations : (Atom.relationName * int list) -> bool option};
+     {functions : Term.functionName * int list -> int option,
+      relations : Atom.relationName * int list -> bool option};
 
 type fixed = {size : int} -> fixedModel
 

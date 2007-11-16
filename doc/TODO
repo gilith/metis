@@ -1,3 +1,8 @@
+* port Metis 2.0 to HOL.
+* apply good(!) perturbations to random models.
+* track provenance of clauses in CNF Normalization.
+* (perhaps) remove Error exception; use options instead.
+
 Meson
 * Optimization: reordering rules and literals either statically or dynamically.
 
