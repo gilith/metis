@@ -85,8 +85,8 @@ while (my $line = <STDIN>) {
     }
 
     if ($line eq 'Command terminated abnormally.') {
-        ($state eq 'status') or ($state =~ /^saturated\./) or
-        ($state =~ /^proof\./) or die;
+        ($state eq 'status') or ($state eq 'time') or
+        ($state =~ /^proof\./) or ($state =~ /^saturated\./) or die;
         $status = 'ResourceOut';
         $state = 'time';
     }

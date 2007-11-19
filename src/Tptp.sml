@@ -48,6 +48,7 @@ val functionMapping = ref
 
 val relationMapping = ref
     [(* Mapping TPTP relations to infix symbols *)
+     {name = "=", arity = 2, tptp = "="},  (* this preserves the = symbol *)
      {name = "==", arity = 2, tptp = "equalish"},
      {name = "<=", arity = 2, tptp = "less_equal"},
      {name = "<", arity = 2, tptp = "less_than"},
