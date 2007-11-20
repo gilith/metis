@@ -647,6 +647,33 @@ fun interpretLiteral M V (true,atm) = interpretAtom M V atm
 fun interpretClause M V cl = LiteralSet.exists (interpretLiteral M V) cl;
 
 (* ------------------------------------------------------------------------- *)
+(* Perturb the model to change the interpretation of a formula.              *)
+(* ------------------------------------------------------------------------- *)
+
+(***
+datatype perturbation =
+    FunctionPerturbation of Term.functionName * int list * int
+  | RelationPerturbation of Atom.relationName * int list * bool;
+
+fun perturbTerm M V target =
+    let
+      fun interpret (Term.Var _, acc) = acc
+        | interpret (tm as Term.Fn f_tms) =
+          let
+            val (f,tms) =
+                case Term.stripComb tm of
+                  (_,[]) => f_tms
+                | (v as Term.Var _, tms) => (".", v :: tms)
+                | (Term.Fn (f,tms), tms') => (f, tms @ tms')
+          in
+            lookupFunction M (f, map interpret tms)
+          end
+    in
+      interpret
+    end;
+***)
+
+(* ------------------------------------------------------------------------- *)
 (* Check whether random groundings of a formula are true in the model.       *)
 (* Note: if it's cheaper, a systematic check will be performed instead.      *)
 (* ------------------------------------------------------------------------- *)
