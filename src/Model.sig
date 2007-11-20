@@ -13,8 +13,8 @@ sig
 
 type fixed =
      {size : int} ->
-     {functions : (Term.functionName * int list) -> int option,
-      relations : (Atom.relationName * int list) -> bool option}
+     {functions : Term.functionName * int list -> int option,
+      relations : Atom.relationName * int list -> bool option}
 
 val fixedMerge : fixed -> fixed -> fixed  (* Prefers the second fixed *)
 

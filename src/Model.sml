@@ -14,6 +14,21 @@ open Useful;
 
 fun intExp x y = exp op* x y 1;
 
+fun boolToInt true = 1
+  | boolToInt false = 0;
+
+fun intToBool 1 = true
+  | intToBool 0 = false
+  | intToBool _ = raise Bug "Model.intToBool";
+
+fun intListToInt base =
+    let
+      fun f [] = 0
+        | f (x :: xs) = x + base * f xs
+    in
+      f
+    end;
+
 fun natFromString "" = NONE
   | natFromString "0" = SOME 0
   | natFromString s =
@@ -384,6 +399,109 @@ fun fixedSet {size = N} =
     end;
 
 (* ------------------------------------------------------------------------- *)
+(* A type of random finite mapping Z^n -> Z.                                 *)
+(* ------------------------------------------------------------------------- *)
+
+val SPARSENESS_THRESHOLD = 10;
+
+val UNKNOWN = ~1;
+
+datatype table =
+    MapTable of int * (int list, int) Map.map
+  | ArrayTable of int Array.array;
+
+fun emptyArrayTable N arity = Array.array (intExp N arity, UNKNOWN);
+
+fun emptyTable N arity =
+    if N = 1 orelse arity <= 1 then ArrayTable (emptyArrayTable N arity)
+    else
+      let
+        val c = intExp N arity div SPARSENESS_THRESHOLD
+        and m = Map.new (lexCompare Int.compare)
+      in
+        MapTable (c,m)
+      end;
+
+fun lookupFixed R fixed elts =
+    case fixed elts of
+      SOME r => r
+    | NONE => Portable.randomInt R;
+
+fun lookupTable N R fixed table elts =
+    case table of
+      ref (ArrayTable a) =>
+      let
+        val i = intListToInt N elts
+        val r = Array.sub (a,i)
+      in
+        if r <> UNKNOWN then r
+        else
+          let
+            val r = lookupFixed R fixed elts
+            val () = Array.update (a,i,r)
+          in
+            r
+          end
+      end
+    | ref (MapTable (c,m)) =>
+      case Map.peek m elts of
+        SOME r => r
+      | NONE =>
+        let
+          val r = lookupFixed R fixed elts
+          val m = Map.insert m (elts,r)
+          val t =
+              if c > 0 then MapTable (c - 1, m)
+              else
+                let
+                  val a = emptyArrayTable N (length elts)
+
+                  fun pop (elts,r) = Array.update (a, intListToInt N elts, r)
+
+                  val () = Map.app pop m
+                in
+                  ArrayTable a
+                end
+ 
+          val () = table := t
+        in
+          r
+        end;
+
+(* ------------------------------------------------------------------------- *)
+(* A type of random finite mappings name * arity -> Z^arity -> Z.            *)
+(* ------------------------------------------------------------------------- *)
+
+datatype tables =
+    Tables of
+      {fixed : Name.name -> int list -> int option,
+       tables : table ref NameArityMap.map ref};
+
+fun emptyTables fixed =
+    Tables
+      {fixed = fixed,
+       tables = ref (NameArityMap.new ())};
+
+fun lookupTables tables N R (name,elts) =
+    let
+      val Tables {fixed, tables as ref m} = tables
+      val arity = length elts
+      val name_arity = (name,arity)
+      val table =
+          case NameArityMap.peek m name_arity of
+            SOME t => t
+          | NONE =>
+            let
+              val t = ref (emptyTable N arity)
+              val () = tables := NameArityMap.insert m (name_arity,t)
+            in
+              t
+            end
+    in
+      lookupTable N R (fixed name) table elts
+    end;
+
+(* ------------------------------------------------------------------------- *)
 (* A type of random finite models.                                           *)
 (* ------------------------------------------------------------------------- *)
 
@@ -392,26 +510,38 @@ type parameters = {size : int, fixed : fixed};
 datatype model =
     Model of
       {size : int,
-       fixed : fixedModel,
-       functions : (Term.functionName * int list, int) Map.map ref,
-       relations : (Atom.relationName * int list, bool) Map.map ref};
+       functions : tables,
+       relations : tables};
 
-local
-  fun cmp ((n1,l1),(n2,l2)) =
-      case String.compare (n1,n2) of
-        LESS => LESS
-      | EQUAL => lexCompare Int.compare (l1,l2)
-      | GREATER => GREATER;
-in
-  fun new {size = N, fixed} =
+fun new {size = N, fixed} =
+    let
+      val {functions = funcs, relations = rels} = fixed {size = N}
+      fun funcs' func elts = funcs (func,elts)
+      fun rels' rel elts = Option.map boolToInt (rels (rel,elts))
+      val functions = emptyTables funcs'
+      val relations = emptyTables rels'
+    in
       Model
         {size = N,
-         fixed = fixed {size = N},
-         functions = ref (Map.new cmp),
-         relations = ref (Map.new cmp)};
-end;
+         functions = functions,
+         relations = relations}
+    end;
 
-fun size (Model {size = s, ...}) = s;
+fun size (Model {size = N, ...}) = N;
+
+fun lookupFunction M func_elts =
+    let
+      val Model {size = N, functions, ...} = M
+    in
+      lookupTables functions N N func_elts
+    end;
+
+fun lookupRelation M rel_elts =
+    let
+      val Model {size = N, relations, ...} = M
+    in
+      intToBool (lookupTables relations N 2 rel_elts)
+    end;
 
 (* ------------------------------------------------------------------------- *)
 (* Valuations.                                                               *)
@@ -462,9 +592,6 @@ fun valuationFold {size = N} vs f =
 
 fun interpretTerm M V =
     let
-      val Model {size = N, fixed, functions, ...} = M
-      val {functions = fixed_functions, ...} = fixed
-
       fun interpret (Term.Var v) =
           (case NameMap.peek V v of
              NONE => raise Error "Model.interpretTerm: incomplete valuation"
@@ -476,55 +603,19 @@ fun interpretTerm M V =
                   (_,[]) => f_tms
                 | (v as Term.Var _, tms) => (".", v :: tms)
                 | (Term.Fn (f,tms), tms') => (f, tms @ tms')
-            val elts = map interpret tms
-            val f_elts = (f,elts)
-            val ref funcs = functions
           in
-            case Map.peek funcs f_elts of
-              SOME k => k
-            | NONE =>
-              let
-                val k =
-                    case fixed_functions f_elts of
-                      SOME k => k
-                    | NONE => Portable.randomInt N
-
-                val () = functions := Map.insert funcs (f_elts,k)
-              in
-                k
-              end
-          end;
+            lookupFunction M (f, map interpret tms)
+          end
     in
       interpret
     end;
 
 fun interpretAtom M V (r,tms) =
-    let
-      val Model {fixed,relations,...} = M
-      val {relations = fixed_relations, ...} = fixed
-
-      val elts = map (interpretTerm M V) tms
-      val r_elts = (r,elts)
-      val ref rels = relations
-    in
-      case Map.peek rels r_elts of
-        SOME b => b
-      | NONE =>
-        let
-          val b =
-              case fixed_relations r_elts of
-                SOME b => b
-              | NONE => Portable.randomBool ()
-
-          val () = relations := Map.insert rels (r_elts,b)
-        in
-          b
-        end
-    end;
+    lookupRelation M (r, map (interpretTerm M V) tms);
 
 fun interpretFormula M =
     let
-      val Model {size = N, ...} = M
+      val N = size M
 
       fun interpret _ Formula.True = true
         | interpret _ Formula.False = false
@@ -563,7 +654,7 @@ fun interpretClause M V cl = LiteralSet.exists (interpretLiteral M V) cl;
 local
   fun checkGen freeVars interpret {maxChecks} M x =
       let
-        val Model {size = N, ...} = M
+        val N = size M
             
         fun score (V,{T,F}) =
             if interpret M V x then {T = T + 1, F = F} else {T = T, F = F + 1}
