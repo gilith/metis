@@ -12,7 +12,35 @@ open Useful;
 (* Helper functions.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
-fun intExp x y = exp op* x y 1;
+local
+  val M = Option.getOpt (Int.maxInt,~1);
+
+  val Msqrt = if M < 0 then M else Real.floor (Math.sqrt (Real.fromInt M));
+
+  fun iexp _ 0 z = SOME z
+    | iexp x 1 z =
+      if x <= Msqrt then SOME (x * z)
+      else if z > Msqrt orelse z > M div x then NONE
+      else SOME (x * z)
+    | iexp x y z =
+      if x > Msqrt then NONE
+      else iexp (x * x) (y div 2) (if y mod 2 = 0 then z else z * x);
+in
+  (* intExp x y = SOME (exp op* x y 1) handle Overflow => NONE *)
+  fun intExp _ 0 = SOME 1
+    | intExp x 1 = SOME x
+    | intExp 1 _ = SOME 1
+    | intExp ~1 y = SOME (if y mod 2 = 0 then 1 else ~1)
+    | intExp x y =
+      if y < 0 then raise Bug "intExp: negative exponent"
+      else if x = 0 then SOME 0
+      else if x < 0 then
+        case intExp (~x) y of
+          SOME r => SOME (if y mod 2 = 0 then r else ~r)
+        | NONE => NONE
+      else if M < 0 then SOME (exp op* x y 1)
+      else iexp x y 1;
+end;
 
 fun boolToInt true = 1
   | boolToInt false = 0;
@@ -61,10 +89,12 @@ fun projection (_,[]) = NONE
             (case charToInt (String.sub (func,1)) of
                NONE => NONE
              | p as SOME d => if d <= 3 then NONE else p)
-          else if (n < intExp 10 (f - 2) handle Overflow => true) then NONE
           else
-            (natFromString (String.extract (func,1,NONE))
-             handle Overflow => NONE)
+            case intExp 10 (f - 1) of
+              NONE => NONE
+            | SOME n' =>
+              if 10 * n < n' then NONE
+              else natFromString (String.extract (func,1,NONE))
     in
       case p of
         NONE => NONE
@@ -212,7 +242,8 @@ local
       if y = 0 then SOME one else if y mod 2 = 0 then NONE else SOME ONeg
     | exp ONeg OInf = NONE
     | exp (ONum x) ONeg = NONE
-    | exp (ONum x) (ONum y) = SOME (ONum (intExp x y) handle Overflow => OInf)
+    | exp (ONum x) (ONum y) =
+      SOME (case intExp x y of SOME n => ONum n | NONE => OInf)
     | exp (ONum x) OInf =
       SOME (if x = 0 then zero else if x = 1 then one else OInf)
     | exp OInf ONeg = NONE
@@ -402,6 +433,8 @@ fun fixedSet {size = N} =
 (* A type of random finite mapping Z^n -> Z.                                 *)
 (* ------------------------------------------------------------------------- *)
 
+val SMALL_SPACE = 100;
+
 val SPARSENESS_THRESHOLD = 10;
 
 val UNKNOWN = ~1;
@@ -410,17 +443,16 @@ datatype table =
     MapTable of int * (int list, int) Map.map
   | ArrayTable of int Array.array;
 
-fun emptyArrayTable N arity = Array.array (intExp N arity, UNKNOWN);
-
 fun emptyTable N arity =
-    if N = 1 orelse arity <= 1 then ArrayTable (emptyArrayTable N arity)
-    else
-      let
-        val c = intExp N arity div SPARSENESS_THRESHOLD
-        and m = Map.new (lexCompare Int.compare)
-      in
-        MapTable (c,m)
-      end;
+    let
+      val space = Option.getOpt (intExp N arity, ~1)
+      val small =
+          space > 0 andalso
+          (N = 1 orelse arity <= 1 orelse space < SMALL_SPACE)
+    in
+      if small then ArrayTable (Array.array (space,UNKNOWN))
+      else MapTable (space, Map.new (lexCompare Int.compare))
+    end;
 
 fun lookupFixed R fixed elts =
     case fixed elts of
@@ -443,18 +475,20 @@ fun lookupTable N R fixed table elts =
             r
           end
       end
-    | ref (MapTable (c,m)) =>
+    | ref (MapTable (space,m)) =>
       case Map.peek m elts of
         SOME r => r
       | NONE =>
         let
           val r = lookupFixed R fixed elts
           val m = Map.insert m (elts,r)
+          val sparse =
+              space <= 0 orelse SPARSENESS_THRESHOLD * Map.size m < space
           val t =
-              if c > 0 then MapTable (c - 1, m)
+              if sparse then MapTable (space,m)
               else
                 let
-                  val a = emptyArrayTable N (length elts)
+                  val a = Array.array (space,UNKNOWN)
 
                   fun pop (elts,r) = Array.update (a, intListToInt N elts, r)
 
@@ -691,7 +725,9 @@ local
         fun randomCheck acc = score (valuationRandom {size = N} vs, acc)
 
         val small =
-            intExp N (NameSet.size vs) <= maxChecks handle Overflow => false
+            case intExp N (NameSet.size vs) of
+              SOME n => n <= maxChecks
+            | NONE => false
       in
         if small then valuationFold {size = N} vs score {T = 0, F = 0}
         else funpow maxChecks randomCheck {T = 0, F = 0}
