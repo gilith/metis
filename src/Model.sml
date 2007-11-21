@@ -60,19 +60,21 @@ fun intListToInt base =
 fun natFromString "" = NONE
   | natFromString "0" = SOME 0
   | natFromString s =
-    case charToInt (String.sub (s,0)) of
-      NONE => NONE
-    | SOME 0 => NONE
-    | SOME d =>
-      let
-        fun parse 0 _ acc = SOME acc
-          | parse n i acc =
-            case charToInt (String.sub (s,i)) of
-              NONE => NONE
-            | SOME d => parse (n - 1) (i + 1) (10 * acc + d)
-      in
-        parse (size s - 1) 1 d
-      end;
+    if not (Option.isSome (intExp 10 (size s))) then NONE
+    else
+      case charToInt (String.sub (s,0)) of
+        NONE => NONE
+      | SOME 0 => NONE
+      | SOME d =>
+        let
+          fun parse 0 _ acc = SOME acc
+            | parse n i acc =
+              case charToInt (String.sub (s,i)) of
+                NONE => NONE
+              | SOME d => parse (n - 1) (i + 1) (10 * acc + d)
+        in
+          parse (size s - 1) 1 d
+        end;
 
 fun projection (_,[]) = NONE
   | projection ("#1", x :: _) = SOME x
@@ -166,7 +168,7 @@ fun fixedModulo {size = N} =
       val even_N = divides_N 2
 
       fun functions (numeral,[]) =
-          Option.map mod_N (natFromString numeral handle Overflow => NONE)
+          Option.map mod_N (natFromString numeral)
         | functions ("suc",[x]) = SOME (if x = N - 1 then 0 else x + 1)
         | functions ("pre",[x]) = SOME (if x = 0 then N - 1 else x - 1)
         | functions ("~",[x]) = SOME (if x = 0 then 0 else N - x)
@@ -308,7 +310,7 @@ local
           | partial_dest_onum (SOME n) = dest_onum n
 
         fun functions (numeral,[]) =
-            (case (natFromString numeral handle Overflow => NONE) of
+            (case natFromString numeral of
                NONE => NONE
              | SOME n => dest_onum (ONum n))
           | functions ("suc",[x]) = dest_onum (suc (mk_onum x))
