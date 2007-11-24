@@ -102,6 +102,8 @@ src/Useful.sml: ../basic/src/Useful.sml $(COPY) ; @$(COPY) $< $@
 
 src/selftest.sml: test/test.sml $(COPY) ; @$(COPY) $< $@
 
+src/benchmark.sml: src/metis.sml $(COPY) ; @$(COPY) $< $@
+
 ###############################################################################
 # Counting the number of lines of code.
 ###############################################################################
@@ -254,9 +256,6 @@ tests: status-test std-test tptp-test
 
 BENCHMARK_OPTS = --show name $(BENCHMARK_SET)/*.tptp
 
-src/benchmark.sml: src/metis.sml
-	cp $< $@
-
 profile-time.mlb: bin/mlton/benchmark.sml
 	echo '$$(SML_LIB)/basis/basis.mlb $$(SML_LIB)/basis/mlton.mlb $<' > $@
 
@@ -271,7 +270,7 @@ profile-time: profile-time.mlb
 
 profile-time.out profile-time-log: profile-time
 	time ./profile-time $(BENCHMARK_OPTS) | tee profile-time-log
-	mv mlmon.out profile-time-log
+	mv mlmon.out profile-time.out
 
 profile-time.txt: profile-time.out Makefile.dev
 	mlprof -show-line true -raw true -keep '(and (thresh 0.1) (thresh-stack 0.1))' -split '.*' profile-time profile-time.out > $@

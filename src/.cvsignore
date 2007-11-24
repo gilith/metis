@@ -33,4 +33,5 @@ Stream.sig
 Stream.sml
 Useful.sig
 Useful.sml
+benchmark.sml
 selftest.sml
