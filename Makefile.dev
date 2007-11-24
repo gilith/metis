@@ -16,7 +16,7 @@ TEMP += $(TEMPFILE) \
         mlmon.out profile-*
 
 ###############################################################################
-# Debugging options.
+# The ML preprocessor.
 ###############################################################################
 
 #MLPP_OPTS += -r 'DEBUG'
@@ -27,7 +27,26 @@ TEMP += $(TEMPFILE) \
 #MLPP_OPTS += -r 'DEBUG|TRACE[0-5]'
 #MLPP_OPTS += -r 'DEBUG|TRACE[0-6]'
 
-#MLTONC_OPTS += -const 'Exn.keepHistory true'
+###############################################################################
+# The Moscow ML compiler.
+###############################################################################
+
+MOSML_TARGETS += bin/mosml/benchmark
+
+mosml-targets: bin/mosml/benchmark
+
+###############################################################################
+# The MLton compiler.
+###############################################################################
+
+MLTON_OPTS += -verbose 1 -keep ssa -keep ssa2
+#MLTON_OPTS += -inline 100000
+#MLTON_OPTS += -const 'MLton.safe false' -const 'MLton.detectOverflow false'
+#MLTON_OPTS += -const 'Exn.keepHistory true'
+
+MLTON_TARGETS += bin/mlton/benchmark
+
+mlton-targets: bin/mlton/benchmark
 
 ###############################################################################
 # Automatically generated dependencies.
@@ -235,7 +254,7 @@ tests: status-test std-test tptp-test
 
 BENCHMARK_OPTS = --show name $(BENCHMARK_SET)/*.tptp
 
-bin/mlton/benchmark.sml: bin/mlton/metis.sml
+src/benchmark.sml: src/metis.sml
 	cp $< $@
 
 profile-time.mlb: bin/mlton/benchmark.sml
@@ -258,7 +277,7 @@ profile-time.txt: profile-time.out Makefile.dev
 	mlprof -show-line true -raw true -keep '(and (thresh 0.1) (thresh-stack 0.1))' -split '.*' profile-time profile-time.out > $@
 
 profile-time.dot: profile-time.out Makefile.dev
-	mlprof -show-line true -raw true -call-graph $@ -keep '(thresh-stack 1)' -graph-title "Gomi Time Profiling" -split '.*' profile-time profile-time.out > /dev/null
+	mlprof -show-line true -raw true -call-graph $@ -keep '(thresh-stack 1)' -graph-title "Metis Time Profiling" -split '.*' profile-time profile-time.out > /dev/null
 
 .PHONY: profile
 profile: profile-time.txt profile-time.dot

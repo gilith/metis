@@ -123,16 +123,16 @@ mosml: mosml-info $(MOSML_OBJ) $(MOSML_TARGETS) test
 # Building using MLton.
 ###############################################################################
 
-METIS = bin/mlton/metis
-
 MLTON = mlton
 
-MLTON_OPTS = -verbose 1 -runtime 'ram-slop 0.4'
+MLTON_OPTS = -runtime 'ram-slop 0.4'
 
 MLTON_SRC = \
   src/PP.sig src/PP.sml \
   src/Portable.sig src/PortableMlton.sml \
   $(SRC)
+
+METIS = bin/mlton/metis
 
 MLTON_TARGETS = \
   bin/mlton/selftest \
