@@ -18,7 +18,8 @@ default: mosml
 
 TEMP = $(MOSML_TARGETS) \
        bin/mosml/*.sml bin/mosml/*.ui bin/mosml/*.uo bin/mosml/a.out \
-       $(MLTON_TARGETS) t.mlb t.sml t
+       $(MLTON_TARGETS) \
+       bin/mlton/*.sml bin/mlton/*.mlb
 
 .PHONY: clean
 clean:
@@ -124,9 +125,9 @@ mosml: mosml-info $(MOSML_OBJ) $(MOSML_TARGETS) test
 
 METIS = bin/mlton/metis
 
-MLTONC = mlton
+MLTON = mlton
 
-MLTONC_OPTS = -verbose 1 -runtime 'ram-slop 0.4'
+MLTON_OPTS = -verbose 1 -runtime 'ram-slop 0.4'
 
 MLTON_SRC = \
   src/PP.sig src/PP.sml \
@@ -138,18 +139,20 @@ MLTON_TARGETS = \
   bin/mlton/problems2tptp \
   $(METIS)
 
-bin/mlton/%: $(MLTON_SRC) src/%.sml
+bin/mlton/%.sml: $(MLTON_SRC) src/%.sml
+	@$(MLPP) $(MLPP_OPTS) -c mlton $^ > $@
+
+bin/mlton/%.mlb: bin/mlton/%.sml
+	echo '$$(SML_LIB)/basis/basis.mlb $$(SML_LIB)/basis/mlton.mlb $(notdir $<)' > $@
+
+bin/mlton/%: bin/mlton/%.mlb
 	@echo
 	@echo '***************************'
 	@echo '* Compile a MLton program *'
 	@echo '***************************'
 	@echo
 	@echo $@
-	@$(MLPP) $(MLPP_OPTS) -c mlton $^ >t.sml
-	echo '$$(SML_LIB)/basis/basis.mlb $$(SML_LIB)/basis/mlton.mlb t.sml' > t.mlb
-	$(MLTONC) $(MLTONC_OPTS) t.mlb
-	mv t $@
-	rm t.mlb t.sml
+	cd bin/mlton ; $(MLTON) $(MLTON_OPTS) $(notdir $<)
 	@echo
 
 .PHONY: mlton-info

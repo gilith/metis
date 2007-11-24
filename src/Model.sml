@@ -528,27 +528,27 @@ fun emptyTables fixed =
       {fixed = fixed,
        tables = ref (NameArityMap.new ())};
 
-local
-  fun getTable tables N name_arity =
-      let
-        val Tables {tables as ref m, ...} = tables
-        val (_,arity) = name_arity
-      in
-        case NameArityMap.peek m name_arity of
-          SOME t => t
-        | NONE =>
-          let
-            val t = ref (emptyTable N arity)
-            val () = tables := NameArityMap.insert m (name_arity,t)
-          in
-            t
-          end
-      end;
+fun getTables tables N name_arity =
+    let
+      val Tables {tables as ref m, ...} = tables
+      val (_,arity) = name_arity
+    in
+      case NameArityMap.peek m name_arity of
+        SOME t => t
+      | NONE =>
+        let
+          val t = ref (emptyTable N arity)
+          val () = tables := NameArityMap.insert m (name_arity,t)
+        in
+          t
+        end
+    end;
 
+local
   fun lookup tables N R (name,elts) =
       let
         val Tables {fixed, ...} = tables
-        val table = getTable tables N (name, length elts)
+        val table = getTables tables N (name, length elts)
       in
         lookupTable N R (fixed name) table elts
       end;
@@ -557,14 +557,14 @@ in
       Int.abs (lookup tables N R name_elts) - 1;
 
   fun isFixedTables tables N R name_elts = lookup tables N R name_elts < 0;
-
-  fun updateTables tables N ((name,elts),elt) =
-      let
-        val table = getTable tables N (name, length elts)
-      in
-        updateTable N table (elts, elt + 1)
-      end;
 end;
+
+fun updateTables tables N ((name,elts),elt) =
+    let
+      val table = getTables tables N (name, length elts)
+    in
+      updateTable N table (elts, elt + 1)
+    end;
 
 (* ------------------------------------------------------------------------- *)
 (* A type of random finite models.                                           *)

@@ -10,8 +10,10 @@
 TEMPFILE = Makefile-temp-file
 
 TEMP += $(TEMPFILE) \
-        benchmark* mlmon.out \
-        cnf.tptp saturated.tptp
+        cnf.tptp saturated.tptp \
+	bin/mlton/*.ssa bin/mlton/*.ssa2 \
+        bin/mlton/benchmark \
+        mlmon.out profile-*
 
 ###############################################################################
 # Debugging options.
@@ -155,6 +157,7 @@ problems: $(PROBLEMS2TPTP)
 	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_9.tptp $(BENCHMARK_SET)
 	@$(COPY_PROBLEM) $(ALL_SET)/AGATHA.tptp $(BENCHMARK_SET)
 	@$(COPY_PROBLEM) $(ALL_SET)/JACOBSON_2.tptp $(BENCHMARK_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/WISHNU.tptp $(BENCHMARK_SET)
 	mkdir $(MLTON_BENCHMARK_SET)
 	@$(COPY_PROBLEM) $(ALL_SET)/P26.tptp $(MLTON_BENCHMARK_SET)
 	@$(COPY_PROBLEM) $(ALL_SET)/P46.tptp $(MLTON_BENCHMARK_SET)
@@ -230,32 +233,35 @@ tests: status-test std-test tptp-test
 # Profiling using MLton.
 ###############################################################################
 
-DROP = <main>
+BENCHMARK_OPTS = --show name $(BENCHMARK_SET)/*.tptp
 
-KEEP = <main>
+bin/mlton/benchmark.sml: bin/mlton/metis.sml
+	cp $< $@
 
-benchmark: $(MLTON_SRC) src/metis.sml
+profile-time.mlb: bin/mlton/benchmark.sml
+	echo '$$(SML_LIB)/basis/basis.mlb $$(SML_LIB)/basis/mlton.mlb $<' > $@
+
+profile-time: profile-time.mlb
 	@echo
-	@echo '***************************************************************'
-	@echo '* Compile a MLton version of the metis program with profiling *'
-	@echo '***************************************************************'
+	@echo '***************************************************'
+	@echo '* Compile the metis benchmark with time profiling *'
+	@echo '***************************************************'
 	@echo
-	@echo $@
-	@$(MLPP) $(MLPP_OPTS) -c mlton $^ >benchmark.sml
-	echo '$$(SML_LIB)/basis/basis.mlb $$(SML_LIB)/basis/mlton.mlb benchmark.sml' > benchmark.mlb
-	$(MLTONC) $(MLTONC_OPTS) -profile time -profile-stack true benchmark.mlb
-	rm benchmark.mlb benchmark.sml
+	$(MLTON) $(MLTON_OPTS) -profile time -profile-stack true -profile-branch true $<
 	@echo
 
-.PHONY: benchmark-test
-benchmark-test: benchmark
-	time ./benchmark --show name $(BENCHMARK_SET)/*.tptp | tee benchmark-log
+profile-time.out profile-time-log: profile-time
+	time ./profile-time $(BENCHMARK_OPTS) | tee profile-time-log
+	mv mlmon.out profile-time-log
 
-benchmark.tab benchmark.dot: mlmon.out Makefile
-	mlprof -call-graph benchmark.dot -keep '(and (thresh-stack 4) (or (not "$(DROP)") "$(KEEP)"))' -split '.*' benchmark mlmon.out >benchmark.tab
+profile-time.txt: profile-time.out Makefile.dev
+	mlprof -show-line true -raw true -keep '(and (thresh 0.1) (thresh-stack 0.1))' -split '.*' profile-time profile-time.out > $@
+
+profile-time.dot: profile-time.out Makefile.dev
+	mlprof -show-line true -raw true -call-graph $@ -keep '(thresh-stack 1)' -graph-title "Gomi Time Profiling" -split '.*' profile-time profile-time.out > /dev/null
 
 .PHONY: profile
-profile: benchmark-test benchmark.tab
+profile: profile-time.txt profile-time.dot
 
 ###############################################################################
 # Releasing.
