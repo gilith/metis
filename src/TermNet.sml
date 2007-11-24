@@ -56,7 +56,7 @@ local
       let
         val _ = f = g orelse raise Error "TermNet.qv"
       in
-        FN (f, zipwith qv a b)
+        FN (f, zipWith qv a b)
       end;
 
   fun qu qsub [] = qsub

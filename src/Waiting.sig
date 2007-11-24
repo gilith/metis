@@ -13,9 +13,9 @@ sig
 type parameters =
      {symbolsWeight : real,
       literalsWeight : real,
-      modelsWeight : real,
-      modelChecks : int,
-      models : Model.parameters list}
+      models : {model : Model.parameters,
+                checks : int,
+                weight : real} list}
 
 type waiting
 

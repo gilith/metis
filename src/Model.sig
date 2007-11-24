@@ -91,4 +91,22 @@ val checkLiteral :
 val checkClause :
     {maxChecks : int} -> model -> Thm.clause -> {T : int, F : int}
 
+(* ------------------------------------------------------------------------- *)
+(* Perturbing the model.                                                     *)
+(* ------------------------------------------------------------------------- *)
+
+val perturbFunction : model -> (Term.functionName * int list) * int -> unit
+
+val perturbRelation : model -> (Atom.relationName * int list) * bool -> unit
+
+(* Choosing a random perturbation to make a formula true *)
+
+val perturbTerm : model -> valuation -> Term.term * int list -> unit
+
+val perturbAtom : model -> valuation -> Atom.atom * bool -> unit
+
+val perturbLiteral : model -> valuation -> Literal.literal -> unit
+
+val perturbClause : model -> valuation -> Thm.clause -> unit
+
 end

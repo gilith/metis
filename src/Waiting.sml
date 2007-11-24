@@ -30,12 +30,15 @@ open Useful;
 (* favours clauses that return false more often when interpreted             *)
 (* modelChecks times over the given list of models.                          *)
 
+type modelParameters =
+     {model : Model.parameters,
+      checks : int,
+      weight : real};
+
 type parameters =
      {symbolsWeight : real,
       literalsWeight : real,
-      modelsWeight : real,
-      modelChecks : int,
-      models : Model.parameters list};
+      models : modelParameters list};
 
 type distance = real;
 
@@ -54,22 +57,25 @@ datatype waiting =
 val default : parameters =
      {symbolsWeight = 1.0,
       literalsWeight = 1.0,
-      modelsWeight = 1.0,
-      modelChecks = 20,
       models =
-        [{size = 8,
-          fixed =
-            Model.fixedMergeList
-              [Model.fixedPure,
-               Model.fixedBasic,
-               Model.fixedModulo,
-               Model.fixedSet]},
-         {size = 5,
-          fixed =
-            Model.fixedMergeList
-              [Model.fixedPure,
-               Model.fixedBasic,
-               Model.fixedOverflowNum]}]};
+        [{model = {size = 4,
+                   fixed =
+                     Model.fixedMergeList
+                       [Model.fixedPure,
+                        Model.fixedBasic,
+                        Model.fixedModulo,
+                        Model.fixedSet]},
+          checks = 20,
+          weight = 1.0},
+         {model = {size = 5,
+                   fixed =
+                     Model.fixedMergeList
+                       [Model.fixedPure,
+                        Model.fixedBasic,
+                        Model.fixedOverflowNum]},
+
+          checks = 20,
+          weight = 1.0}]};
 
 fun size (Waiting {clauses,...}) = Heap.size clauses;
 
@@ -95,26 +101,67 @@ local
 
   fun clauseLiterals cl = Real.fromInt (LiteralSet.size cl);
 
-  fun clauseSat modelChecks models cl =
+  fun checkPerturb model cls =
       let
-        fun g {T,F} = (Real.fromInt T / Real.fromInt (T + F)) + 1.0
-        fun f (m,z) = g (Model.checkClause {maxChecks = modelChecks} m cl) * z
+        val modelSize = {size = Model.size model}
+
+        fun check (fv,cl) n =
+            let
+              val v = Model.valuationRandom modelSize fv
+            in
+              if Model.interpretClause model v cl then n + 1
+              else
+                let
+                  val () = Model.perturbClause model v cl
+                in
+                  n
+                end
+            end
+
+        val fv_cls =
+            let
+              fun mk cl =
+                  let
+                    val lits = Clause.literals cl
+                    val fvs = LiteralSet.freeVars lits
+                  in
+                    (fvs,lits)
+                  end
+            in
+              map mk cls
+            end
       in
-        foldl f 1.0 models
+        zipWith check fv_cls
+      end;
+
+  fun clauseModelWeights (parm,model) cls =
+      let
+        val {checks,weight,...} : modelParameters = parm
+
+        val countToWeight =
+            let
+              val realChecks = Real.fromInt checks
+            in
+              fn n => Math.pow (1.0 + Real.fromInt n / realChecks, weight)
+            end
+
+        val counts = map (K 0) cls
+        val counts = funpow checks (checkPerturb model cls) counts
+      in
+        map countToWeight counts
       end;
 
   fun priority cl = 1e~12 * Real.fromInt (Clause.id cl);
-in
-  fun clauseWeight (parm : parameters) models dist cl =
+
+  fun clauseWeight (parm : parameters) dist modelsW cl =
       let
 (*TRACE3
         val () = Parser.ppTrace Clause.pp "Waiting.clauseWeight: cl" cl
 *)
-        val {symbolsWeight,literalsWeight,modelsWeight,modelChecks,...} = parm
+        val {symbolsWeight,literalsWeight,...} = parm
         val lits = Clause.literals cl
         val symbolsW = Math.pow (clauseSymbols lits, symbolsWeight)
         val literalsW = Math.pow (clauseLiterals lits, literalsWeight)
-        val modelsW = Math.pow (clauseSat modelChecks models lits, modelsWeight)
 (*TRACE4
         val () = trace ("Waiting.clauseWeight: dist = " ^
                         Real.toString dist ^ "\n")
@@ -122,8 +169,8 @@ in
                         Real.toString symbolsW ^ "\n")
         val () = trace ("Waiting.clauseWeight: literalsW = " ^
                         Real.toString literalsW ^ "\n")
-        val () = trace ("Waiting.clauseWeight: modelsW = " ^
-                        Real.toString modelsW ^ "\n")
+        val () = trace ("Waiting.clauseWeight: modelW = " ^
+                        Real.toString modelW ^ "\n")
 *)
         val weight = dist * symbolsW * literalsW * modelsW + priority cl
 (*TRACE3
@@ -131,7 +178,23 @@ in
                         Real.toString weight ^ "\n")
 *)
       in
-        weight
+        (cl,weight)
+      end;
+in
+  fun clauseWeights parm models dist cls =
+      let
+        val {models = modelsParm, ...} = parm
+      in
+        case zip modelsParm models of
+          [] => map (clauseWeight parm dist 1.0) cls
+        | m :: ms =>
+          let
+            fun inc (m,w) = zipWith (curry op* ) w (clauseModelWeights m cls)
+            val modelsW = clauseModelWeights m cls
+            val modelsW = foldl inc modelsW ms
+          in
+            zipWith (clauseWeight parm dist) modelsW cls
+          end
       end;
 end;
 
@@ -151,11 +214,11 @@ fun add waiting (_,[]) = waiting
 
       val dist = dist + Math.ln (Real.fromInt (length cls))
 
-      val weight = clauseWeight parameters models dist
+      val cl_weights = clauseWeights parameters models dist cls
 
-      fun f (cl,acc) = Heap.add acc (weight cl, (dist,cl))
+      fun f ((cl,weight),acc) = Heap.add acc (weight,(dist,cl))
 
-      val clauses = foldl f clauses cls
+      val clauses = foldl f clauses cl_weights
 
       val waiting =
           Waiting {parameters = parameters, clauses = clauses, models = models}
@@ -173,7 +236,7 @@ local
   fun empty parameters =
       let
         val clauses = Heap.new cmp
-        and models = map Model.new (#models parameters)
+        and models = map (Model.new o #model) (#models parameters)
       in
         Waiting {parameters = parameters, clauses = clauses, models = models}
       end;

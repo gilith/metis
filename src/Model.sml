@@ -439,7 +439,7 @@ val SMALL_SPACE = 100;
 
 val SPARSENESS_THRESHOLD = 10;
 
-val UNKNOWN = ~1;
+val UNKNOWN = 0;
 
 datatype table =
     MapTable of int * (int list, int) Map.map
@@ -458,8 +458,8 @@ fun emptyTable N arity =
 
 fun lookupFixed R fixed elts =
     case fixed elts of
-      SOME r => r
-    | NONE => Portable.randomInt R;
+      SOME r => ~(r + 1)
+    | NONE => Portable.randomInt R + 1;
 
 fun lookupTable N R fixed table elts =
     case table of
@@ -504,6 +504,16 @@ fun lookupTable N R fixed table elts =
           r
         end;
 
+fun updateTable N table (elts,r) =
+    case table of
+      ref (ArrayTable a) => Array.update (a, intListToInt N elts, r)
+    | ref (MapTable (space,m)) =>
+      let
+        val m = Map.insert m (elts,r)
+      in
+        table := MapTable (space,m)
+      end;
+
 (* ------------------------------------------------------------------------- *)
 (* A type of random finite mappings name * arity -> Z^arity -> Z.            *)
 (* ------------------------------------------------------------------------- *)
@@ -518,24 +528,43 @@ fun emptyTables fixed =
       {fixed = fixed,
        tables = ref (NameArityMap.new ())};
 
-fun lookupTables tables N R (name,elts) =
-    let
-      val Tables {fixed, tables as ref m} = tables
-      val arity = length elts
-      val name_arity = (name,arity)
-      val table =
-          case NameArityMap.peek m name_arity of
-            SOME t => t
-          | NONE =>
-            let
-              val t = ref (emptyTable N arity)
-              val () = tables := NameArityMap.insert m (name_arity,t)
-            in
-              t
-            end
-    in
-      lookupTable N R (fixed name) table elts
-    end;
+local
+  fun getTable tables N name_arity =
+      let
+        val Tables {tables as ref m, ...} = tables
+        val (_,arity) = name_arity
+      in
+        case NameArityMap.peek m name_arity of
+          SOME t => t
+        | NONE =>
+          let
+            val t = ref (emptyTable N arity)
+            val () = tables := NameArityMap.insert m (name_arity,t)
+          in
+            t
+          end
+      end;
+
+  fun lookup tables N R (name,elts) =
+      let
+        val Tables {fixed, ...} = tables
+        val table = getTable tables N (name, length elts)
+      in
+        lookupTable N R (fixed name) table elts
+      end;
+in
+  fun lookupTables tables N R name_elts =
+      Int.abs (lookup tables N R name_elts) - 1;
+
+  fun isFixedTables tables N R name_elts = lookup tables N R name_elts < 0;
+
+  fun updateTables tables N ((name,elts),elt) =
+      let
+        val table = getTable tables N (name, length elts)
+      in
+        updateTable N table (elts, elt + 1)
+      end;
+end;
 
 (* ------------------------------------------------------------------------- *)
 (* A type of random finite models.                                           *)
@@ -572,11 +601,39 @@ fun lookupFunction M func_elts =
       lookupTables functions N N func_elts
     end;
 
+fun isFixedFunction M func_elts =
+    let
+      val Model {size = N, functions, ...} = M
+    in
+      isFixedTables functions N N func_elts
+    end;
+
+fun perturbFunction M func_elts_elt =
+    let
+      val Model {size = N, functions, ...} = M
+    in
+      updateTables functions N func_elts_elt
+    end;
+
 fun lookupRelation M rel_elts =
     let
       val Model {size = N, relations, ...} = M
     in
       intToBool (lookupTables relations N 2 rel_elts)
+    end;
+
+fun isFixedRelation M rel_elts =
+    let
+      val Model {size = N, relations, ...} = M
+    in
+      isFixedTables relations N 2 rel_elts
+    end;
+
+fun perturbRelation M (rel_elts,pol) =
+    let
+      val Model {size = N, relations, ...} = M
+    in
+      updateTables relations N (rel_elts, boolToInt pol)
     end;
 
 (* ------------------------------------------------------------------------- *)
@@ -623,25 +680,53 @@ fun valuationFold {size = N} vs f =
     end;
 
 (* ------------------------------------------------------------------------- *)
+(* A type of terms with interpretations embedded in the subterms.            *)
+(* ------------------------------------------------------------------------- *)
+
+datatype modelTerm =
+    ModelVar
+  | ModelFn of Term.functionName * modelTerm list * int list;
+
+fun destTerm tm =
+    case tm of
+      Term.Var _ => tm
+    | Term.Fn f_tms =>
+      case Term.stripComb tm of
+        (_,[]) => tm
+      | (v as Term.Var _, tms) => Term.Fn (".", v :: tms)
+      | (Term.Fn (f,tms), tms') => Term.Fn (f, tms @ tms');
+
+fun modelTerm M V =
+    let
+      fun modelTm tm =
+          case destTerm tm of
+            Term.Var v =>
+            (case NameMap.peek V v of
+               NONE => raise Error "Model.interpretTerm: incomplete valuation"
+             | SOME x => (ModelVar,x))
+          | Term.Fn (f,tms) =>
+            let
+              val (tms,xs) = unzip (map modelTm tms)
+            in
+              (ModelFn (f,tms,xs), lookupFunction M (f,xs))
+            end
+    in
+      modelTm
+    end;
+
+(* ------------------------------------------------------------------------- *)
 (* Interpreting terms and formulas in the model.                             *)
 (* ------------------------------------------------------------------------- *)
 
 fun interpretTerm M V =
     let
-      fun interpret (Term.Var v) =
-          (case NameMap.peek V v of
-             NONE => raise Error "Model.interpretTerm: incomplete valuation"
-           | SOME i => i)
-        | interpret (tm as Term.Fn f_tms) =
-          let
-            val (f,tms) =
-                case Term.stripComb tm of
-                  (_,[]) => f_tms
-                | (v as Term.Var _, tms) => (".", v :: tms)
-                | (Term.Fn (f,tms), tms') => (f, tms @ tms')
-          in
-            lookupFunction M (f, map interpret tms)
-          end
+      fun interpret tm =
+          case destTerm tm of
+            Term.Var v =>
+            (case NameMap.peek V v of
+               NONE => raise Error "Model.interpretTerm: incomplete valuation"
+             | SOME i => i)
+          | Term.Fn (f,tms) => lookupFunction M (f, map interpret tms)
     in
       interpret
     end;
@@ -683,33 +768,6 @@ fun interpretLiteral M V (true,atm) = interpretAtom M V atm
 fun interpretClause M V cl = LiteralSet.exists (interpretLiteral M V) cl;
 
 (* ------------------------------------------------------------------------- *)
-(* Perturb the model to change the interpretation of a formula.              *)
-(* ------------------------------------------------------------------------- *)
-
-(***
-datatype perturbation =
-    FunctionPerturbation of Term.functionName * int list * int
-  | RelationPerturbation of Atom.relationName * int list * bool;
-
-fun perturbTerm M V target =
-    let
-      fun interpret (Term.Var _, acc) = acc
-        | interpret (tm as Term.Fn f_tms) =
-          let
-            val (f,tms) =
-                case Term.stripComb tm of
-                  (_,[]) => f_tms
-                | (v as Term.Var _, tms) => (".", v :: tms)
-                | (Term.Fn (f,tms), tms') => (f, tms @ tms')
-          in
-            lookupFunction M (f, map interpret tms)
-          end
-    in
-      interpret
-    end;
-***)
-
-(* ------------------------------------------------------------------------- *)
 (* Check whether random groundings of a formula are true in the model.       *)
 (* Note: if it's cheaper, a systematic check will be performed instead.      *)
 (* ------------------------------------------------------------------------- *)
@@ -742,6 +800,111 @@ in
   val checkLiteral = checkGen Literal.freeVars interpretLiteral;
 
   val checkClause = checkGen LiteralSet.freeVars interpretClause;
+end;
+
+(* ------------------------------------------------------------------------- *)
+(* Perturbing the model.                                                     *)
+(* ------------------------------------------------------------------------- *)
+
+datatype perturbation =
+    FunctionPerturbation of (Term.functionName * int list) * int
+  | RelationPerturbation of (Atom.relationName * int list) * bool;
+
+fun perturb M pert =
+    case pert of
+      FunctionPerturbation func_elts_elt => perturbFunction M func_elts_elt
+    | RelationPerturbation rel_elts_pol => perturbRelation M rel_elts_pol;
+
+local
+  fun pertTerm _ [] _ acc = acc
+    | pertTerm M target tm acc =
+      case tm of
+        ModelVar => acc
+      | ModelFn (func,tms,xs) =>
+        let
+          fun onTarget ys = mem (lookupFunction M (func,ys)) target
+
+          val func_xs = (func,xs)
+
+          val acc =
+              if isFixedFunction M func_xs then acc
+              else
+                let
+                  fun add (y,acc) = FunctionPerturbation (func_xs,y) :: acc
+                in
+                  foldl add acc target
+                end
+        in
+          pertTerms M onTarget tms xs acc
+        end
+
+  and pertTerms M onTarget =
+      let
+        val N = size M
+
+        fun filterElements pred =
+            let
+              fun filt 0 acc = acc
+                | filt i acc =
+                  let
+                    val i = i - 1
+                    val acc = if pred i then i :: acc else acc
+                  in
+                    filt i acc
+                  end
+            in
+              filt N []
+            end
+
+        fun pert _ [] [] acc = acc
+          | pert ys (tm :: tms) (x :: xs) acc =
+            let
+              fun pred y =
+                  y <> x andalso onTarget (List.revAppend (ys, y :: xs))
+
+              val target = filterElements pred
+
+              val acc = pertTerm M target tm acc
+            in
+              pert (x :: ys) tms xs acc
+            end
+          | pert _ _ _ _ = raise Bug "Model.pertTerms.pert"
+      in
+        pert []
+      end;
+
+  fun pertAtom M V target (rel,tms) acc =
+      let
+        fun onTarget ys = lookupRelation M (rel,ys) = target
+
+        val (tms,xs) = unzip (map (modelTerm M V) tms)
+
+        val rel_xs = (rel,xs)
+
+        val acc =
+            if isFixedRelation M rel_xs then acc
+            else RelationPerturbation (rel_xs,target) :: acc
+      in
+        pertTerms M onTarget tms xs acc
+      end;
+
+  fun pertLiteral M V ((pol,atm),acc) = pertAtom M V pol atm acc;
+
+  fun pertClause M V cl acc = LiteralSet.foldl (pertLiteral M V) acc cl;
+
+  fun pickPerturb M perts =
+      if null perts then ()
+      else perturb M (List.nth (perts, Portable.randomInt (length perts)));
+in
+  fun perturbTerm M V (tm,target) =
+      pickPerturb M (pertTerm M target (fst (modelTerm M V tm)) []);
+
+  fun perturbAtom M V (atm,target) =
+      pickPerturb M (pertAtom M V target atm []);
+
+  fun perturbLiteral M V lit = pickPerturb M (pertLiteral M V (lit,[]));
+
+  fun perturbClause M V cl = pickPerturb M (pertClause M V cl []);
 end;
 
 end
