@@ -20,9 +20,9 @@ val fixedMerge : fixed -> fixed -> fixed  (* Prefers the second fixed *)
 
 val fixedMergeList : fixed list -> fixed
 
-val fixedPure : fixed  (* : = *)
+val fixedPure : fixed  (* = *)
 
-val fixedBasic : fixed  (* id fst snd #1 #2 #3 <> *)
+val fixedBasic : fixed  (* : id fst snd #1 #2 #3 <> *)
 
 val fixedModulo : fixed  (* <numerals> suc pre ~ + - * exp div mod *)
                          (* is_0 divides even odd *)

@@ -131,8 +131,7 @@ fun fixedMergeList [] = raise Bug "fixedMergeList: empty"
 
 fun fixedPure {size = _} =
     let
-      fun functions (":",[x,_]) = SOME x
-        | functions _ = NONE
+      fun functions _ = NONE
 
       fun relations (rel,[x,y]) =
           if (rel,2) = Atom.eqRelation then SOME (x = y) else NONE
@@ -143,7 +142,8 @@ fun fixedPure {size = _} =
 
 fun fixedBasic {size = _} =
     let
-      fun functions ("id",[x]) = SOME x
+      fun functions (":",[x,_]) = SOME x
+        | functions ("id",[x]) = SOME x
         | functions ("fst",[x,_]) = SOME x
         | functions ("snd",[_,x]) = SOME x
         | functions func_args = projection func_args

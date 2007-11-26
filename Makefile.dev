@@ -198,9 +198,9 @@ problems: $(PROBLEMS2TPTP)
 	@$(COPY_PROBLEM) $(ALL_SET)/LOGICPROOF_1999.tptp $(SATISFIABLE_SET)
 	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_2.tptp $(SATISFIABLE_SET)
 	mkdir $(TPTP_CNF_SET)
-	@tptp1T CNF Unsatisfiable Rating 0.0 0.0 | perl -n -e '$$l = $$_; chomp $$l; $$l =~ s/[[:space:]].*$$//; $$l =~ s/^([A-Z]*)/\1\/\1/; (system ("$(COPY_PROBLEM) -l $(TPTP_PROBLEM_DIR)/$$l.tptp $(TPTP_CNF_SET)") == 0) or die;'
+	@tptp1T CNF Unsatisfiable | perl -n -e '$$l = $$_; chomp $$l; $$l =~ s/[[:space:]].*$$//; $$l =~ s/^([A-Z]*)/\1\/\1/; (system ("$(COPY_PROBLEM) -l $(TPTP_PROBLEM_DIR)/$$l.tptp $(TPTP_CNF_SET)") == 0) or die;'
 	mkdir $(TPTP_FOF_SET)
-	@tptp1T FOF Theorem Rating 0.0 0.0 | perl -n -e '$$l = $$_; chomp $$l; $$l =~ s/[[:space:]].*$$//; $$l =~ s/^([A-Z]*)/\1\/\1/; (system ("$(COPY_PROBLEM) -l $(TPTP_PROBLEM_DIR)/$$l.tptp $(TPTP_FOF_SET)") == 0) or die;'
+	@tptp1T FOF Theorem | perl -n -e '$$l = $$_; chomp $$l; $$l =~ s/[[:space:]].*$$//; $$l =~ s/^([A-Z]*)/\1\/\1/; (system ("$(COPY_PROBLEM) -l $(TPTP_PROBLEM_DIR)/$$l.tptp $(TPTP_FOF_SET)") == 0) or die;'
 
 ###############################################################################
 # Testing Metis on the problem sets.
