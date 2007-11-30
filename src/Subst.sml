@@ -78,13 +78,13 @@ fun subst sub =
     let
       fun tmSub (tm as Term.Var v) =
           (case peek sub v of
-             SOME tm' => if Sharing.pointerEqual (tm,tm') then tm else tm'
+             SOME tm' => if Portable.pointerEqual (tm,tm') then tm else tm'
            | NONE => tm)
         | tmSub (tm as Term.Fn (f,args)) =
           let
             val args' = Sharing.map tmSub args
           in
-            if Sharing.pointerEqual (args,args') then tm
+            if Portable.pointerEqual (args,args') then tm
             else Term.Fn (f,args')
           end
     in

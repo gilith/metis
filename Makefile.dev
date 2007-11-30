@@ -31,10 +31,6 @@ TEMP += $(TEMPFILE) \
 # The Moscow ML compiler.
 ###############################################################################
 
-MOSML_TARGETS += bin/mosml/benchmark
-
-mosml-targets: bin/mosml/benchmark
-
 ###############################################################################
 # The MLton compiler.
 ###############################################################################
@@ -43,10 +39,6 @@ MLTON_OPTS += -verbose 1 -keep ssa -keep ssa2
 #MLTON_OPTS += -inline 100000
 #MLTON_OPTS += -const 'MLton.safe false' -const 'MLton.detectOverflow false'
 #MLTON_OPTS += -const 'Exn.keepHistory true'
-
-MLTON_TARGETS += bin/mlton/benchmark
-
-mlton-targets: bin/mlton/benchmark
 
 ###############################################################################
 # Automatically generated dependencies.
@@ -245,7 +237,7 @@ std-test: $(METIS)
 .PHONY: tptp-test
 tptp-test: $(METIS)
 	ulimit -t $(TEST_TIME_LIMIT) ; find $(TPTP_CNF_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show proof --show saturated $$_");' 2>&1 | tee tptp-log
-	ulimit -t $(TEST_TIME_LIMIT) ; find $(TPTP_FOF_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show proof --show saturated $$_");' 2>&1 | tee -a tptp-log
+#	ulimit -t $(TEST_TIME_LIMIT) ; find $(TPTP_FOF_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show proof --show saturated $$_");' 2>&1 | tee -a tptp-log
 
 .PHONY: tests
 tests: status-test std-test tptp-test
@@ -312,7 +304,7 @@ tarball: clean doc/DONT-RELEASE Makefile.dev
 release: release-stamp mosml mlton documentation tarball
 	rm -f $(RELEASE_DIR)/*.html $(RELEASE_DIR)/*.jpg $(RELEASE_DIR)/*.txt
 	cp -v doc/*.html doc/*.jpg doc/*.txt $(RELEASE_DIR)/
-	rsync -azv --delete --checksum --size-only --exclude=.cvsignore --exclude=CVS -e ssh release/ gilith@gilith.com:public_html/software/metis
+	rsync -azv --delete --checksum --size-only --exclude=.cvsignore --exclude=CVS -e ssh $(RELEASE_DIR)/ gilith@gilith.com:public_html/software/metis
 
 .PHONY: hol-release
 hol-release: mosml

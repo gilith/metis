@@ -153,7 +153,7 @@ fun subst sub (th as Thm (cl,inf)) =
     let
       val cl' = LiteralSet.subst sub cl
     in
-      if Sharing.pointerEqual (cl,cl') then th
+      if Portable.pointerEqual (cl,cl') then th
       else
         case inf of
           (Subst,_) => Thm (cl',inf)

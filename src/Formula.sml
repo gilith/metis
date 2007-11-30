@@ -362,13 +362,13 @@ local
         let
           val tms' = Sharing.map (Subst.subst sub) tms
         in
-          if Sharing.pointerEqual (tms,tms') then fm else Atom (p,tms')
+          if Portable.pointerEqual (tms,tms') then fm else Atom (p,tms')
         end
       | Not p =>
         let
           val p' = substFm sub p
         in
-          if Sharing.pointerEqual (p,p') then fm else Not p'
+          if Portable.pointerEqual (p,p') then fm else Not p'
         end
       | And (p,q) => substConn sub fm And p q
       | Or (p,q) => substConn sub fm Or p q
@@ -382,8 +382,8 @@ local
         val p' = substFm sub p
         and q' = substFm sub q
       in
-        if Sharing.pointerEqual (p,p') andalso
-           Sharing.pointerEqual (q,q')
+        if Portable.pointerEqual (p,p') andalso
+           Portable.pointerEqual (q,q')
         then fm
         else conn (p',q')
       end
@@ -411,7 +411,7 @@ local
 
         val p' = substCheck sub p
       in
-        if v = v' andalso Sharing.pointerEqual (p,p') then fm
+        if v = v' andalso Portable.pointerEqual (p,p') then fm
         else quant (v',p')
       end;
 in

@@ -88,7 +88,7 @@ fun replace (lit as (pol,atm)) path_tm =
     let
       val atm' = Atom.replace atm path_tm
     in
-      if Sharing.pointerEqual (atm,atm') then lit else (pol,atm')
+      if Portable.pointerEqual (atm,atm') then lit else (pol,atm')
     end;
 
 (* ------------------------------------------------------------------------- *)
@@ -107,7 +107,7 @@ fun subst sub (lit as (pol,atm)) : literal =
     let
       val atm' = Atom.subst sub atm
     in
-      if Sharing.pointerEqual (atm',atm) then lit else (pol,atm')
+      if Portable.pointerEqual (atm',atm) then lit else (pol,atm')
     end;
 
 (* ------------------------------------------------------------------------- *)
@@ -255,7 +255,7 @@ struct
         fun substLit (lit,(eq,lits')) =
             let
               val lit' = Literal.subst sub lit
-              val eq = eq andalso Sharing.pointerEqual (lit,lit')
+              val eq = eq andalso Portable.pointerEqual (lit,lit')
             in
               (eq, add lits' lit')
             end

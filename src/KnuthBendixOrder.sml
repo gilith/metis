@@ -75,15 +75,6 @@ end;
 
 fun weightSubtract w1 w2 = weightAdd w1 (weightNeg w2);
 
-fun weightMult 0 _ = weightZero
-  | weightMult 1 w = w
-  | weightMult k (Weight (m,c)) =
-    let
-      fun mult n = k * n
-    in
-      Weight (NameMap.transform mult m, k * c)
-    end;
-
 fun weightTerm weight =
     let
       fun wt m c [] = Weight (m,c)
@@ -99,49 +90,10 @@ fun weightTerm weight =
       fn tm => wt weightEmpty ~1 [tm]
     end;
 
-fun weightIsVar v (Weight (m,c)) =
-    c = 0 andalso NameMap.size m = 1 andalso NameMap.peek m v = SOME 1;
-
-fun weightConst (Weight (_,c)) = c;
-
-fun weightVars (Weight (m,_)) = 
-    NameMap.foldl (fn (v,_,s) => NameSet.add s v) NameSet.empty m;
-
-val weightsVars =
-    List.foldl (fn (w,s) => NameSet.union (weightVars w) s) NameSet.empty;
-
-fun weightVarList w = NameSet.toList (weightVars w);
-
-fun weightNumVars (Weight (m,_)) = NameMap.size m;
-
-fun weightNumVarsWithPositiveCoeff (Weight (m,_)) =
-    NameMap.foldl (fn (_,n,z) => if n > 0 then z + 1 else z) 0 m;
-
-fun weightCoeff var (Weight (m,_)) = Option.getOpt (NameMap.peek m var, 0);
-
-fun weightCoeffs varList w = map (fn var => weightCoeff var w) varList;
-
-fun weightCoeffSum (Weight (m,_)) = NameMap.foldl (fn (_,n,z) => n + z) 0 m;
-
 fun weightLowerBound (w as Weight (m,c)) =
     if NameMap.exists (fn (_,n) => n < 0) m then NONE else SOME c;
 
-fun weightNoLowerBound w = not (Option.isSome (weightLowerBound w));
-
-fun weightAlwaysPositive w =
-    case weightLowerBound w of NONE => false | SOME n => n > 0;
-
-fun weightUpperBound (w as Weight (m,c)) =
-    if NameMap.exists (fn (_,n) => n > 0) m then NONE else SOME c;
-
-fun weightNoUpperBound w = not (Option.isSome (weightUpperBound w));
-
-fun weightAlwaysNegative w =
-    case weightUpperBound w of NONE => false | SOME n => n < 0;
-
-fun weightGcd (w as Weight (m,c)) =
-    NameMap.foldl (fn (_,i,k) => gcd i k) (Int.abs c) m;
-
+(*DEBUG
 fun ppWeightList pp =
     let
       fun coeffToString n =
@@ -165,14 +117,13 @@ fun ppWeight pp (Weight (m,c)) =
     end;
 
 val weightToString = Parser.toString ppWeight;
+*)
 
 (* ------------------------------------------------------------------------- *)
 (* The Knuth-Bendix term order.                                              *)
 (* ------------------------------------------------------------------------- *)
 
-datatype kboOrder = Less | Equal | Greater | SignOf of weight;
-
-fun kboOrder {weight,precedence} =
+fun compare {weight,precedence} =
     let
       fun weightDifference tm1 tm2 =
           let
@@ -210,27 +161,20 @@ fun kboOrder {weight,precedence} =
             val w = weightDifference tm1 tm2
           in
             if weightIsZero w then precedenceCmp tm1 tm2
-            else if weightDiffLess w tm1 tm2 then Less
-            else if weightDiffGreater w tm1 tm2 then Greater
-            else SignOf w
+            else if weightDiffLess w tm1 tm2 then SOME LESS
+            else if weightDiffGreater w tm1 tm2 then SOME GREATER
+            else NONE
           end
 
       and precedenceCmp (Term.Fn (f1,a1)) (Term.Fn (f2,a2)) =
           (case precedence ((f1, length a1), (f2, length a2)) of
-             LESS => Less
+             LESS => SOME LESS
            | EQUAL => firstNotEqual weightCmp (zip a1 a2)
-           | GREATER => Greater)
+           | GREATER => SOME GREATER)
         | precedenceCmp _ _ = raise Bug "kboOrder.precendenceCmp"
     in
-      fn (tm1,tm2) => if tm1 = tm2 then Equal else weightCmp tm1 tm2
+      fn (tm1,tm2) => if tm1 = tm2 then SOME EQUAL else weightCmp tm1 tm2
     end;
-
-fun compare kbo tm1_tm2 =
-    case kboOrder kbo tm1_tm2 of
-      Less => SOME LESS
-    | Equal => SOME EQUAL
-    | Greater => SOME GREATER
-    | SignOf _ => NONE;
 
 (*TRACE7
 val compare = fn kbo => fn (tm1,tm2) =>

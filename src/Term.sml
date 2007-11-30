@@ -189,7 +189,7 @@ fun replace tm ([],res) = if res = tm then tm else res
           val arg = List.nth (tms,h)
           val arg' = replace arg (t,res)
         in
-          if Sharing.pointerEqual (arg',arg) then tm
+          if Portable.pointerEqual (arg',arg) then tm
           else Fn (func, updateNth (h,arg') tms)
         end;
 

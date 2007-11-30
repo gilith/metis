@@ -94,7 +94,7 @@ fun replace _ ([],_) = raise Bug "Atom.replace: empty path"
         val tm = List.nth (tms,h)
         val tm' = Term.replace tm (t,res)
       in
-        if Sharing.pointerEqual (tm,tm') then atm
+        if Portable.pointerEqual (tm,tm') then atm
         else (rel, updateNth (h,tm') tms)
       end;
 
@@ -129,7 +129,7 @@ fun subst sub (atm as (p,tms)) : atom =
     let
       val tms' = Sharing.map (Subst.subst sub) tms
     in
-      if Sharing.pointerEqual (tms',tms) then atm else (p,tms')
+      if Portable.pointerEqual (tms',tms) then atm else (p,tms')
     end;
 
 (* ------------------------------------------------------------------------- *)
