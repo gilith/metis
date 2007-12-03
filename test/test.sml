@@ -703,6 +703,8 @@ val () = SAY "Clauses";
 val cl = pvCl (CL[`P $x`,`P $y`]);
 val _ = pvLits (Clause.largestLiterals cl);
 val _ = pvCls (Clause.factor cl);
+val cl = pvCl (CL[`P $x`,`~P (f $x)`]);
+val _ = pvLits (Clause.largestLiterals cl);
 val cl = pvCl (CL[`$x = $y`,`f $y = f $x`]);
 val _ = pvLits (Clause.largestLiterals cl);
 val cl = pvCl (CL[`$x = f $y`,`f $x = $y`]);

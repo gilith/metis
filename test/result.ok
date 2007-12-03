@@ -431,6 +431,10 @@ Clauses
 
 [|- P $y]
 
+|- ~P (f $x) \/ P $x
+
+{~P (f $x)}
+
 |- $x = $y \/ f $y = f $x
 
 {f $y = f $x}
