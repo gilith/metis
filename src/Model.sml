@@ -134,7 +134,7 @@ fun fixedPure {size = _} =
       fun functions _ = NONE
 
       fun relations (rel,[x,y]) =
-          if (rel,2) = Atom.eqRelation then SOME (x = y) else NONE
+          if rel = Atom.eqRelationName then SOME (x = y) else NONE
         | relations _ = NONE
     in
       {functions = functions, relations = relations}

@@ -94,6 +94,8 @@ val unify : Subst.subst -> atom -> atom -> Subst.subst  (* raises Error *)
 (* The equality relation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
+val eqRelationName : relationName
+
 val eqRelation : relation
 
 val mkEq : Term.term * Term.term -> atom

@@ -8,9 +8,9 @@ use Pod::Usage;
 use Getopt::Std;
 use File::Basename;
 
-use vars qw($opt_h $opt_o $opt_t $opt_m);
+use vars qw($opt_h $opt_o $opt_t $opt_m $opt_a);
 
-getopts('ho:t:m:');
+getopts('ho:t:m:a');
 
 if ($opt_h or scalar @ARGV == 0) {
     pod2usage({-exitval => 2,
@@ -28,6 +28,7 @@ sub is_solved {
     my ($status) = @_;
 
     if ($status eq 'Theorem') { return 1; }
+    elsif ($status eq 'Unsatisfiable') { return 1; }
     elsif ($status eq 'CounterSatisfiable') { return 0; }
     elsif ($status eq 'ResourceOut') { return 0; }
     else { die "$0: bad status '$status'\n"; }
@@ -48,8 +49,9 @@ sub make_points {
         next if ($line =~ /^\#/);
         $line =~ /^[^ ]+ ([^ ]+) ([^ ]+)$/
             or die "weird result line: $line\n";
-        push @times, $2 if (is_solved $1);
-        ++$probs;
+        my $solved = is_solved $1;
+        push @times, $2 if $solved;
+        ++$probs if ($solved || $opt_a);
     }
     close INPUT;
 
@@ -88,7 +90,7 @@ for (my $i = 0; 0 < scalar @ARGV; ++$i) {
 @graphs = sort { ${$b}[0] <=> ${$a}[0] } @graphs;
 
 my $plotting = '
-set terminal png medium
+set terminal png large size 1280,960
 set output "' . $opt_o . '"
 set key top left Right nobox
 set grid
@@ -128,7 +130,7 @@ graph - produce a results graph
 
 =head1 SYNOPSIS
 
-graph [-o graph.png] [-t title] [-m maxtime] summarized-results...
+graph [-o graph.png] [-t title] [-m maxtime] [-a] summarized-results...
 
 =head1 ARGUMENTS
 
@@ -151,6 +153,10 @@ Set the graph title.
 =item B<-m>
 
 Set the maximum time.
+
+=item B<-a>
+
+Include all problems, not just the solved ones.
 
 =back
 

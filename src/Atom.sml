@@ -168,17 +168,17 @@ end;
 (* The equality relation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
-val eqName = "=";
+val eqRelationName = "=";
 
-val eqArity = 2;
+val eqRelationArity = 2;
 
-val eqRelation = (eqName,eqArity);
+val eqRelation = (eqRelationName,eqRelationArity);
 
-val mkEq = mkBinop eqName;
+val mkEq = mkBinop eqRelationName;
 
-fun destEq x = destBinop eqName x;
+fun destEq x = destBinop eqRelationName x;
 
-fun isEq x = isBinop eqName x;
+fun isEq x = isBinop eqRelationName x;
 
 fun mkRefl tm = mkEq (tm,tm);
 
