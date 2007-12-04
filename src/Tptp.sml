@@ -35,6 +35,7 @@ fun isHdTlString hp tp s =
 
 val functionMapping = ref
     [(* Mapping TPTP functions to infix symbols *)
+     {name = "~", arity = 1, tptp = "negate"},
      {name = "*", arity = 2, tptp = "multiply"},
      {name = "/", arity = 2, tptp = "divide"},
      {name = "+", arity = 2, tptp = "add"},

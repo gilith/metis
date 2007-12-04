@@ -810,8 +810,8 @@ pr = p1 * py + n1 * ny /\ nr = p1 * ny + n1 * py ==> pl = pr /\ nl = nr`},
 {name = "JACOBSON_2",
  comments = [],
  goal = `
-(!x. 0 + x = x) /\ (!x. x + 0 = x) /\ (!x. n x + x = 0) /\
-(!x. x + n x = 0) /\ (!x y z. x + (y + z) = x + y + z) /\
+(!x. 0 + x = x) /\ (!x. x + 0 = x) /\ (!x. ~x + x = 0) /\
+(!x. x + ~x = 0) /\ (!x y z. x + (y + z) = x + y + z) /\
 (!x y. x + y = y + x) /\ (!x y z. x * (y * z) = x * y * z) /\
 (!x y z. x * (y + z) = x * y + x * z) /\
 (!x y z. (x + y) * z = x * z + y * z) /\ (!x. x * x = x) ==>
@@ -820,8 +820,8 @@ pr = p1 * py + n1 * ny /\ nr = p1 * ny + n1 * py ==> pl = pr /\ nl = nr`},
 {name = "JACOBSON_3",
  comments = [],
  goal = `
-(!x. 0 + x = x) /\ (!x. x + 0 = x) /\ (!x. n x + x = 0) /\
-(!x. x + n x = 0) /\ (!x y z. x + (y + z) = x + y + z) /\
+(!x. 0 + x = x) /\ (!x. x + 0 = x) /\ (!x. ~x + x = 0) /\
+(!x. x + ~x = 0) /\ (!x y z. x + (y + z) = x + y + z) /\
 (!x y. x + y = y + x) /\ (!x y z. x * (y * z) = x * y * z) /\
 (!x y z. x * (y + z) = x * y + x * z) /\
 (!x y z. (x + y) * z = x * z + y * z) /\ (!x. x * (x * x) = x) ==>
