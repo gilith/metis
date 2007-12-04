@@ -61,4 +61,4 @@ mlton-diff:
 
 mlton-result: ../bin/mlton/selftest
 	rm -f $@
-	$< | tee $@
+	$< 2>&1 | tee $@
