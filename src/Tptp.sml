@@ -1063,41 +1063,48 @@ local
 
   fun mapSubstClause maps sub cl = clauseSubst sub (mapClause maps cl);
 
-  fun ppAtomInfo pp atm =
+  val ppTermTstp = ppTerm;
+
+  fun ppAtomTstp pp atm =
       case total Atom.destEq atm of
         SOME (a,b) => ppAtom pp ("$equal",[a,b])
       | NONE => ppAtom pp atm;
 
-  fun ppLiteralInfo pp (pol,atm) =
-      if pol then ppAtomInfo pp atm
+  fun ppLiteralTstp pp (pol,atm) =
+      if pol then ppAtomTstp pp atm
       else
         (Parser.beginBlock pp Parser.Inconsistent 2;
          Parser.addString pp "~";
          Parser.addBreak pp (1,0);
-         ppAtomInfo pp atm;
+         ppAtomTstp pp atm;
          Parser.endBlock pp);
 
-  val ppAssumeInfo = Parser.ppBracket "(" ")" ppAtomInfo;
+  val ppTermInfo = Parser.ppBracket "term(" ")" ppTermTstp;
+
+  val ppAtomInfo = Parser.ppBracket "foff(" ")" ppAtomTstp;
+
+  val ppLiteralInfo = Parser.ppBracket "foff(" ")" ppLiteralTstp;
+
+  val ppAssumeInfo = ppAtomInfo;
 
   val ppSubstInfo =
       Parser.ppMap
         Subst.toList
         (Parser.ppSequence ","
-           (Parser.ppBracket "[" "]"
-              (Parser.ppBinop "," ppVar (Parser.ppBracket "(" ")" ppTerm))));
+           (Parser.ppBracket "[" "]" (Parser.ppBinop "," ppVar ppTermInfo)));
 
-  val ppResolveInfo = Parser.ppBracket "(" ")" ppAtomInfo;
+  val ppResolveInfo = ppAtomInfo;
 
-  val ppReflInfo = Parser.ppBracket "(" ")" ppTerm;
+  val ppReflInfo = ppTermInfo;
         
   fun ppEqualityInfo pp (lit,path,res) =
-      (Parser.ppBracket "(" ")" ppLiteralInfo pp lit;
+      (ppLiteralInfo pp lit;
        Parser.addString pp ",";
        Parser.addBreak pp (1,0);
        Term.ppPath pp path;
        Parser.addString pp ",";
        Parser.addBreak pp (1,0);
-       Parser.ppBracket "(" ")" ppTerm pp res);
+       ppTermInfo pp res);
 
   fun ppInfInfo maps sub pp inf =
       case inf of

@@ -66,15 +66,6 @@ val default : parameters =
                         Model.fixedModulo,
                         Model.fixedSet]},
           checks = 20,
-          weight = 1.0},
-         {model = {size = 5,
-                   fixed =
-                     Model.fixedMergeList
-                       [Model.fixedPure,
-                        Model.fixedBasic,
-                        Model.fixedOverflowNum]},
-
-          checks = 20,
           weight = 1.0}]};
 
 fun size (Waiting {clauses,...}) = Heap.size clauses;
