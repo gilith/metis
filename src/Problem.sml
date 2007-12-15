@@ -20,6 +20,8 @@ fun size cls =
      symbols = foldl (fn (cl,n) => n + LiteralSet.symbols cl) 0 cls,
      typedSymbols = foldl (fn (cl,n) => n + LiteralSet.typedSymbols cl) 0 cls};
 
+(***
+(*DEBUG
 fun checkFormula {models,checks} exp fm =
     let
       fun check 0 = true
@@ -38,6 +40,7 @@ fun checkFormula {models,checks} exp fm =
 val checkGoal = checkFormula {models = 10, checks = 100} true;
 
 val checkClauses = checkFormula {models = 10, checks = 100} false;
+*)
 
 fun fromGoal goal =
     let
@@ -79,6 +82,7 @@ fun fromGoal goal =
     in
       map fromCnf cnfs
     end;
+***)
 
 fun toClauses cls =
     let

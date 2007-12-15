@@ -273,3 +273,10 @@ struct
 end
 
 structure LiteralMap = KeyMap (LiteralOrdered);
+
+structure LiteralSetOrdered =
+struct type t = LiteralSet.set val compare = LiteralSet.compare end
+
+structure LiteralSetSet = ElementSet (LiteralSetOrdered);
+
+structure LiteralSetMap = KeyMap (LiteralSetOrdered);

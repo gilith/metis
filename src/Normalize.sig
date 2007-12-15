@@ -16,6 +16,8 @@ val nnf : Formula.formula -> Formula.formula
 (* Conjunctive normal form.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-val cnf : Formula.formula -> Formula.formula list
+val cnf :
+    (Formula.formula * StringSet.set) list ->
+    (LiteralSet.set * StringSet.set) list
 
 end

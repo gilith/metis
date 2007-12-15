@@ -730,13 +730,6 @@ in
   and isTptpConstant = canParseString constantParser;
 end;
 
-(***
-fun formulaFromString s =
-    case Stream.toList (parseFormula (Stream.fromList (explode s))) of
-      [fm] => fm
-    | _ => raise Parser.NoParse;
-***)
-
 (* ------------------------------------------------------------------------- *)
 (* Converting to and from TPTP names.                                        *)
 (* ------------------------------------------------------------------------- *)
@@ -881,11 +874,142 @@ fun formulasFromTptp formulas =
 (* TPTP problems.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
-datatype goal =
-    Cnf of Problem.problem
-  | Fof of Formula.formula;
+type axiomNames = string LiteralSetMap.map;
 
 type problem = {comments : string list, formulas : formula list};
+
+fun isCnfProblem ({formulas,...} : problem) =
+    let
+      val cnf = List.exists isCnfFormula formulas
+      and fof = List.exists isFofFormula formulas
+    in
+      case (cnf,fof) of
+        (false,false) => raise Error "TPTP problem has no formulas"
+      | (true,true) => raise Error "TPTP problem has both cnf and fof formulas"
+      | (cnf,_) => cnf
+    end;
+
+fun isFofProblem prob = not (isCnfProblem prob);
+
+fun hasConjecture ({formulas,...} : problem) =
+    List.exists formulaIsConjecture formulas;
+
+local
+  fun fofFormulaToGoal (FofFormula {name,role,formula}, {axioms,goals}) =
+      let
+        val fm = Formula.generalize formula
+        val name = StringSet.singleton name
+      in
+        if role = ROLE_CONJECTURE then
+          {axioms = axioms, goals = (fm,name) :: goals}
+        else
+          {axioms = (fm,name) :: axioms, goals = goals}
+      end
+    | fofFormulaToGoal (CnfFormula _, _) = raise Bug "normalizeFofToCnf";
+
+  fun mkProblem comments formulas =
+      let
+        val clauses = Normalize.cnf (rev formulas)
+      in
+        {comments = comments, formulas = formulas}
+      end;
+in
+  fun normalizeFofToCnf ({comments,formulas} : problem) =
+      let
+        val axioms_goals = {axioms = [], goals = []}
+        val axioms_goals = List.foldl fofFormulaToGoal axioms_goals formulas
+      in
+        case axioms_goals of
+          {axioms, goals = []} => [mkProblem comments axioms]
+        | {axioms,goals} =>
+          let
+            val n = Int.toString (length goals)
+
+            fun mk (goal,name) i =
+                let
+                  val i = i + 1
+                  val comments =
+                      comments @
+                      ((if null comments then [] else [""]) @
+                       ["Subgoal: " ^ Int.toString i ^ "/" ^ n])
+                  val formulas = (Formula.Not goal, name) :: axioms
+                in
+                  (mkProblem comments formulas, i)
+                end
+
+            val (problems,_) = maps mk (rev goals) 0
+          in
+            problems
+          end
+      end;
+end;
+
+local
+  val axiomNames =
+      let
+        fun add (_,n,s) = StringSet.add s n
+      in
+        LiteralSetMap.foldl add StringSet.empty
+      end;
+
+  fun bump n avoid =
+      let
+        val s = Int.toString n
+      in
+        if StringSet.member s avoid then bump (n + 1) avoid
+        else (s, n, StringSet.add avoid s)
+      end;
+
+  fun fromClause axioms cl (n,avoid) =
+      let
+        val (name,n,avoid) =
+            case LiteralSetMap.peek axioms cl of
+              SOME name => (name,n,avoid)
+            | NONE => bump n avoid
+        val role = ROLE_NEGATED_CONJECTURE
+        val clause = clauseFromLiteralSet cl
+      in
+        (CnfFormula {name = name, role = role, clause = clause}, (n,avoid))
+      end;
+in
+  fun mkCnfProblem axioms prob =
+      let
+        val comments = []
+        val avoid = axiomNames axioms
+        val (formulas,_) = maps (fromClause axioms) prob (0,avoid)
+      in
+        {comments = comments, formulas = formulas}
+      end;
+end;
+
+local
+  fun addCnfFormula (CnfFormula {name,clause,...}, acc) =
+      if mem (Boolean true) clause then acc
+      else
+        let
+          val litl = List.mapPartial (total destLiteral) clause
+          val lits = LiteralSet.fromList litl
+          val (litsl,axioms) = acc
+        in
+          if LiteralSetMap.inDomain lits axioms then acc
+          else
+            let
+              val litsl = lits :: litsl
+              val axioms = LiteralSetMap.insert axioms (lits,name)
+            in
+              (litsl,axioms)
+            end
+        end
+    | addCnfFormula (FofFormula _, _) = raise Bug "destCnfProblem";
+in
+  fun destCnfProblem ({formulas,...} : problem) =
+      let
+        val axioms = LiteralSetMap.new ()
+        val (cls,axioms) = foldl addCnfFormula ([],axioms) formulas
+      in
+        (rev cls, axioms)
+      end;
+end;
 
 local
   fun stripComments acc strm =
@@ -929,86 +1053,10 @@ in
            (formulaStream (formulasToTptp formulas)));
 end;
 
-(* ------------------------------------------------------------------------- *)
-(* Converting TPTP problems to goal formulas.                                *)
-(* ------------------------------------------------------------------------- *)
-
-fun isCnfProblem ({formulas,...} : problem) =
-    let
-      val cnf = List.exists isCnfFormula formulas
-      and fof = List.exists isFofFormula formulas
-    in
-      case (cnf,fof) of
-        (false,false) => raise Error "TPTP problem has no formulas"
-      | (true,true) => raise Error "TPTP problem has both cnf and fof formulas"
-      | (cnf,_) => cnf
-    end;
-
-fun hasConjecture ({formulas,...} : problem) =
-    List.exists formulaIsConjecture formulas;
-
 local
-  fun cnfFormulaToClause (CnfFormula {clause,...}) =
-      if mem (Boolean true) clause then NONE
-      else
-        let
-          val lits = List.mapPartial (total destLiteral) clause
-        in
-          SOME (LiteralSet.fromList lits)
-        end
-    | cnfFormulaToClause (FofFormula _) = raise Bug "cnfFormulaToClause";
-
-  fun fofFormulaToGoal (FofFormula {formula,role,...}, {axioms,goals}) =
+  fun refute problem =
       let
-        val fm = Formula.generalize formula
-      in
-        if role = ROLE_CONJECTURE then
-          {axioms = axioms, goals = fm :: goals}
-        else
-          {axioms = fm :: axioms, goals = goals}
-      end
-    | fofFormulaToGoal (CnfFormula _, _) = raise Bug "fofFormulaToGoal";
-in
-  fun toGoal (prob as {formulas,...}) =
-      if isCnfProblem prob then
-        Cnf (List.mapPartial cnfFormulaToClause formulas)
-      else
-        Fof
-        let
-          val axioms_goals = {axioms = [], goals = []}
-          val axioms_goals = List.foldl fofFormulaToGoal axioms_goals formulas
-        in
-          case axioms_goals of
-            {axioms, goals = []} =>
-            Formula.Imp (Formula.listMkConj axioms, Formula.False)
-          | {axioms = [], goals} => Formula.listMkConj goals
-          | {axioms,goals} =>
-            Formula.Imp (Formula.listMkConj axioms, Formula.listMkConj goals)
-        end;
-end;
-
-local
-  fun fromClause cl n =
-      let
-        val name = "clause_" ^ Int.toString n
-        val role = ROLE_NEGATED_CONJECTURE
-        val clause = clauseFromLiteralSet cl
-      in
-        (CnfFormula {name = name, role = role, clause = clause}, n + 1)
-      end;
-in
-  fun fromProblem prob =
-      let
-        val comments = []
-        and (formulas,_) = maps fromClause prob 0
-      in
-        {comments = comments, formulas = formulas}
-      end;
-end;
-
-local
-  fun refute cls =
-      let
+        val (cls,_) = destCnfProblem problem
         val res = Resolution.new Resolution.default (map Thm.axiom cls)
       in
         case Resolution.loop res of
@@ -1018,11 +1066,10 @@ local
 in
   fun prove filename =
       let
-        val tptp = read filename
+        val problem = read filename
         val problems =
-            case toGoal tptp of
-              Cnf prob => [prob]
-            | Fof goal => Problem.fromGoal goal
+            if isCnfProblem problem then [problem]
+            else normalizeFofToCnf problem
       in
         List.all refute problems
       end;

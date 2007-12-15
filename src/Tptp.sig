@@ -50,21 +50,25 @@ val formulaIsConjecture : formula -> bool
 (* TPTP problems.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
-datatype goal =
-    Cnf of Problem.problem
-  | Fof of Formula.formula
+type axiomNames = string LiteralSetMap.map
 
 type problem = {comments : string list, formulas : formula list}
+
+val isCnfProblem : problem -> bool
+
+val isFofProblem : problem -> bool
+
+val hasConjecture : problem -> bool
+
+val normalizeFofToCnf : problem -> problem list
+
+val mkCnfProblem : Problem.problem * axiomNames -> problem
+
+val destCnfProblem : problem -> Problem.problem * axiomNames
 
 val read : {filename : string} -> problem
 
 val write : {filename : string} -> problem -> unit
-
-val hasConjecture : problem -> bool
-
-val toGoal : problem -> goal
-
-val fromProblem : Problem.problem -> problem
 
 val prove : {filename : string} -> bool
 
@@ -72,6 +76,6 @@ val prove : {filename : string} -> bool
 (* TSTP proofs.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-val writeProof : {filename : string} -> Proof.proof -> unit
+val writeProof : {filename : string} -> axiomNames -> Proof.proof -> unit
 
 end
