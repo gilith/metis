@@ -13,11 +13,31 @@ sig
 val nnf : Formula.formula -> Formula.formula
 
 (* ------------------------------------------------------------------------- *)
+(* Normalization proofs.                                                     *)
+(* ------------------------------------------------------------------------- *)
+
+type proof = StringSet.set
+
+val noProof : proof
+
+val singletonProof : string -> proof
+
+val combineProofs : proof -> proof -> proof
+
+(* ------------------------------------------------------------------------- *)
 (* Conjunctive normal form.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-val cnf :
-    (Formula.formula * StringSet.set) list ->
-    (LiteralSet.set * StringSet.set) list
+type cnfState
+
+val cnfStateInitial : cnfState
+
+val cnfStateAdd :
+    Formula.formula * proof -> cnfState ->
+    (Thm.clause * proof) list * cnfState
+
+val cnfProof : (Formula.formula * proof) list -> (Thm.clause * proof) list
+
+val cnf : Formula.formula -> Thm.clause list
 
 end

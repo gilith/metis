@@ -17,11 +17,7 @@ val size : problem -> {clauses : int,
                        symbols : int,
                        typedSymbols : int}
 
-(***
-val fromGoal : Formula.formula -> problem list
-***)
-
-val toClauses : problem -> Formula.formula
+val toFormula : problem -> Formula.formula
 
 val toString : problem -> string
 

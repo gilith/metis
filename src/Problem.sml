@@ -20,71 +20,7 @@ fun size cls =
      symbols = foldl (fn (cl,n) => n + LiteralSet.symbols cl) 0 cls,
      typedSymbols = foldl (fn (cl,n) => n + LiteralSet.typedSymbols cl) 0 cls};
 
-(***
-(*DEBUG
-fun checkFormula {models,checks} exp fm =
-    let
-      fun check 0 = true
-        | check n =
-          let
-            val N = 3 + Portable.randomInt 3
-            val M = Model.new {size = N, fixed = Model.fixedPure}
-            val {T,F} = Model.checkFormula {maxChecks = checks} M fm
-          in
-            (if exp then F = 0 else T = 0) andalso check (n - 1)
-          end
-    in
-      check models
-    end;
-
-val checkGoal = checkFormula {models = 10, checks = 100} true;
-
-val checkClauses = checkFormula {models = 10, checks = 100} false;
-*)
-
-fun fromGoal goal =
-    let
-      fun fromLiterals fms = LiteralSet.fromList (map Literal.fromFormula fms)
-
-      fun fromClause fm = fromLiterals (Formula.stripDisj fm)
-
-      fun fromCnf fm = map fromClause (Formula.stripConj fm)
-
-(*DEBUG
-      val () = if checkGoal goal then ()
-               else raise Error "goal failed the finite model test"
-*)
-
-      val refute = Formula.Not (Formula.generalize goal)
-
-(*TRACE2
-      val () = Parser.ppTrace Formula.pp "Problem.fromGoal: refute" refute
-*)
-
-      val cnfs = Normalize.cnf refute
-
-(*
-      val () =
-          let
-            fun check fm =
-                let
-(*TRACE2
-                  val () = Parser.ppTrace Formula.pp "Problem.fromGoal: cnf" fm
-*)
-                in
-                  if checkClauses fm then ()
-                  else raise Error "cnf failed the finite model test"
-                end
-          in
-            app check cnfs
-          end
-*)
-    in
-      map fromCnf cnfs
-    end;
-***)
-
-fun toClauses cls =
+fun toFormula cls =
     let
       fun formulize cl =
           Formula.listMkDisj (LiteralSet.transform Literal.toFormula cl)
@@ -92,7 +28,7 @@ fun toClauses cls =
       Formula.listMkConj (map formulize cls)
     end;
 
-fun toString cls = Formula.toString (toClauses cls);
+fun toString cls = Formula.toString (toFormula cls);
 
 (* ------------------------------------------------------------------------- *)
 (* Categorizing problems.                                                    *)

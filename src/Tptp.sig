@@ -47,12 +47,26 @@ val formulaFreeVars : formula -> NameSet.set
 val formulaIsConjecture : formula -> bool
 
 (* ------------------------------------------------------------------------- *)
+(* Clause information.                                                       *)
+(* ------------------------------------------------------------------------- *)
+
+type 'a clauseInfo = 'a LiteralSetMap.map
+
+type clauseNames = string clauseInfo
+
+type clauseRoles = string clauseInfo
+
+type clauseProofs = Normalize.proof clauseInfo
+
+val clauseNameProofs : clauseNames -> clauseProofs
+
+(* ------------------------------------------------------------------------- *)
 (* TPTP problems.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
-type axiomNames = string LiteralSetMap.map
+type comments = string list
 
-type problem = {comments : string list, formulas : formula list}
+type problem = {comments : comments, formulas : formula list}
 
 val isCnfProblem : problem -> bool
 
@@ -60,11 +74,23 @@ val isFofProblem : problem -> bool
 
 val hasConjecture : problem -> bool
 
-val normalizeFofToCnf : problem -> problem list
+val mkCnfProblem : {comments : comments,
+                    names : clauseNames,
+                    roles : clauseRoles,
+                    problem : Problem.problem} -> problem
 
-val mkCnfProblem : Problem.problem * axiomNames -> problem
+val destCnfProblem : problem -> {comments : comments,
+                                 names : clauseNames,
+                                 roles : clauseRoles,
+                                 problem : Problem.problem}
 
-val destCnfProblem : problem -> Problem.problem * axiomNames
+val goalFofProblem : problem -> Formula.formula
+
+val normalizeFof : problem -> {roles : clauseRoles,
+                               problem : Problem.problem,
+                               proofs : clauseProofs} list
+
+val normalizeFofToCnf : problem -> (problem * clauseProofs) list
 
 val read : {filename : string} -> problem
 
@@ -76,6 +102,8 @@ val prove : {filename : string} -> bool
 (* TSTP proofs.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-val writeProof : {filename : string} -> axiomNames -> Proof.proof -> unit
+val writeProof :
+    {filename : string, prefix : string, proofs : clauseProofs} ->
+    Proof.proof -> unit
 
 end

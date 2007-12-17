@@ -112,9 +112,14 @@ local
       if notshowing "name" then ()
       else print ("Problem: " ^ filename ^ "\n\n");
 
-  fun display_goal goal =
+  fun display_fof_goal tptp =
       if notshowing "goal" then ()
-      else print ("Goal:\n" ^ Formula.toString goal ^ "\n\n");
+      else
+        let
+          val goal = Tptp.goalFofProblem tptp
+        in
+          print ("Goal:\n" ^ Formula.toString goal ^ "\n\n")
+        end;
 
   fun display_clauses cls =
       if notshowing "clauses" then ()
@@ -146,12 +151,29 @@ local
           print ("Category: " ^ Problem.categoryToString cat ^ ".\n\n")
         end;
 
-  fun display_proof filename th = 
-      if notshowing "proof" then ()
-      else
-        (print ("SZS output start CNFRefutation for " ^ filename ^ "\n");
-         Tptp.writeProof {filename = "-"} (Proof.proof th);
-         print ("SZS output end CNFRefutation for " ^ filename ^ "\n\n"));
+  local
+    fun display_proof_start filename =
+        print ("\nSZS output start CNFRefutation for " ^ filename ^ "\n");
+
+    fun display_proof_body prefix proofs th =
+        Tptp.writeProof
+          {filename = "-", prefix = prefix, proofs = proofs}
+          (Proof.proof th);
+
+    fun display_proof_end filename =
+        print ("SZS output end CNFRefutation for " ^ filename ^ "\n\n");
+  in
+    fun display_cnf_proof filename names th = 
+        if notshowing "proof" then ()
+        else
+          let
+            val proofs = Tptp.clauseNameProofs names
+          in
+            display_proof_start filename;
+            display_proof_body "" proofs th;
+            display_proof_end filename
+          end;
+  end;
 
   fun display_saturated filename ths =
       if notshowing "saturated" then ()
@@ -161,17 +183,12 @@ local
           val () = Tptp.write {filename = "saturated.tptp"}
                      (Tptp.fromProblem (map Thm.clause ths))
 *)
-          val () = print ("SZS output start Saturated for " ^ filename ^ "\n")
+          val () = print ("\nSZS output start Saturated for " ^ filename ^ "\n")
           val () = app (fn th => print (Thm.toString th ^ "\n")) ths
           val () = print ("SZS output end Saturated for " ^ filename ^ "\n\n")
         in
           ()
         end;
-
-  fun display_result filename result =
-      case result of
-        Resolution.Contradiction th => display_proof filename th
-      | Resolution.Satisfiable ths => display_saturated filename ths;
 
   fun display_status filename status =
       if notshowing "status" then ()
@@ -195,6 +212,7 @@ local
   fun refute cls =
       Resolution.loop (Resolution.new Resolution.default (map Thm.axiom cls));
 
+(***
   fun refutable filename cls =
       let
         val () = display_problem filename cls
@@ -203,6 +221,7 @@ local
           Resolution.Contradiction th => (display_proof filename th; true)
         | Resolution.Satisfiable ths => (display_saturated filename ths; false)
       end;
+***)
 in
   fun prove filename =
       let
@@ -210,30 +229,28 @@ in
         val () = display_name filename
         val tptp = Tptp.read {filename = filename}
       in
-        case Tptp.toGoal tptp of
-          Tptp.Cnf prob =>
+        if Tptp.isCnfProblem tptp then
           let
-            val () = display_problem filename prob
+            val {names,problem,...} = Tptp.destCnfProblem tptp
+            val () = display_problem filename problem
           in
             if !TEST then
               (display_status filename "Unknown";
                true)
             else
-              case refute prob of
+              case refute problem of
                 Resolution.Contradiction th =>
                 (display_status filename "Unsatisfiable";
-                 if showing "proof" then print "\n" else ();
-                 display_proof filename th;
+                 display_cnf_proof filename names th;
                  true)
               | Resolution.Satisfiable ths =>
                 (display_status filename "Satisfiable";
-                 if showing "saturated" then print "\n" else ();
                  display_saturated filename ths;
                  false)
           end
-        | Tptp.Fof goal =>
+        else
           let
-            val () = display_goal goal
+            val () = display_fof_goal tptp
             val problems = Problem.fromGoal goal
             val result =
                 if !TEST then (display_problems filename problems; true)
