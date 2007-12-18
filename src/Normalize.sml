@@ -1045,8 +1045,6 @@ val simplify = fn simp => fn fm =>
 (* Definitions.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-val definitionProof = StringSet.singleton definitionPrefix;
-
 val newDefinitionRelation =
     let
       val counter : int ref = ref 0
@@ -1063,10 +1061,12 @@ val newDefinitionRelation =
 fun newDefinition def =
     let
       val fv = freeVars def
-      val atm = (newDefinitionRelation (), NameSet.transform Term.Var fv)
+      val rel = newDefinitionRelation ()
+      val atm = (rel, NameSet.transform Term.Var fv)
       val lit = Literal (fv,(true,atm))
+      val prf = singletonProof rel
     in
-      (Xor2 (lit,def), definitionProof)
+      (Xor2 (lit,def), prf)
     end;
 
 (* ------------------------------------------------------------------------- *)
