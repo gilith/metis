@@ -1092,6 +1092,16 @@ fun normalizeFofToCnf (problem as {comments,...}) =
       probs
     end;
 
+fun goal problem =
+    if isCnfProblem problem then
+      let
+        val {problem,...} = destCnfProblem problem
+      in
+        Problem.toGoal problem
+      end
+    else
+      goalFofProblem problem;
+
 local
   fun stripComments acc strm =
       case strm of
@@ -1236,6 +1246,9 @@ local
        Parser.addBreak pp (1,0);
        ppTermInfo pp res);
 
+  val ppAxiomProof =
+      Parser.ppMap StringSet.toList (Parser.ppList Parser.ppString);
+
   fun ppInfInfo maps sub pp inf =
       case inf of
         Proof.Axiom _ => raise Bug "ppInfInfo"
@@ -1310,7 +1323,13 @@ in
               Parser.addString p (role ^ ",");
               Parser.addBreak p (1,0);
               Parser.ppBracket "(" ")" ppClause p cl;
-              if is_axiom then ()
+              if is_axiom then
+                case LiteralSetMap.peek proofs (Thm.clause th) of
+                  NONE => ()
+                | SOME axiomPrf =>
+                  (Parser.addString p ",";
+                   Parser.addBreak p (1,0);
+                   ppAxiomProof p axiomPrf)
               else
                 let
                   val is_tautology = null (Proof.parents inf)

@@ -596,7 +596,8 @@ fun toLiteral (Literal (_,lit)) = lit
 local
   fun addLiteral (l,s) = LiteralSet.add s (toLiteral l);
 in
-  fun toClause (Or (_,_,s)) = Set.foldl addLiteral LiteralSet.empty s
+  fun toClause False = LiteralSet.empty
+    | toClause (Or (_,_,s)) = Set.foldl addLiteral LiteralSet.empty s
     | toClause l = LiteralSet.singleton (toLiteral l);
 end;
 
@@ -1108,13 +1109,19 @@ local
         | NONE =>
           let
             val simp = simplifyAdd simp fm_prf
-            fun add (f,l) = (toClause f, prf) :: l
+            fun add (f,l) =
+                (toClause f, prf) :: l
+(*DEBUG
+                handle Error err =>
+                  (Parser.ppTrace pp "Normalize.def_cnf_formula: f" f;
+                   raise Bug ("Normalize.cnfStateAdd.def_cnf_formula: "^err))
+*)
           in
             case basicCnf fm of
               True => def_cnf prob simp fms
             | False => def_cnf_inconsistent prf
             | And (_,_,s) => def_cnf (Set.foldl add prob s) simp fms
-            | _ => def_cnf (add (fm,prob)) simp fms
+            | fm => def_cnf (add (fm,prob)) simp fms
           end
 
   and def_cnf_inconsistent prf = ([(LiteralSet.empty,prf)],CnfInconsistent);

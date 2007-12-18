@@ -19,6 +19,8 @@ val size : problem -> {clauses : int,
 
 val toFormula : problem -> Formula.formula
 
+val toGoal : problem -> Formula.formula
+
 val toString : problem -> string
 
 (* ------------------------------------------------------------------------- *)

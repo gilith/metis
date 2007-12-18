@@ -292,18 +292,21 @@ release-stamp: $(RELEASE_STAMP)
 doc/example-cnf-proof.txt: data/problems/all/SYN075-1.tptp $(METIS)
 	$(METIS) --show name --show clauses --show proof $< > $@
 
+doc/example-fof-proof.txt: data/problems/all/SYN075+1.tptp $(METIS)
+	$(METIS) --show name --show goal --show clauses --show proof $< > $@
+
 doc/logical-kernel.txt: src/Thm.sig Makefile.dev
 	perl -n -e 'if (defined($$a)) { if ($$a++ > 0) { print STDOUT $$_; } } elsif ($$_ =~ /Primitive rules of inference/) { $$a = 0; print STDOUT "signature Thm =\n\ntype clause = LiteralSet.set\n\ntype thm\n\nval clause : thm -> clause\n"; }' < $< > $@
 
 .PHONY: documentation
-documentation: doc/example-cnf-proof.txt doc/logical-kernel.txt
+documentation: doc/example-cnf-proof.txt doc/example-fof-proof.txt doc/logical-kernel.txt
 
 .PHONY: tarball
 tarball: clean doc/DONT-RELEASE Makefile.dev
 	cd .. ; tar cvzhf metis/release/metis.tar.gz --exclude-from metis/doc/DONT-RELEASE metis
 
 .PHONY: release
-release: release-stamp mosml mlton documentation tarball
+release: release-stamp mosml mlton documentation status-test tarball
 	rm -f $(RELEASE_DIR)/*.html $(RELEASE_DIR)/*.jpg $(RELEASE_DIR)/*.txt
 	cp -v doc/*.html doc/*.jpg doc/*.txt $(RELEASE_DIR)/
 	rsync -azv --delete --checksum --size-only --exclude=.cvsignore --exclude=CVS -e ssh $(RELEASE_DIR)/ gilith@gilith.com:public_html/software/metis

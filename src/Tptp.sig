@@ -84,13 +84,13 @@ val destCnfProblem : problem -> {comments : comments,
                                  roles : clauseRoles,
                                  problem : Problem.problem}
 
-val goalFofProblem : problem -> Formula.formula
-
 val normalizeFof : problem -> {roles : clauseRoles,
                                problem : Problem.problem,
                                proofs : clauseProofs} list
 
 val normalizeFofToCnf : problem -> (problem * clauseProofs) list
+
+val goal : problem -> Formula.formula
 
 val read : {filename : string} -> problem
 

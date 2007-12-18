@@ -20,13 +20,17 @@ fun size cls =
      symbols = foldl (fn (cl,n) => n + LiteralSet.symbols cl) 0 cls,
      typedSymbols = foldl (fn (cl,n) => n + LiteralSet.typedSymbols cl) 0 cls};
 
-fun toFormula cls =
-    let
-      fun formulize cl =
-          Formula.listMkDisj (LiteralSet.transform Literal.toFormula cl)
-    in
-      Formula.listMkConj (map formulize cls)
-    end;
+local
+  fun clauseToFormula cl =
+      Formula.listMkDisj (LiteralSet.transform Literal.toFormula cl);
+in
+  fun toFormula cls = Formula.listMkConj (map clauseToFormula cls);
+
+  fun toGoal cls =
+      Formula.Imp
+        (Formula.listMkConj (map (Formula.generalize o clauseToFormula) cls),
+         Formula.False);
+end;
 
 fun toString cls = Formula.toString (toFormula cls);
 

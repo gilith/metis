@@ -513,7 +513,7 @@ val _ = pvFm (nnf (F`~(~(p <=> q) <=> r) <=> ~(p <=> ~(q <=> r))`));
 val () = SAY "Conjunctive normal form";
 (* ------------------------------------------------------------------------- *)
 
-val cnf = pvFms o Normalize.cnf o Formula.Not o Formula.generalize o F;
+val cnf = pvFm o Problem.toFormula o Normalize.cnf o Formula.Not o Formula.generalize o F;
 
 val _ = cnf `p \/ ~p`;
 val _ = cnf `~((p /\ (q \/ r /\ s)) /\ (~p \/ ~q \/ ~s))`;
@@ -679,10 +679,7 @@ val TPTP_DIR = "../data/problems/all";
 fun tptp d f =
     let
       val () = print ("parsing " ^ f ^ "... ")
-      val goal =
-          case Tptp.toGoal (Tptp.read {filename = d ^ "/" ^ f}) of
-            Tptp.Fof goal => goal
-          | Tptp.Cnf prob => Problem.toClauses prob
+      val goal = Tptp.goal (Tptp.read {filename = d ^ "/" ^ f})
       val () = print "ok\n"
     in
       pvFm goal

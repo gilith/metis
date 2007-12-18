@@ -77,7 +77,7 @@ end;
 
 val VERSION = "2.0";
 
-val versionString = "Metis "^VERSION^" (release 20071212)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20071218)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -112,11 +112,11 @@ local
       if notshowing "name" then ()
       else print ("Problem: " ^ filename ^ "\n\n");
 
-  fun display_fof_goal tptp =
+  fun display_goal tptp =
       if notshowing "goal" then ()
       else
         let
-          val goal = Tptp.goalFofProblem tptp
+          val goal = Tptp.goal tptp
         in
           print ("Goal:\n" ^ Formula.toString goal ^ "\n\n")
         end;
@@ -173,6 +173,23 @@ local
             display_proof_body "" proofs th;
             display_proof_end filename
           end;
+
+    fun display_fof_proof filename acc =
+        if notshowing "proof" then ()
+        else
+          let
+            fun display (i,(th,proofs)) =
+                let
+                  val prefix = if length acc = 1 then ""
+                               else "subgoal" ^ Int.toString (i + 1) ^ "_"
+                in
+                  display_proof_body prefix proofs th
+                end
+          in
+            display_proof_start filename;
+            app display (enumerate (rev acc));
+            display_proof_end filename
+          end;
   end;
 
   fun display_saturated filename ths =
@@ -181,7 +198,11 @@ local
         let
 (*DEBUG
           val () = Tptp.write {filename = "saturated.tptp"}
-                     (Tptp.fromProblem (map Thm.clause ths))
+                     (Tptp.mkCnfProblem
+                        {comments = ["Saturated clause set for " ^ filename],
+                         names = LiteralSetMap.new (),
+                         roles = LiteralSetMap.new (),
+                         problem = map Thm.clause ths})
 *)
           val () = print ("\nSZS output start Saturated for " ^ filename ^ "\n")
           val () = app (fn th => print (Thm.toString th ^ "\n")) ths
@@ -197,7 +218,12 @@ local
   fun display_problem filename cls =
       let
 (*DEBUG
-        val () = Tptp.write {filename = "cnf.tptp"} (Tptp.fromProblem cls)
+          val () = Tptp.write {filename = "cnf.tptp"}
+                     (Tptp.mkCnfProblem
+                        {comments = ["CNF clauses for " ^ filename],
+                         names = LiteralSetMap.new (),
+                         roles = LiteralSetMap.new (),
+                         problem = cls})
 *)
         val () = display_clauses cls
         val () = display_size cls
@@ -206,28 +232,15 @@ local
         ()
       end;
 
-  fun display_problems filename problems =
-      List.app (display_problem filename) problems;
-
   fun refute cls =
       Resolution.loop (Resolution.new Resolution.default (map Thm.axiom cls));
-
-(***
-  fun refutable filename cls =
-      let
-        val () = display_problem filename cls
-      in
-        case refute cls of
-          Resolution.Contradiction th => (display_proof filename th; true)
-        | Resolution.Satisfiable ths => (display_saturated filename ths; false)
-      end;
-***)
 in
   fun prove filename =
       let
         val () = display_sep ()
         val () = display_name filename
         val tptp = Tptp.read {filename = filename}
+        val () = display_goal tptp
       in
         if Tptp.isCnfProblem tptp then
           let
@@ -250,20 +263,45 @@ in
           end
         else
           let
-            val () = display_fof_goal tptp
-            val problems = Problem.fromGoal goal
-            val result =
-                if !TEST then (display_problems filename problems; true)
-                else List.all (refutable filename) problems
-            val status =
-                if !TEST then "Unknown"
-                else if Tptp.hasConjecture tptp then
-                  if result then "Theorem" else "CounterSatisfiable"
-                else
-                  if result then "Unsatisfiable" else "Satisfiable"
-            val () = display_status filename status
+            fun refuteAll acc [] =
+                let
+                  val status =
+                      if !TEST then "Unknown"
+                      else if Tptp.hasConjecture tptp then "Theorem"
+                      else "Unsatisfiable"
+
+                  val () = display_status filename status
+
+                  val () = if !TEST then ()
+                           else display_fof_proof filename acc
+                in
+                  true
+                end
+              | refuteAll acc ({roles = _, problem, proofs} :: problems) =
+                let
+                  val () = display_problem filename problem
+                in
+                  if !TEST then refuteAll acc problems
+                  else
+                    case refute problem of
+                      Resolution.Contradiction th =>
+                      refuteAll ((th,proofs) :: acc) problems
+                    | Resolution.Satisfiable ths =>
+                      let
+                        val status =
+                            if Tptp.hasConjecture tptp then "CounterSatisfiable"
+                            else "Satisfiable"
+
+                        val () = display_status filename status
+                        val () = display_saturated filename ths
+                      in
+                        false
+                      end
+                end
+
+            val problems = Tptp.normalizeFof tptp
           in
-            result
+            refuteAll [] problems
           end
       end;
 end;
