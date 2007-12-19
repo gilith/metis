@@ -887,8 +887,18 @@ type clauseRoles = string clauseInfo;
 
 type clauseProofs = Normalize.proof clauseInfo;
 
-fun clauseNameProofs names =
-    LiteralSetMap.transform Normalize.singletonProof names;
+val noClauseNames : clauseNames = LiteralSetMap.new ();
+
+val allClauseNames : clauseNames -> StringSet.set =
+    let
+      fun add (_,n,s) = StringSet.add s n
+    in
+      LiteralSetMap.foldl add StringSet.empty
+    end;
+
+val noClauseRoles : clauseRoles = LiteralSetMap.new ();
+
+val noClauseProofs : clauseProofs = LiteralSetMap.new ();
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP problems.                                                            *)
@@ -915,13 +925,6 @@ fun hasConjecture ({formulas,...} : problem) =
     List.exists formulaIsConjecture formulas;
 
 local
-  val clauseNames =
-      let
-        fun add (_,n,s) = StringSet.add s n
-      in
-        LiteralSetMap.foldl add StringSet.empty
-      end;
-
   fun bump n avoid =
       let
         val s = Int.toString n
@@ -948,7 +951,7 @@ local
 in
   fun mkCnfProblem {comments,names,roles,problem} =
       let
-        val avoid = clauseNames names
+        val avoid = allClauseNames names
         val (formulas,_) = maps (fromClause names roles) problem (0,avoid)
       in
         {comments = comments, formulas = formulas}
@@ -1173,6 +1176,24 @@ end;
 type axiomProofs = Normalize.proof LiteralSetMap.map;
 
 local
+  fun newThmName avoid prefix =
+      let
+        fun bump i =
+            let
+              val name = prefix ^ Int.toString i
+              val i = i + 1
+            in
+              if StringSet.member name avoid then bump i else (name,i)
+            end
+      in
+        bump
+      end;
+
+  fun ppThm prevNames p th =
+      case LiteralSetMap.peek prevNames (Thm.clause th) of
+        SOME name => Parser.addString p name
+      | NONE => raise Error "previous theorem not found";
+
   fun mapSubstTerm maps sub tm =
       let
         val {functionMap, relationMap = _} = maps
@@ -1219,11 +1240,11 @@ local
          ppAtomTstp pp atm;
          Parser.endBlock pp);
 
-  val ppTermInfo = Parser.ppBracket "term(" ")" ppTermTstp;
+  val ppTermInfo = Parser.ppBracket "$fot(" ")" ppTermTstp;
 
-  val ppAtomInfo = Parser.ppBracket "foff(" ")" ppAtomTstp;
+  val ppAtomInfo = Parser.ppBracket "$cnf(" ")" ppAtomTstp;
 
-  val ppLiteralInfo = Parser.ppBracket "foff(" ")" ppLiteralTstp;
+  val ppLiteralInfo = Parser.ppBracket "$cnf(" ")" ppLiteralTstp;
 
   val ppAssumeInfo = ppAtomInfo;
 
@@ -1246,9 +1267,6 @@ local
        Parser.addBreak pp (1,0);
        ppTermInfo pp res);
 
-  val ppAxiomProof =
-      Parser.ppMap StringSet.toList (Parser.ppList Parser.ppString);
-
   fun ppInfInfo maps sub pp inf =
       case inf of
         Proof.Axiom _ => raise Bug "ppInfInfo"
@@ -1263,31 +1281,25 @@ local
         in
           ppEqualityInfo pp (l,p,t)
         end;
-in
-  fun ppProof prefix proofs p prf =
-      let
-        fun thmString n = prefix ^ Int.toString n
 
+  fun ppAxiomProof p prf =
+      (Parser.addString p "fof_to_cnf,";
+       Parser.addBreak p (1,0);
+       Parser.addString p "[],";
+       Parser.addBreak p (1,0);
+       Parser.ppMap StringSet.toList (Parser.ppList Parser.ppString) p prf);
+in
+  fun ppProof prefix names proofs p prf =
+      let
         val maps =
             {functionMap = mappingToTptp (!functionMapping),
              relationMap = mappingToTptp (!relationMapping)}
 
+        val allNames = allClauseNames names
+
         val (_,sub) = mkTptpVars (Proof.freeVars prf)
 
-        val prf = enumerate prf
-
-        fun ppThm p th =
-            let
-              val cl = Thm.clause th
-
-              fun pred (_,(th',_)) = LiteralSet.equal (Thm.clause th') cl
-            in
-              case List.find pred prf of
-                NONE => Parser.addString p "(?)"
-              | SOME (n,_) => Parser.addString p (thmString n)
-            end
-
-        fun ppInf p inf =
+        fun ppInf prevNames p inf =
             let
               val name = Thm.inferenceTypeToString (Proof.inferenceType inf)
               val name = String.map Char.toLower name
@@ -1300,36 +1312,35 @@ in
               | ths =>
                 (Parser.addString p ",";
                  Parser.addBreak p (1,0);
-                 Parser.ppList ppThm p ths)
+                 Parser.ppList (ppThm prevNames) p ths)
             end
 
         fun ppTaut p inf =
             (Parser.addString p "tautology,";
              Parser.addBreak p (1,0);
-             Parser.ppBracket "[" "]" ppInf p inf)
+             Parser.ppBracket "[" "]" (ppInf noClauseNames) p inf)
              
-        fun ppStepInfo p (n,(th,inf)) =
+        fun ppStepInfo prevNames p (name,cl,inf) =
             let
               val is_axiom = case inf of Proof.Axiom _ => true | _ => false
-              val name = thmString n
               val role =
                   if is_axiom then "axiom"
-                  else if Thm.isContradiction th then "theorem"
+                  else if LiteralSet.null cl then "theorem"
                   else "plain"
-              val cl = mapSubstClause maps sub (clauseFromThm th)
+              val cl' = mapSubstClause maps sub (clauseFromLiteralSet cl)
             in
               Parser.addString p (name ^ ",");
               Parser.addBreak p (1,0);
               Parser.addString p (role ^ ",");
               Parser.addBreak p (1,0);
-              Parser.ppBracket "(" ")" ppClause p cl;
+              Parser.ppBracket "(" ")" ppClause p cl';
               if is_axiom then
-                case LiteralSetMap.peek proofs (Thm.clause th) of
+                case LiteralSetMap.peek proofs cl of
                   NONE => ()
                 | SOME axiomPrf =>
                   (Parser.addString p ",";
                    Parser.addBreak p (1,0);
-                   ppAxiomProof p axiomPrf)
+                   Parser.ppBracket "inference(" ")" ppAxiomProof p axiomPrf)
               else
                 let
                   val is_tautology = null (Proof.parents inf)
@@ -1339,17 +1350,26 @@ in
                   if is_tautology then
                     Parser.ppBracket "introduced(" ")" ppTaut p inf
                   else
-                    Parser.ppBracket "inference(" ")" ppInf p inf
+                    Parser.ppBracket "inference(" ")" (ppInf prevNames) p inf
                 end
             end
 
-        fun ppStep p step =
-            (Parser.ppBracket "cnf(" ")" ppStepInfo p step;
-             Parser.addString p ".";
-             Parser.addNewline p)
+        fun ppStep p ((th,inf),(prevNames,i)) =
+            let
+              val cl = Thm.clause th
+              val (name,i) =
+                  case LiteralSetMap.peek names cl of
+                    SOME name => (name,i)
+                  | NONE => newThmName allNames prefix i
+            in
+              Parser.ppBracket "cnf(" ")" (ppStepInfo prevNames) p (name,cl,inf);
+              Parser.addString p ".";
+              Parser.addNewline p;
+              (LiteralSetMap.insert prevNames (cl,name), i)
+            end
       in
         Parser.beginBlock p Parser.Consistent 0;
-        app (ppStep p) prf;
+        foldl (ppStep p) (noClauseNames,0) prf;
         Parser.endBlock p
       end
 (*DEBUG
@@ -1357,8 +1377,8 @@ in
 *)
 end;
 
-fun writeProof {filename, prefix, proofs} =
+fun writeProof {filename,prefix,names,proofs} =
     Stream.toTextFile {filename = filename} o
-    Parser.toStream (ppProof prefix proofs);
+    Parser.toStream (ppProof prefix names proofs);
 
 end

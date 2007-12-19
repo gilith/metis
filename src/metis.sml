@@ -155,9 +155,9 @@ local
     fun display_proof_start filename =
         print ("\nSZS output start CNFRefutation for " ^ filename ^ "\n");
 
-    fun display_proof_body prefix proofs th =
+    fun display_proof_body prefix names proofs th =
         Tptp.writeProof
-          {filename = "-", prefix = prefix, proofs = proofs}
+          {filename = "-", prefix = prefix, names = names, proofs = proofs}
           (Proof.proof th);
 
     fun display_proof_end filename =
@@ -166,13 +166,9 @@ local
     fun display_cnf_proof filename names th = 
         if notshowing "proof" then ()
         else
-          let
-            val proofs = Tptp.clauseNameProofs names
-          in
-            display_proof_start filename;
-            display_proof_body "" proofs th;
-            display_proof_end filename
-          end;
+          (display_proof_start filename;
+           display_proof_body "" names Tptp.noClauseProofs th;
+           display_proof_end filename);
 
     fun display_fof_proof filename acc =
         if notshowing "proof" then ()
@@ -183,7 +179,7 @@ local
                   val prefix = if length acc = 1 then ""
                                else "subgoal" ^ Int.toString (i + 1) ^ "_"
                 in
-                  display_proof_body prefix proofs th
+                  display_proof_body prefix Tptp.noClauseNames proofs th
                 end
           in
             display_proof_start filename;

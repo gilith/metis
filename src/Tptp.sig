@@ -58,7 +58,13 @@ type clauseRoles = string clauseInfo
 
 type clauseProofs = Normalize.proof clauseInfo
 
-val clauseNameProofs : clauseNames -> clauseProofs
+val noClauseNames : clauseNames
+
+val allClauseNames : clauseNames -> StringSet.set
+
+val noClauseRoles : clauseRoles
+
+val noClauseProofs : clauseProofs
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP problems.                                                            *)
@@ -102,8 +108,9 @@ val prove : {filename : string} -> bool
 (* TSTP proofs.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-val writeProof :
-    {filename : string, prefix : string, proofs : clauseProofs} ->
-    Proof.proof -> unit
+val writeProof : {filename : string,
+                  prefix : string,
+                  names : clauseNames,
+                  proofs : clauseProofs} -> Proof.proof -> unit
 
 end
