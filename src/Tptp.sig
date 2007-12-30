@@ -15,6 +15,33 @@ val functionMapping : {name : string, arity : int, tptp : string} list ref
 val relationMapping : {name : string, arity : int, tptp : string} list ref
 
 (* ------------------------------------------------------------------------- *)
+(* TPTP roles.                                                               *)
+(* ------------------------------------------------------------------------- *)
+
+type role = string
+
+val ROLE_AXIOM : role
+val ROLE_CONJECTURE : role
+val ROLE_DEFINITION : role
+val ROLE_NEGATED_CONJECTURE : role
+
+val roleIsCnfConjecture : role -> bool
+
+val roleIsFofConjecture : role -> bool
+
+(* ------------------------------------------------------------------------- *)
+(* SZS Statuses.                                                             *)
+(* ------------------------------------------------------------------------- *)
+
+type status = string
+
+val STATUS_COUNTER_SATISFIABLE : status
+val STATUS_THEOREM : status
+val STATUS_SATISFIABLE : status
+val STATUS_UNKNOWN : status
+val STATUS_UNSATISFIABLE : status
+
+(* ------------------------------------------------------------------------- *)
 (* TPTP literals.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
@@ -35,8 +62,8 @@ val literalFreeVars : literal -> NameSet.set
 (* ------------------------------------------------------------------------- *)
 
 datatype formula =
-    CnfFormula of {name : string, role : string, clause : literal list}
-  | FofFormula of {name : string, role : string, formula : Formula.formula}
+    CnfFormula of {name : string, role : role, clause : literal list}
+  | FofFormula of {name : string, role : role, formula : Formula.formula}
 
 val formulaFunctions : formula -> NameAritySet.set
 
@@ -54,7 +81,7 @@ type 'a clauseInfo = 'a LiteralSetMap.map
 
 type clauseNames = string clauseInfo
 
-type clauseRoles = string clauseInfo
+type clauseRoles = role clauseInfo
 
 type clauseProofs = Normalize.proof clauseInfo
 
@@ -110,6 +137,7 @@ val prove : {filename : string} -> bool
 (* ------------------------------------------------------------------------- *)
 
 val writeProof : {filename : string,
+                  avoid : StringSet.set,
                   prefix : string,
                   names : clauseNames,
                   proofs : clauseProofs} -> Proof.proof -> unit

@@ -211,6 +211,8 @@ val isForall = can destForall;
 fun listMkForall ([],body) = body
   | listMkForall (v :: vs, body) = Forall (v, listMkForall (vs,body));
 
+fun setMkForall (vs,body) = NameSet.foldr Forall body vs;
+
 local
   fun strip vs (Forall (v,b)) = strip (v :: vs) b
     | strip vs tm = (rev vs, tm);
@@ -227,6 +229,8 @@ val isExists = can destExists;
 
 fun listMkExists ([],body) = body
   | listMkExists (v :: vs, body) = Exists (v, listMkExists (vs,body));
+
+fun setMkExists (vs,body) = NameSet.foldr Exists body vs;
 
 local
   fun strip vs (Exists (v,b)) = strip (v :: vs) b

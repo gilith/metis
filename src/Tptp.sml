@@ -9,14 +9,6 @@ struct
 open Useful;
 
 (* ------------------------------------------------------------------------- *)
-(* Constants.                                                                *)
-(* ------------------------------------------------------------------------- *)
-
-val ROLE_AXIOM = "axiom"
-and ROLE_CONJECTURE = "conjecture"
-and ROLE_NEGATED_CONJECTURE = "negated_conjecture";
-
-(* ------------------------------------------------------------------------- *)
 (* Helper functions.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
@@ -131,6 +123,33 @@ fun destComment "" = ""
     end;
 
 val isComment = can destComment;
+
+(* ------------------------------------------------------------------------- *)
+(* TPTP roles.                                                               *)
+(* ------------------------------------------------------------------------- *)
+
+type role = string;
+
+val ROLE_AXIOM = "axiom"
+and ROLE_CONJECTURE = "conjecture"
+and ROLE_DEFINITION = "definition"
+and ROLE_NEGATED_CONJECTURE = "negated_conjecture";
+
+fun roleIsCnfConjecture role = role = ROLE_NEGATED_CONJECTURE;
+
+fun roleIsFofConjecture role = role = ROLE_CONJECTURE;
+
+(* ------------------------------------------------------------------------- *)
+(* SZS Statuses.                                                             *)
+(* ------------------------------------------------------------------------- *)
+
+type status = string;
+
+val STATUS_COUNTER_SATISFIABLE = "CounterSatisfiable"
+and STATUS_THEOREM = "Theorem"
+and STATUS_SATISFIABLE = "Satisfiable"
+and STATUS_UNKNOWN = "Unknown"
+and STATUS_UNSATISFIABLE = "Unsatisfiable";
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP literals.                                                            *)
@@ -351,10 +370,6 @@ val formulasRelations =
     in
       foldl rels NameAritySet.empty
     end;
-
-fun roleIsCnfConjecture role = role = ROLE_NEGATED_CONJECTURE;
-
-fun roleIsFofConjecture role = role = ROLE_CONJECTURE;
 
 fun formulaIsConjecture (CnfFormula {role,...}) = roleIsCnfConjecture role
   | formulaIsConjecture (FofFormula {role,...}) = roleIsFofConjecture role;
@@ -1157,16 +1172,20 @@ end;
 local
   fun mkCommentLine comment = mkComment comment ^ "\n";
 
-  fun formulaStream [] () = Stream.NIL
-    | formulaStream (h :: t) () =
-      Stream.CONS ("\n" ^ formulaToString h, formulaStream t);
+  fun formulaStream _ [] () = Stream.NIL
+    | formulaStream start (h :: t) () =
+      let
+        val s = formulaToString h ^ "\n"
+      in
+        Stream.CONS (if start then s else "\n" ^ s, formulaStream false t)
+      end;
 in
   fun write {filename} {comments,formulas} =
       Stream.toTextFile
         {filename = filename}
         (Stream.append
            (Stream.map mkCommentLine (Stream.fromList comments))
-           (formulaStream (formulasToTptp formulas)));
+           (formulaStream (null comments) (formulasToTptp formulas)));
 end;
 
 local
@@ -1311,13 +1330,11 @@ local
        Parser.addBreak p (1,0);
        Parser.ppMap StringSet.toList (Parser.ppList Parser.ppString) p prf);
 in
-  fun ppProof prefix names proofs p prf =
+  fun ppProof avoid prefix names proofs p prf =
       let
         val maps =
             {functionMap = mappingToTptp (!functionMapping),
              relationMap = mappingToTptp (!relationMapping)}
-
-        val allNames = allClauseNames names
 
         val (_,sub) = mkTptpVars (Proof.freeVars prf)
 
@@ -1376,22 +1393,24 @@ in
                 end
             end
 
-        fun ppStep p ((th,inf),(prevNames,i)) =
+        fun ppStep p ((th,inf),(start,prevNames,i)) =
             let
               val cl = Thm.clause th
               val (name,i) =
                   case LiteralSetMap.peek names cl of
                     SOME name => (name,i)
-                  | NONE => newThmName allNames prefix i
+                  | NONE => newThmName avoid prefix i
             in
-              Parser.ppBracket "cnf(" ")" (ppStepInfo prevNames) p (name,cl,inf);
+              if start then () else Parser.addNewline p;
+              Parser.ppBracket
+                "cnf(" ")" (ppStepInfo prevNames) p (name,cl,inf);
               Parser.addString p ".";
               Parser.addNewline p;
-              (LiteralSetMap.insert prevNames (cl,name), i)
+              (false, LiteralSetMap.insert prevNames (cl,name), i)
             end
       in
         Parser.beginBlock p Parser.Consistent 0;
-        foldl (ppStep p) (noClauseNames,0) prf;
+        List.foldl (ppStep p) (true,noClauseNames,0) prf;
         Parser.endBlock p
       end
 (*DEBUG
@@ -1399,8 +1418,8 @@ in
 *)
 end;
 
-fun writeProof {filename,prefix,names,proofs} =
+fun writeProof {filename,avoid,prefix,names,proofs} =
     Stream.toTextFile {filename = filename} o
-    Parser.toStream (ppProof prefix names proofs);
+    Parser.toStream (ppProof avoid prefix names proofs);
 
 end

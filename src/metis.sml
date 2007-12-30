@@ -77,7 +77,7 @@ end;
 
 val VERSION = "2.0";
 
-val versionString = "Metis "^VERSION^" (release 20071218)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20071230)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -155,10 +155,14 @@ local
     fun display_proof_start filename =
         print ("\nSZS output start CNFRefutation for " ^ filename ^ "\n");
 
-    fun display_proof_body prefix names proofs th =
+    fun display_proof_body avoid prefix names proofs proof =
         Tptp.writeProof
-          {filename = "-", prefix = prefix, names = names, proofs = proofs}
-          (Proof.proof th);
+          {filename = "-",
+           avoid = avoid,
+           prefix = prefix,
+           names = names,
+           proofs = proofs}
+          proof;
 
     fun display_proof_end filename =
         print ("SZS output end CNFRefutation for " ^ filename ^ "\n\n");
@@ -166,24 +170,88 @@ local
     fun display_cnf_proof filename names th = 
         if notshowing "proof" then ()
         else
-          (display_proof_start filename;
-           display_proof_body "" names Tptp.noClauseProofs th;
-           display_proof_end filename);
+          let
+            val avoid = Tptp.allClauseNames names
+            and prefix = ""
+            and proofs = Tptp.noClauseProofs
+            and proof = Proof.proof th
+          in
+            display_proof_start filename;
+            display_proof_body avoid prefix names proofs proof;
+            display_proof_end filename
+          end;
 
-    fun display_fof_proof filename acc =
+    fun display_fof_proof filename tptp acc =
         if notshowing "proof" then ()
         else
           let
-            fun display (i,(definitions,proofs,th)) =
+            fun calc_used ((defns,proofs,th),(avoid,used,defs,acc)) =
                 let
-                  val prefix = if length acc = 1 then ""
+                  fun add_line ((t,_),used) =
+                      case LiteralSetMap.peek proofs (Thm.clause t) of
+                        NONE => used
+                      | SOME set => StringSet.union set used
+
+                  val proof = Proof.proof th
+                  val used = List.foldl add_line used proof
+
+                  fun add_def ((name,def),(avoid,defs)) =
+                      (StringSet.add avoid name,
+                       if not (StringSet.member name used) then defs
+                       else StringMap.insert defs (name,def))
+
+                  val (avoid,defs) = List.foldl add_def (avoid,defs) defns
+                  val acc = (proofs,proof) :: acc
+                in
+                  (avoid,used,defs,acc)
+                end
+
+            val avoid = StringSet.empty
+            and used = StringSet.empty
+            and defs = StringMap.new ()
+            val (avoid,used,defs,acc) =
+                List.foldl calc_used (avoid,used,defs,[]) acc
+
+            fun get_used (formula,(avoid,formulas)) =
+                case formula of
+                  Tptp.FofFormula {name,...} =>
+                  (StringSet.add avoid name,
+                   if not (StringSet.member name used) then formulas
+                   else formula :: formulas)
+                | Tptp.CnfFormula _ => raise Bug "get_used"
+
+            val {comments = _, formulas} = tptp
+            val (avoid,formulas) = List.foldl get_used (avoid,[]) formulas
+
+            fun add_def (name,def,formulas) =
+                let
+                  val role = Tptp.ROLE_DEFINITION
+                  val formula =
+                      Tptp.FofFormula {name = name, role = role, formula = def}
+                in
+                  formula :: formulas
+                end
+
+            val formulas = StringMap.foldl add_def formulas defs
+
+            val axioms = {comments = [], formulas = rev formulas}
+
+            val names = Tptp.noClauseNames
+
+            fun display n ((proofs,proof),(start,i)) =
+                let
+                  val prefix = if n = 1 then ""
                                else "subgoal" ^ Int.toString (i + 1) ^ "_"
                 in
-                  display_proof_body prefix Tptp.noClauseNames proofs th
+                  if start then () else print "\n";
+                  display_proof_body avoid prefix names proofs proof;
+                  (false, i + 1)
                 end
           in
             display_proof_start filename;
-            app display (enumerate (rev acc));
+            if null formulas then ()
+            else Tptp.write {filename = "-"} axioms;
+            List.foldl (display (length acc)) (null formulas, 0) acc;
             display_proof_end filename
           end;
   end;
@@ -244,16 +312,16 @@ in
             val () = display_problem filename problem
           in
             if !TEST then
-              (display_status filename "Unknown";
+              (display_status filename Tptp.STATUS_UNKNOWN;
                true)
             else
               case refute problem of
                 Resolution.Contradiction th =>
-                (display_status filename "Unsatisfiable";
+                (display_status filename Tptp.STATUS_UNSATISFIABLE;
                  display_cnf_proof filename names th;
                  true)
               | Resolution.Satisfiable ths =>
-                (display_status filename "Satisfiable";
+                (display_status filename Tptp.STATUS_SATISFIABLE;
                  display_saturated filename ths;
                  false)
           end
@@ -262,14 +330,14 @@ in
             fun refuteAll acc [] =
                 let
                   val status =
-                      if !TEST then "Unknown"
-                      else if Tptp.hasConjecture tptp then "Theorem"
-                      else "Unsatisfiable"
+                      if !TEST then Tptp.STATUS_UNKNOWN
+                      else if Tptp.hasConjecture tptp then Tptp.STATUS_THEOREM
+                      else Tptp.STATUS_UNSATISFIABLE
 
                   val () = display_status filename status
 
                   val () = if !TEST then ()
-                           else display_fof_proof filename acc
+                           else display_fof_proof filename tptp acc
                 in
                   true
                 end
@@ -286,8 +354,10 @@ in
                     | Resolution.Satisfiable ths =>
                       let
                         val status =
-                            if Tptp.hasConjecture tptp then "CounterSatisfiable"
-                            else "Satisfiable"
+                            if Tptp.hasConjecture tptp then
+                              Tptp.STATUS_COUNTER_SATISFIABLE
+                            else
+                              Tptp.STATUS_SATISFIABLE
 
                         val () = display_status filename status
                         val () = display_saturated filename ths

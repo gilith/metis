@@ -92,6 +92,8 @@ val isForall : formula -> bool
 
 val listMkForall : Term.var list * formula -> formula
 
+val setMkForall : NameSet.set * formula -> formula
+
 val stripForall : formula -> Term.var list * formula
 
 (* Existential quantification *)
@@ -101,6 +103,8 @@ val destExists : formula -> Term.var * formula
 val isExists : formula -> bool
 
 val listMkExists : Term.var list * formula -> formula
+
+val setMkExists : NameSet.set * formula -> formula
 
 val stripExists : formula -> Term.var list * formula
 

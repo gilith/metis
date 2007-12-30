@@ -1063,11 +1063,11 @@ fun newDefinition def =
       val fv = freeVars def
       val rel = newDefinitionRelation ()
       val atm = (rel, NameSet.transform Term.Var fv)
+      val fm = Formula.Iff (Formula.Atom atm, toFormula def)
       val lit = Literal (fv,(false,atm))
       val prf = singletonProof rel
     in
-      ((rel, Formula.Iff (Formula.Atom atm, toFormula def)),
-       (Xor2 (lit,def), prf))
+      ((rel, Formula.setMkForall (fv,fm)), (Xor2 (lit,def), prf))
     end;
 
 (* ------------------------------------------------------------------------- *)
