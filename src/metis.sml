@@ -174,7 +174,7 @@ local
         if notshowing "proof" then ()
         else
           let
-            fun display (i,(th,proofs)) =
+            fun display (i,(definitions,proofs,th)) =
                 let
                   val prefix = if length acc = 1 then ""
                                else "subgoal" ^ Int.toString (i + 1) ^ "_"
@@ -196,8 +196,8 @@ local
           val () = Tptp.write {filename = "saturated.tptp"}
                      (Tptp.mkCnfProblem
                         {comments = ["Saturated clause set for " ^ filename],
-                         names = LiteralSetMap.new (),
-                         roles = LiteralSetMap.new (),
+                         names = Tptp.noClauseNames,
+                         roles = Tptp.noClauseRoles,
                          problem = map Thm.clause ths})
 *)
           val () = print ("\nSZS output start Saturated for " ^ filename ^ "\n")
@@ -217,8 +217,8 @@ local
           val () = Tptp.write {filename = "cnf.tptp"}
                      (Tptp.mkCnfProblem
                         {comments = ["CNF clauses for " ^ filename],
-                         names = LiteralSetMap.new (),
-                         roles = LiteralSetMap.new (),
+                         names = Tptp.noClauseNames,
+                         roles = Tptp.noClauseRoles,
                          problem = cls})
 *)
         val () = display_clauses cls
@@ -273,15 +273,16 @@ in
                 in
                   true
                 end
-              | refuteAll acc ({roles = _, problem, proofs} :: problems) =
+              | refuteAll acc (prob :: problems) =
                 let
+                  val {definitions, roles = _, problem, proofs} = prob
                   val () = display_problem filename problem
                 in
                   if !TEST then refuteAll acc problems
                   else
                     case refute problem of
                       Resolution.Contradiction th =>
-                      refuteAll ((th,proofs) :: acc) problems
+                      refuteAll ((definitions,proofs,th) :: acc) problems
                     | Resolution.Satisfiable ths =>
                       let
                         val status =

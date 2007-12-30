@@ -90,11 +90,12 @@ val destCnfProblem : problem -> {comments : comments,
                                  roles : clauseRoles,
                                  problem : Problem.problem}
 
-val normalizeFof : problem -> {roles : clauseRoles,
+val normalizeFof : problem -> {definitions : (string * Formula.formula) list,
+                               roles : clauseRoles,
                                problem : Problem.problem,
                                proofs : clauseProofs} list
 
-val normalizeFofToCnf : problem -> (problem * clauseProofs) list
+val normalizeFofToCnf : problem -> problem list
 
 val goal : problem -> Formula.formula
 

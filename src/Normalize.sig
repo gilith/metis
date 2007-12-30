@@ -30,13 +30,15 @@ val combineProofs : proof -> proof -> proof
 
 type cnfState
 
+type cnfResult =
+     {definitions : (string * Formula.formula) list,
+      clauses : (Thm.clause * proof) list}
+
 val cnfStateInitial : cnfState
 
-val cnfStateAdd :
-    Formula.formula * proof -> cnfState ->
-    (Thm.clause * proof) list * cnfState
+val cnfStateAdd : Formula.formula * proof -> cnfState -> cnfResult * cnfState
 
-val cnfProof : (Formula.formula * proof) list -> (Thm.clause * proof) list
+val cnfProof : (Formula.formula * proof) list -> cnfResult
 
 val cnf : Formula.formula -> Thm.clause list
 

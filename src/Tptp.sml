@@ -993,6 +993,18 @@ in
       end;
 end;
 
+type normalizedFof =
+     {definitions : (string * Formula.formula) list,
+      roles : clauseRoles,
+      problem : Problem.problem,
+      proofs : clauseProofs};
+
+val initialNormalizedFof : normalizedFof =
+    {definitions = [],
+     roles = LiteralSetMap.new (),
+     problem = [],
+     proofs = LiteralSetMap.new ()};
+
 local
   fun partitionFofFormula (fm,(axioms,goals)) =
       case fm of
@@ -1008,26 +1020,39 @@ local
         {axioms = rev axioms, goals = rev goals}
       end;
 
-  fun addClause role ((cl,prf),{roles,problem,proofs}) =
+  fun addClauses role new acc : normalizedFof =
       let
-        val roles = LiteralSetMap.insert roles (cl,role)
-        and problem = cl :: problem
-        and proofs = LiteralSetMap.insert proofs (cl,prf)
+        fun addClause ((cl,prf),(roles,proofs)) =
+            (LiteralSetMap.insert roles (cl,role),
+             LiteralSetMap.insert proofs (cl,prf))
+            
+        val {definitions = defs, clauses = cls} = new
+        and {definitions,roles,problem,proofs} : normalizedFof = acc
+
+        val definitions = defs @ definitions
+        and problem = map fst cls @ problem
+        and (roles,proofs) = List.foldl addClause (roles,proofs) cls
       in
-        {roles = roles, problem = problem, proofs = proofs}
+        {definitions = definitions,
+         roles = roles,
+         problem = problem,
+         proofs = proofs}
       end
 
-  fun addClauses role ((name,fm),(prob,cnf)) =
+  fun addFof role ((name,fm),(acc,cnf)) =
       let
         val prf = Normalize.singletonProof name
-        val (cls,cnf) = Normalize.cnfStateAdd (fm,prf) cnf
-        val prob = List.foldl (addClause role) prob (rev cls)
+        val (new,cnf) = Normalize.cnfStateAdd (fm,prf) cnf
+        val acc = addClauses role new acc
       in
-        (prob,cnf)
+        (acc,cnf)
       end;
 
-  fun mkProblem ({roles,problem,proofs},_) =
-      {roles = roles, problem = rev problem, proofs = proofs};
+  fun mkProblem ({definitions,roles,problem,proofs},_) : normalizedFof =
+      {definitions = rev definitions,
+       roles = roles,
+       problem = rev problem,
+       proofs = proofs};
 in
   fun goalFofProblem ({formulas,...} : problem) =
       let
@@ -1042,14 +1067,11 @@ in
         | (false,false) => Formula.Imp (hyp,concl)
       end;
 
-  fun normalizeFof ({formulas,...} : problem) =
+  fun normalizeFof ({formulas,...} : problem) : normalizedFof list =
       let
         val {axioms,goals} = partitionFofFormulas formulas
-        val acc = ({roles = LiteralSetMap.new (),
-                    problem = [],
-                    proofs = LiteralSetMap.new ()},
-                   Normalize.cnfStateInitial)
-        val acc = List.foldl (addClauses ROLE_AXIOM) acc axioms
+        val acc = (initialNormalizedFof, Normalize.cnfStateInitial)
+        val acc = List.foldl (addFof ROLE_AXIOM) acc axioms
       in
         if null goals then [mkProblem acc]
         else
@@ -1057,7 +1079,7 @@ in
             fun mk (name,goal) =
                 let
                   val goal = Formula.Not (Formula.generalize goal)
-                  val acc = addClauses ROLE_NEGATED_CONJECTURE ((name,goal),acc)
+                  val acc = addFof ROLE_NEGATED_CONJECTURE ((name,goal),acc)
                 in
                   mkProblem acc
                 end
@@ -1077,7 +1099,7 @@ fun normalizeFofToCnf (problem as {comments,...}) =
 
       val n = Int.toString (length problems)
 
-      fun mk {roles,problem,proofs} i =
+      fun mk {definitions = _, roles, problem, proofs = _} i =
           let
             val i = i + 1
             val comments =
@@ -1087,7 +1109,7 @@ fun normalizeFofToCnf (problem as {comments,...}) =
                                      roles = roles,
                                      problem = problem}
           in
-            ((prob,proofs),i)
+            (prob,i)
           end
 
       val (probs,_) = maps mk problems 0
@@ -1163,7 +1185,7 @@ in
         val problem = read filename
         val problems =
             if isCnfProblem problem then [problem]
-            else map fst (normalizeFofToCnf problem)
+            else normalizeFofToCnf problem
       in
         List.all refute problems
       end;

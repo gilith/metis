@@ -1063,15 +1063,20 @@ fun newDefinition def =
       val fv = freeVars def
       val rel = newDefinitionRelation ()
       val atm = (rel, NameSet.transform Term.Var fv)
-      val lit = Literal (fv,(true,atm))
+      val lit = Literal (fv,(false,atm))
       val prf = singletonProof rel
     in
-      (Xor2 (lit,def), prf)
+      ((rel, Formula.Iff (Formula.Atom atm, toFormula def)),
+       (Xor2 (lit,def), prf))
     end;
 
 (* ------------------------------------------------------------------------- *)
 (* Definitional conjunctive normal form.                                     *)
 (* ------------------------------------------------------------------------- *)
+
+type cnfResult =
+     {definitions : (string * Formula.formula) list,
+      clauses : (Thm.clause * proof) list};
 
 datatype cnfState =
     CnfState of simplify
@@ -1080,31 +1085,32 @@ datatype cnfState =
 val cnfStateInitial = CnfState simplifyEmpty;
 
 local
-  fun def_cnf prob simp [] = (prob, CnfState simp)
-    | def_cnf prob simp (fm :: fms) =
-      def_cnf_formula prob simp (simplify simp fm) fms
+  fun def_cnf defs cls simp [] =
+      ({definitions = defs, clauses = cls}, CnfState simp)
+    | def_cnf defs cls simp (fm :: fms) =
+      def_cnf_formula defs cls simp (simplify simp fm) fms
 
-  and def_cnf_formula prob simp (fm_prf as (fm,prf)) fms =
+  and def_cnf_formula defs cls simp (fm_prf as (fm,prf)) fms =
       case fm of
-        True => def_cnf prob simp fms
-      | False => def_cnf_inconsistent prf
+        True => def_cnf defs cls simp fms
+      | False => def_cnf_inconsistent defs prf
       | And (_,_,s) =>
         let
           fun add (f,z) = (f,prf) :: z
         in
-          def_cnf prob simp (Set.foldr add fms s)
+          def_cnf defs cls simp (Set.foldr add fms s)
         end
       | Exists (fv,_,n,f) =>
-        def_cnf_formula prob simp (skolemize fv n f, prf) fms
-      | Forall (_,_,_,f) => def_cnf_formula prob simp (f,prf) fms
+        def_cnf_formula defs cls simp (skolemize fv n f, prf) fms
+      | Forall (_,_,_,f) => def_cnf_formula defs cls simp (f,prf) fms
       | _ =>
         case minimumDefinition fm of
           SOME def =>
           let
-            val def_fm = newDefinition def
+            val (def,fm) = newDefinition def
             and fms = fm_prf :: fms
           in
-            def_cnf_formula prob simp def_fm fms
+            def_cnf_formula (def :: defs) cls simp fm fms
           end
         | NONE =>
           let
@@ -1118,35 +1124,46 @@ local
 *)
           in
             case basicCnf fm of
-              True => def_cnf prob simp fms
-            | False => def_cnf_inconsistent prf
-            | And (_,_,s) => def_cnf (Set.foldl add prob s) simp fms
-            | fm => def_cnf (add (fm,prob)) simp fms
+              True => def_cnf defs cls simp fms
+            | False => def_cnf_inconsistent defs prf
+            | And (_,_,s) => def_cnf defs (Set.foldl add cls s) simp fms
+            | fm => def_cnf defs (add (fm,cls)) simp fms
           end
 
-  and def_cnf_inconsistent prf = ([(LiteralSet.empty,prf)],CnfInconsistent);
+  and def_cnf_inconsistent defs prf =
+      let
+        val cls = [(LiteralSet.empty,prf)]
+      in
+        ({definitions = defs, clauses = cls}, CnfInconsistent)
+      end;
 in
   fun cnfStateAdd (fm,prf) (CnfState simp) =
-      def_cnf [] simp [(fromFormula fm, prf)]
-    | cnfStateAdd _ CnfInconsistent = ([],CnfInconsistent);
+      def_cnf [] [] simp [(fromFormula fm, prf)]
+    | cnfStateAdd _ CnfInconsistent =
+      ({definitions = [], clauses = []}, CnfInconsistent);
 end;
 
 local
-  fun add (fm,(prob,state)) =
+  fun add (fm,(defs,cls,state)) =
       let
-        val (cls,state) = cnfStateAdd fm state
+        val ({definitions,clauses},state) = cnfStateAdd fm state
       in
-        (cls @ prob, state)
+        (definitions @ defs, clauses @ cls, state)
       end;
 in
-  fun cnfProof fms =
+  fun cnfProof fms : cnfResult =
       let
-        val (prob,_) = List.foldl add ([],cnfStateInitial) fms
+        val (defs,cls,_) = List.foldl add ([],[],cnfStateInitial) fms
       in
-        rev prob
+        {definitions = rev defs, clauses = rev cls}
       end;
 end;
 
-fun cnf fm = map fst (cnfProof [(fm,noProof)]);
+fun cnf fm =
+    let
+      val {clauses,...} = cnfProof [(fm,noProof)]
+    in
+      map fst clauses
+    end;
 
 end
