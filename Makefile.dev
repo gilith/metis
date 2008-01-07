@@ -33,19 +33,6 @@ TEMP += $(TEMPFILE) \
 # The Moscow ML compiler.
 ###############################################################################
 
-###############################################################################
-# The MLton compiler.
-###############################################################################
-
-MLTON_OPTS += -verbose 1 -keep ssa -keep ssa2
-#MLTON_OPTS += -inline 100000
-#MLTON_OPTS += -const 'MLton.safe false' -const 'MLton.detectOverflow false'
-#MLTON_OPTS += -const 'Exn.keepHistory true'
-
-###############################################################################
-# Automatically generated dependencies.
-###############################################################################
-
 MOSML_DEP = scripts/mosml_dep
 
 bin/mosml/Makefile.src: Makefile Makefile.dev $(MOSML_DEP) $(MLPP)
@@ -55,6 +42,15 @@ bin/mosml/Makefile.src: Makefile Makefile.dev $(MOSML_DEP) $(MLPP)
 	@echo '****************************************************'
 	@echo
 	@$(MOSML_DEP) $(MOSML_SRC) $(MOSML_TARGETS) > $@
+
+###############################################################################
+# The MLton compiler.
+###############################################################################
+
+MLTON_OPTS += -verbose 1 -keep ssa -keep ssa2
+#MLTON_OPTS += -inline 100000
+#MLTON_OPTS += -const 'MLton.safe false' -const 'MLton.detectOverflow false'
+#MLTON_OPTS += -const 'Exn.keepHistory true'
 
 ###############################################################################
 # Moving source files around.
