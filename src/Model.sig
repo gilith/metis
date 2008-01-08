@@ -79,6 +79,10 @@ val interpretClause : model -> valuation -> Thm.clause -> bool
 (* Note: if it's cheaper, a systematic check will be performed instead.      *)
 (* ------------------------------------------------------------------------- *)
 
+val check :
+    (model -> valuation -> 'a -> bool) -> {maxChecks : int} -> model ->
+    NameSet.set -> 'a -> {T : int, F : int}
+
 val checkAtom :
     {maxChecks : int} -> model -> Atom.atom -> {T : int, F : int}
 

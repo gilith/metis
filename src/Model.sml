@@ -772,35 +772,35 @@ fun interpretClause M V cl = LiteralSet.exists (interpretLiteral M V) cl;
 (* Note: if it's cheaper, a systematic check will be performed instead.      *)
 (* ------------------------------------------------------------------------- *)
 
-local
-  fun checkGen freeVars interpret {maxChecks} M x =
-      let
-        val N = size M
+fun check interpret {maxChecks} M fv x =
+    let
+      val N = size M
             
-        fun score (V,{T,F}) =
-            if interpret M V x then {T = T + 1, F = F} else {T = T, F = F + 1}
+      fun score (V,{T,F}) =
+          if interpret M V x then {T = T + 1, F = F} else {T = T, F = F + 1}
 
-        val vs = freeVars x
+      fun randomCheck acc = score (valuationRandom {size = N} fv, acc)
 
-        fun randomCheck acc = score (valuationRandom {size = N} vs, acc)
+      val small =
+          case intExp N (NameSet.size fv) of
+            SOME n => n <= maxChecks
+          | NONE => false
+    in
+      if small then valuationFold {size = N} fv score {T = 0, F = 0}
+      else funpow maxChecks randomCheck {T = 0, F = 0}
+    end;
 
-        val small =
-            case intExp N (NameSet.size vs) of
-              SOME n => n <= maxChecks
-            | NONE => false
-      in
-        if small then valuationFold {size = N} vs score {T = 0, F = 0}
-        else funpow maxChecks randomCheck {T = 0, F = 0}
-      end;
-in
-  val checkAtom = checkGen Atom.freeVars interpretAtom;
+fun checkAtom maxChecks M atm =
+    check interpretAtom maxChecks M (Atom.freeVars atm) atm;
 
-  val checkFormula = checkGen Formula.freeVars interpretFormula;
+fun checkFormula maxChecks M fm =
+    check interpretFormula maxChecks M (Formula.freeVars fm) fm;
 
-  val checkLiteral = checkGen Literal.freeVars interpretLiteral;
-
-  val checkClause = checkGen LiteralSet.freeVars interpretClause;
-end;
+fun checkLiteral maxChecks M lit =
+    check interpretLiteral maxChecks M (Literal.freeVars lit) lit;
+    
+fun checkClause maxChecks M cl =
+    check interpretClause maxChecks M (LiteralSet.freeVars cl) cl;
 
 (* ------------------------------------------------------------------------- *)
 (* Perturbing the model.                                                     *)

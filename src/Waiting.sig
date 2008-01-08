@@ -7,15 +7,39 @@ signature Waiting =
 sig
 
 (* ------------------------------------------------------------------------- *)
-(* A type of waiting sets of clauses.                                        *)
+(* The parameters control the order that clauses are removed from the        *)
+(* waiting set: clauses are assigned a weight and removed in strict weight   *)
+(* order, with smaller weights being removed before larger weights.          *)
+(*                                                                           *)
+(* The weight of a clause is defined to be                                   *)
+(*                                                                           *)
+(*   d * s^symbolsWeight * l^literalsWeight * m                              *)
+(*                                                                           *)
+(* where                                                                     *)
+(*                                                                           *)
+(*   d = the derivation distance of the clause from the axioms               *)
+(*   s = the number of symbols in the clause                                 *)
+(*   l = the number of literals in the clause                                *)
+(*   m = the truth of the clause wrt the models                              *)
 (* ------------------------------------------------------------------------- *)
 
+type weight = real
+
+type modelParameters =
+     {model : Model.parameters,
+      initialPerturbations : int,
+      checks : int,
+      perturbations : int,
+      weight : weight}
+
 type parameters =
-     {symbolsWeight : real,
-      literalsWeight : real,
-      models : {model : Model.parameters,
-                checks : int,
-                weight : real} list}
+     {symbolsWeight : weight,
+      literalsWeight : weight,
+      models : modelParameters list}
+
+(* ------------------------------------------------------------------------- *)
+(* A type of waiting sets of clauses.                                        *)
+(* ------------------------------------------------------------------------- *)
 
 type waiting
 
