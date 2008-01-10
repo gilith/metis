@@ -1087,15 +1087,23 @@ in
         if null goals then [mkProblem acc]
         else
           let
-            fun mk (name,goal) =
+            fun mk name goal =
                 let
                   val goal = Formula.Not (Formula.generalize goal)
                   val acc = addFof ROLE_NEGATED_CONJECTURE ((name,goal),acc)
                 in
                   mkProblem acc
                 end
+
+            fun split (name,goal) =
+                let
+                  val goals = Formula.splitGoal goal
+                  val goals = if null goals then [Formula.True] else goals
+                in
+                  map (mk name) goals
+                end
           in
-            map mk goals
+            List.concat (map split goals)
           end
       end;
 end;

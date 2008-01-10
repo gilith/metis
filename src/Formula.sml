@@ -452,6 +452,57 @@ fun lhs fm = fst (destEq fm);
 fun rhs fm = snd (destEq fm);
 
 (* ------------------------------------------------------------------------- *)
+(* Splitting goals.                                                          *)
+(* ------------------------------------------------------------------------- *)
+
+local
+  fun split acc [] = rev acc
+    | split acc ((asms,pol,fm) :: rest) =
+      case (pol,fm) of
+        (* Positive splittables *)
+        (true,True) =>
+        split acc rest
+      | (true, Not f) =>
+        split acc ((asms,false,f) :: rest)
+      | (true, And (f1,f2)) =>
+        split acc ((asms,true,f1) :: (f1 :: asms, true, f2) :: rest)
+      | (true, Or (f1,f2)) =>
+        split acc ((Not f1 :: asms, true, f2) :: rest)
+      | (true, Imp (f1,f2)) =>
+        split acc ((f1 :: asms, true, f2) :: rest)
+      | (true, Iff (f1,f2)) =>
+        split acc ((f1 :: asms, true, f2) :: (f2 :: asms, true, f1) :: rest)
+      | (true, Forall (_,f)) =>
+        split acc ((asms,true,f) :: rest)
+        (* Negative splittables *)
+      | (false,False) =>
+        split acc rest
+      | (false, Not f) =>
+        split acc ((asms,true,f) :: rest)
+      | (false, And (f1,f2)) =>
+        split acc ((f1 :: asms, false, f2) :: rest)
+      | (false, Or (f1,f2)) =>
+        split acc ((asms,false,f1) :: (Not f1 :: asms, false, f2) :: rest)
+      | (false, Imp (f1,f2)) =>
+        split acc ((asms,true,f1) :: (f1 :: asms, false, f2) :: rest)
+      | (false, Iff (f1,f2)) =>
+        split acc ((f1 :: asms, false, f2) :: (f2 :: asms, false, f1) :: rest)
+      | (false, Exists (_,f)) =>
+        split acc ((asms,false,f) :: rest)
+        (* Unsplittables *)
+      | _ =>
+        let
+          val goal = if pol then fm else Not fm
+          val goal =
+              if null asms then goal else Imp (listMkConj (rev asms), goal)
+        in
+          split (goal :: acc) rest
+        end;
+in
+  fun splitGoal fm = split [] [([],true,fm)];
+end;
+
+(* ------------------------------------------------------------------------- *)
 (* Parsing and pretty-printing.                                              *)
 (* ------------------------------------------------------------------------- *)
 
