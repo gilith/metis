@@ -1,7 +1,7 @@
 % -----------------------------------------------------------------------------
-% Name: QUOTED TERMS IDENTITY
+% Name: QUOTED TERMS DIFFERENT
 %
-% The quoted name 'p' is the same as the name p.
+% The quoted name 'p' is not the same as the name p.
 % -----------------------------------------------------------------------------
 
 fof(a,axiom,'p').

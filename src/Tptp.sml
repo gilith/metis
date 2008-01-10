@@ -470,12 +470,7 @@ local
 
   fun punctParser c = somePunct (equal c) >> K ();
 
-  fun quoteParser p =
-      let
-        fun q s = if p s then s else "'" ^ s ^ "'"
-      in
-        maybe (fn Quote s => SOME (q s) | _ => NONE)
-      end;
+  val quoteParser = maybe (fn Quote s => SOME ("'" ^ s ^ "'") | _ => NONE);
 
   local
     fun f [] = raise Bug "symbolParser"
@@ -492,7 +487,7 @@ local
       punctParser #"$" ++ punctParser #"$" ++ someAlphaNum (K true) >>
       (fn ((),((),s)) => "$$" ^ s);
 
-  val nameParser = stringParser || numberParser || quoteParser (K false);
+  val nameParser = stringParser || numberParser || quoteParser;
 
   val roleParser = lowerParser;
 
@@ -501,7 +496,7 @@ local
   in
     val propositionParser =
         someAlphaNum isProposition ||
-        definedParser || systemParser || quoteParser isProposition;
+        definedParser || systemParser || quoteParser;
   end;
 
   local
@@ -509,7 +504,7 @@ local
   in
     val functionParser =
         someAlphaNum isFunction ||
-        definedParser || systemParser || quoteParser isFunction;
+        definedParser || systemParser || quoteParser;
   end;
 
   local
@@ -519,7 +514,7 @@ local
   in
     val constantParser =
         someAlphaNum isConstant ||
-        definedParser || systemParser || quoteParser isConstant;
+        definedParser || systemParser || quoteParser;
   end;
 
   val varParser = upperParser;
