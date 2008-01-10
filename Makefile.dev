@@ -127,10 +127,8 @@ SATISFIABLE_SET = $(PROBLEM_DIR)/satisfiable
 TPTP_CNF_SET = $(PROBLEM_DIR)/tptp-cnf
 TPTP_FOF_SET = $(PROBLEM_DIR)/tptp-fof
 
-.PHONY: problems
-problems: $(PROBLEMS2TPTP)
-	if test -d $(PROBLEM_DIR) ; then rm -r $(PROBLEM_DIR)/ ; fi ; mkdir $(PROBLEM_DIR)
-	mkdir $(ALL_SET)
+.PHONY: problems-all
+problems-all: $(PROBLEMS2TPTP)
 	$(PROBLEMS2TPTP) --output-dir $(ALL_SET)
 	@cp $(TPTP_PROBLEM_DIR)/BOO/BOO021-1.tptp $(ALL_SET)
 	@cp $(TPTP_PROBLEM_DIR)/COL/COL058-2.tptp $(ALL_SET)
@@ -140,6 +138,12 @@ problems: $(PROBLEMS2TPTP)
 	@cp $(TPTP_PROBLEM_DIR)/PUZ/PUZ001-1.tptp $(ALL_SET)
 	@cp $(TPTP_PROBLEM_DIR)/SYN/SYN075-1.tptp $(ALL_SET)
 	@cp $(TPTP_PROBLEM_DIR)/SYN/SYN075+1.tptp $(ALL_SET)
+
+.PHONY: problems
+problems: $(PROBLEMS2TPTP)
+	if test -d $(PROBLEM_DIR) ; then rm -r $(PROBLEM_DIR)/ ; fi ; mkdir $(PROBLEM_DIR)
+	mkdir $(ALL_SET)
+	$(MAKE) problems-all
 	mkdir $(NONEQUALITY_SET)
 	for p in `$(PROBLEMS2TPTP) --collection nonequality --list` ; do $(COPY_PROBLEM) $(ALL_SET)/$$p.tptp $(NONEQUALITY_SET) ; done
 	mkdir $(EQUALITY_SET)

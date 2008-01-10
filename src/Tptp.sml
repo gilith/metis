@@ -34,6 +34,7 @@ val functionMapping = ref
      {name = "+", arity = 2, tptp = "add"},
      {name = "-", arity = 2, tptp = "subtract"},
      {name = "::", arity = 2, tptp = "cons"},
+     {name = "@", arity = 2, tptp = "append"},
      {name = ",", arity = 2, tptp = "pair"},
      (* Expanding HOL symbols to TPTP alphanumerics *)
      {name = ":", arity = 2, tptp = "has_type"},

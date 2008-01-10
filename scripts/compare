@@ -76,8 +76,16 @@ sub median {
 sub read_log {
     my ($input, $result) = @_;
 
-    open INPUT, "cat $input | scripts/summarize -l |" or
-        die "compare: couldn't open $input: $!\n";
+    if ($input =~ /\.gz$/) {
+        my $raw = $input;
+        $input =~ s/\.gz$//;
+        (system("gzcat $raw | scripts/summarize -l > $input") == 0) or
+            die "compare: couldn't preprocess input:\n$!";
+    }
+    
+    open INPUT, $input or
+        die "compare: couldn't open $input:\n$!\n";
+
     while (my $line = <INPUT>) {
         chomp $line;
         $line =~ /^[^ ]*\/[0-9]+-([[:alnum:]+._-]+)\.tptp ([[:alnum:]]+) ([[:digit:].]+)$/ or
@@ -91,6 +99,7 @@ sub read_log {
         my $time_str = sprintf ("%.2f",$time);
         ${$result}{$name} = [$time,$time_str,$status];
     }
+
     close INPUT;
 }
 
