@@ -690,6 +690,7 @@ val _ = tptp "tptp" "NUMBERED_FORMULAS.tptp";
 val _ = tptp "tptp" "DEFINED_TERMS.tptp";
 val _ = tptp "tptp" "SYSTEM_TERMS.tptp";
 val _ = tptp "tptp" "QUOTED_TERMS.tptp";
+val _ = tptp "tptp" "QUOTED_TERMS_IDENTITY.tptp";
 val _ = tptp "tptp" "QUOTED_TERMS_DIFFERENT.tptp";
 val _ = tptp "tptp" "QUOTED_TERMS_SPECIAL.tptp";
 

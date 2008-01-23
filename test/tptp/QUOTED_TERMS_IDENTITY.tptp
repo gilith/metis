@@ -1,9 +1,9 @@
 % -----------------------------------------------------------------------------
-% Name: QUOTED TERMS DIFFERENT
+% Name: QUOTED TERMS IDENTITY
 %
-% The quoted constant name '1' is not the same as the constant name 1.
+% The quoted name 'p' is the same as the name p.
 % -----------------------------------------------------------------------------
 
-fof(a, axiom, p('1')).
+fof(a,axiom,'p').
 
-fof(b, conjecture, p(1)).
+fof(b,conjecture,p).

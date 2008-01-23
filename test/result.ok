@@ -420,8 +420,11 @@ parsing QUOTED_TERMS.tptp... ok
 p a /\ (!X. 'quoted predicate' X) /\ 'quoted proposition' /\
 p ('quoted function' a) /\ p 'quoted constant' ==> p a
 
+parsing QUOTED_TERMS_IDENTITY.tptp... ok
+p ==> p
+
 parsing QUOTED_TERMS_DIFFERENT.tptp... ok
-'p' ==> p
+p '1' ==> p 1
 
 parsing QUOTED_TERMS_SPECIAL.tptp... ok
 $times_int 2 3 = 6 ==> '$times_int' 2 3 = 6

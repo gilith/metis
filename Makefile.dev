@@ -212,6 +212,7 @@ status-test: $(METIS)
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) test/tptp/NUMBERED_FORMULAS.tptp | grep '^SZS status Theorem for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) test/tptp/DEFINED_TERMS.tptp | grep '^SZS status CounterSatisfiable for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) test/tptp/QUOTED_TERMS.tptp | grep '^SZS status Theorem for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) test/tptp/QUOTED_TERMS_IDENTITY.tptp | grep '^SZS status Theorem for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) test/tptp/QUOTED_TERMS_DIFFERENT.tptp | grep '^SZS status CounterSatisfiable for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) test/tptp/QUOTED_TERMS_SPECIAL.tptp | grep '^SZS status CounterSatisfiable for'
 # Testing the prover

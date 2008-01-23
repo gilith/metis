@@ -455,9 +455,7 @@ local
 
   fun alphaNumParser s = someAlphaNum (equal s) >> K ();
 
-  fun isLower s = Char.isLower (String.sub (s,0));
-
-  val lowerParser = someAlphaNum isLower;
+  val lowerParser = someAlphaNum (fn s => Char.isLower (String.sub (s,0)));
 
   val upperParser = someAlphaNum (fn s => Char.isUpper (String.sub (s,0)));
 
@@ -470,7 +468,14 @@ local
 
   fun punctParser c = somePunct (equal c) >> K ();
 
-  val quoteParser = maybe (fn Quote s => SOME ("'" ^ s ^ "'") | _ => NONE);
+  val quoteParser =
+      let
+        val p = isHdTlString Char.isLower isAlphaNum
+
+        fun q s = if p s then s else "'" ^ s ^ "'"
+      in
+        maybe (fn Quote s => SOME (q s) | _ => NONE)
+      end;
 
   local
     fun f [] = raise Bug "symbolParser"
