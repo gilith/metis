@@ -134,7 +134,9 @@ type role = string;
 val ROLE_AXIOM = "axiom"
 and ROLE_CONJECTURE = "conjecture"
 and ROLE_DEFINITION = "definition"
-and ROLE_NEGATED_CONJECTURE = "negated_conjecture";
+and ROLE_NEGATED_CONJECTURE = "negated_conjecture"
+and ROLE_PLAIN = "plain"
+and ROLE_THEOREM = "theorem";
 
 fun roleIsCnfConjecture role = role = ROLE_NEGATED_CONJECTURE;
 
@@ -1339,7 +1341,7 @@ local
        Parser.addBreak p (1,0);
        Parser.ppMap StringSet.toList (Parser.ppList Parser.ppString) p prf);
 in
-  fun ppProof avoid prefix names proofs p prf =
+  fun ppProof avoid prefix names roles proofs p prf =
       let
         val maps =
             {functionMap = mappingToTptp (!functionMapping),
@@ -1372,9 +1374,12 @@ in
             let
               val is_axiom = case inf of Proof.Axiom _ => true | _ => false
               val role =
-                  if is_axiom then "axiom"
-                  else if LiteralSet.null cl then "theorem"
-                  else "plain"
+                  case LiteralSetMap.peek roles cl of
+                    SOME role => role
+                  | NONE =>
+                    if is_axiom then ROLE_AXIOM
+                    else if LiteralSet.null cl then ROLE_THEOREM
+                    else ROLE_PLAIN
               val cl' = mapSubstClause maps sub (clauseFromLiteralSet cl)
             in
               Parser.addString p (name ^ ",");
@@ -1427,8 +1432,8 @@ in
 *)
 end;
 
-fun writeProof {filename,avoid,prefix,names,proofs} =
+fun writeProof {filename,avoid,prefix,names,roles,proofs} =
     Stream.toTextFile {filename = filename} o
-    Parser.toStream (ppProof avoid prefix names proofs);
+    Parser.toStream (ppProof avoid prefix names roles proofs);
 
 end

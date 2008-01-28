@@ -24,6 +24,8 @@ val ROLE_AXIOM : role
 val ROLE_CONJECTURE : role
 val ROLE_DEFINITION : role
 val ROLE_NEGATED_CONJECTURE : role
+val ROLE_PLAIN : role
+val ROLE_THEOREM : role
 
 val roleIsCnfConjecture : role -> bool
 
@@ -140,6 +142,7 @@ val writeProof : {filename : string,
                   avoid : StringSet.set,
                   prefix : string,
                   names : clauseNames,
+                  roles : clauseRoles,
                   proofs : clauseProofs} -> Proof.proof -> unit
 
 end

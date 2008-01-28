@@ -77,7 +77,7 @@ end;
 
 val VERSION = "2.0";
 
-val versionString = "Metis "^VERSION^" (release 20080123)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20080128)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -155,12 +155,13 @@ local
     fun display_proof_start filename =
         print ("\nSZS output start CNFRefutation for " ^ filename ^ "\n");
 
-    fun display_proof_body avoid prefix names proofs proof =
+    fun display_proof_body avoid prefix names roles proofs proof =
         Tptp.writeProof
           {filename = "-",
            avoid = avoid,
            prefix = prefix,
            names = names,
+           roles = roles,
            proofs = proofs}
           proof;
 
@@ -173,11 +174,12 @@ local
           let
             val avoid = Tptp.allClauseNames names
             and prefix = ""
+            and roles = Tptp.noClauseRoles
             and proofs = Tptp.noClauseProofs
             and proof = Proof.proof th
           in
             display_proof_start filename;
-            display_proof_body avoid prefix names proofs proof;
+            display_proof_body avoid prefix names roles proofs proof;
             display_proof_end filename
           end;
 
@@ -187,13 +189,20 @@ local
           let
             fun calc_used ((defns,proofs,th),(avoid,used,defs,acc)) =
                 let
-                  fun add_line ((t,_),used) =
-                      case LiteralSetMap.peek proofs (Thm.clause t) of
-                        NONE => used
-                      | SOME set => StringSet.union set used
+                  fun add_line ((t,_),(used,roles)) =
+                      let
+                        val cl = Thm.clause t
+                      in
+                        case LiteralSetMap.peek proofs cl of
+                          NONE => (used,roles)
+                        | SOME set =>
+                          (StringSet.union set used,
+                           LiteralSetMap.insert roles (cl,Tptp.ROLE_PLAIN))
+                      end
 
                   val proof = Proof.proof th
-                  val used = List.foldl add_line used proof
+                  val roles = Tptp.noClauseRoles
+                  val (used,roles) = List.foldl add_line (used,roles) proof
 
                   fun add_def ((name,def),(avoid,defs)) =
                       (StringSet.add avoid name,
@@ -201,7 +210,7 @@ local
                        else StringMap.insert defs (name,def))
 
                   val (avoid,defs) = List.foldl add_def (avoid,defs) defns
-                  val acc = (proofs,proof) :: acc
+                  val acc = (roles,proofs,proof) :: acc
                 in
                   (avoid,used,defs,acc)
                 end
@@ -238,13 +247,13 @@ local
 
             val names = Tptp.noClauseNames
 
-            fun display n ((proofs,proof),(start,i)) =
+            fun display n ((roles,proofs,proof),(start,i)) =
                 let
                   val prefix = if n = 1 then ""
                                else "subgoal" ^ Int.toString (i + 1) ^ "_"
                 in
                   if start then () else print "\n";
-                  display_proof_body avoid prefix names proofs proof;
+                  display_proof_body avoid prefix names roles proofs proof;
                   (false, i + 1)
                 end
           in
