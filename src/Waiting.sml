@@ -38,21 +38,24 @@ datatype waiting =
 (* Basic operations.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
+val defaultModels : modelParameters list =
+    [{model =
+        {size = 4,
+         fixed =
+           Model.fixedMergeList
+             [Model.fixedPure,
+              Model.fixedBasic,
+              Model.fixedModulo,
+              Model.fixedSet]},
+      initialPerturbations = 100,
+      checks = 20,
+      perturbations = 1,
+      weight = 1.0}];
+                     
 val default : parameters =
      {symbolsWeight = 1.0,
       literalsWeight = 1.0,
-      models =
-        [{model = {size = 4,
-                   fixed =
-                     Model.fixedMergeList
-                       [Model.fixedPure,
-                        Model.fixedBasic,
-                        Model.fixedModulo,
-                        Model.fixedSet]},
-          initialPerturbations = 100,
-          checks = 20,
-          perturbations = 0,
-          weight = 1.0}]};
+      models = defaultModels};
 
 fun size (Waiting {clauses,...}) = Heap.size clauses;
 
