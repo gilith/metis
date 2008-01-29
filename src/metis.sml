@@ -77,7 +77,7 @@ end;
 
 val VERSION = "2.0";
 
-val versionString = "Metis "^VERSION^" (release 20080128)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20080129)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -196,8 +196,15 @@ local
                         case LiteralSetMap.peek proofs cl of
                           NONE => (used,roles)
                         | SOME set =>
-                          (StringSet.union set used,
-                           LiteralSetMap.insert roles (cl,Tptp.ROLE_PLAIN))
+                          let
+                            val used = StringSet.union set used
+                            val role =
+                                if LiteralSet.null cl then Tptp.ROLE_THEOREM
+                                else Tptp.ROLE_PLAIN
+                            val roles = LiteralSetMap.insert roles (cl,role)
+                          in
+                            (used,roles)
+                          end
                       end
 
                   val proof = Proof.proof th
