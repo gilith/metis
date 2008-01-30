@@ -9,7 +9,7 @@ struct
 open Useful;
 
 (* ------------------------------------------------------------------------- *)
-(* Parameters.                                                               *)
+(* A type of resolution proof procedures.                                    *)
 (* ------------------------------------------------------------------------- *)
 
 type parameters =
@@ -21,6 +21,8 @@ datatype resolution =
       {parameters : parameters,
        active : Active.active,
        waiting : Waiting.waiting};
+
+type clauses = {axioms : Thm.thm list, conjecture : Thm.thm list};
 
 (* ------------------------------------------------------------------------- *)
 (* Basic operations.                                                         *)
