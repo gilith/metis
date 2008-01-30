@@ -112,10 +112,11 @@ fun perturbModel _ [] = K ()
       perturbClauses
     end;
 
-fun initialModel axioms parm =
+fun initialModel axioms conjecture parm =
     let
       val {model,initialPerturbations,...} : modelParameters = parm
       val m = Model.new model
+      val () = perturbModel m conjecture initialPerturbations
       val () = perturbModel m axioms initialPerturbations
     in
       m
@@ -233,11 +234,11 @@ fun add waiting (_,[]) = waiting
 local
   fun cmp ((w1,_),(w2,_)) = Real.compare (w1,w2);
 
-  fun empty parameters axioms =
+  fun empty parameters axioms conjecture =
       let
         val {models = modelParameters, ...} = parameters
         val clauses = Heap.new cmp
-        and models = map (initialModel axioms) modelParameters
+        and models = map (initialModel axioms conjecture) modelParameters
       in
         Waiting {parameters = parameters, clauses = clauses, models = models}
       end;
@@ -247,7 +248,7 @@ in
         val mAxioms = mkModelClauses axioms
         and mConjecture = mkModelClauses conjecture
 
-        val waiting = empty parameters mAxioms
+        val waiting = empty parameters mAxioms mConjecture
       in
         add' waiting 0.0 (mAxioms @ mConjecture) (axioms @ conjecture)
       end;
