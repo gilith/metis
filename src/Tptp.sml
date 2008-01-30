@@ -951,16 +951,14 @@ local
         else (s, n, StringSet.add avoid s)
       end;
 
-  fun fromClause names roles cl (n,avoid) =
+  fun fromClause defaultRole names roles cl (n,avoid) =
       let
         val (name,n,avoid) =
             case LiteralSetMap.peek names cl of
               SOME name => (name,n,avoid)
             | NONE => bump n avoid
 
-        val role =
-            Option.getOpt
-              (LiteralSetMap.peek roles cl, ROLE_NEGATED_CONJECTURE)
+        val role = Option.getOpt (LiteralSetMap.peek roles cl, defaultRole)
 
         val clause = clauseFromLiteralSet cl
       in
@@ -969,8 +967,18 @@ local
 in
   fun mkCnfProblem {comments,names,roles,problem} =
       let
-        val avoid = allClauseNames names
-        val (formulas,_) = maps (fromClause names roles) problem (0,avoid)
+        fun fromCl defaultRole = fromClause defaultRole names roles
+
+        val {axioms,conjecture} = problem
+
+        val n_avoid = (0, allClauseNames names)
+
+        val (axiomFormulas,n_avoid) = maps (fromCl ROLE_AXIOM) axioms n_avoid
+
+        val (conjectureFormulas,_) =
+            maps (fromCl ROLE_NEGATED_CONJECTURE) conjecture n_avoid
+
+        val formulas = axiomFormulas @ conjectureFormulas
       in
         {comments = comments, formulas = formulas}
       end;
@@ -983,16 +991,18 @@ local
         let
           val litl = List.mapPartial (total destLiteral) clause
           val lits = LiteralSet.fromList litl
-          val (names,roles,litsl) = acc
+          val (names,roles,axioms,conjecture) = acc
         in
           if LiteralSetMap.inDomain lits names then acc
           else
             let
               val names = LiteralSetMap.insert names (lits,name)
               val roles = LiteralSetMap.insert roles (lits,role)
-              val litsl = lits :: litsl
+              val (axioms,conjecture) =
+                  if roleIsCnfConjecture role then (lits :: axioms, conjecture)
+                  else (axioms, lits :: conjecture)
             in
-              (names,roles,litsl)
+              (names,roles,axioms,conjecture)
             end
         end
     | addCnfFormula (FofFormula _, _) = raise Bug "destCnfProblem";
@@ -1001,8 +1011,9 @@ in
       let
         val names = LiteralSetMap.new ()
         val roles = LiteralSetMap.new ()
-        val (names,roles,cls) = foldl addCnfFormula (names,roles,[]) formulas
-        val problem = rev cls
+        val (names,roles,axioms,conjecture) =
+            foldl addCnfFormula (names,roles,[],[]) formulas
+        val problem = {axioms = rev axioms, conjecture = rev conjecture}
       in
         {comments = comments,
          names = names,
@@ -1020,7 +1031,7 @@ type normalizedFof =
 val initialNormalizedFof : normalizedFof =
     {definitions = [],
      roles = LiteralSetMap.new (),
-     problem = [],
+     problem = {axioms = [], conjecture = []},
      proofs = LiteralSetMap.new ()};
 
 local
@@ -1044,12 +1055,18 @@ local
             (LiteralSetMap.insert roles (cl,role),
              LiteralSetMap.insert proofs (cl,prf))
             
-        val {definitions = defs, clauses = cls} = new
+        val {definitions = defs, clauses} = new
         and {definitions,roles,problem,proofs} : normalizedFof = acc
+        val {axioms,conjecture} = problem
+
+        val cls = map fst clauses
+        val (axioms,conjecture) =
+            if role = ROLE_AXIOM then (cls @ axioms, conjecture)
+            else (axioms, cls @ conjecture)
 
         val definitions = defs @ definitions
-        and problem = map fst cls @ problem
-        and (roles,proofs) = List.foldl addClause (roles,proofs) cls
+        and problem = {axioms = axioms, conjecture = conjecture}
+        and (roles,proofs) = List.foldl addClause (roles,proofs) clauses
       in
         {definitions = definitions,
          roles = roles,
@@ -1066,11 +1083,16 @@ local
         (acc,cnf)
       end;
 
-  fun mkProblem ({definitions,roles,problem,proofs},_) : normalizedFof =
-      {definitions = rev definitions,
-       roles = roles,
-       problem = rev problem,
-       proofs = proofs};
+  fun mkProblem (acc,_) : normalizedFof =
+      let
+        val {definitions,roles,problem,proofs} = acc
+        val {axioms,conjecture} = problem
+      in
+        {definitions = rev definitions,
+         roles = roles,
+         problem = {axioms = rev axioms, conjecture = rev conjecture},
+         proofs = proofs}
+      end;
 in
   fun goalFofProblem ({formulas,...} : problem) =
       let
@@ -1125,7 +1147,7 @@ fun normalizeFofToCnf (problem as {comments,...}) =
 
       val n = Int.toString (length problems)
 
-      fun mk {definitions = _, roles, problem, proofs = _} i =
+      fun mk {definitions = _, roles, problem = p, proofs = _} i =
           let
             val i = i + 1
             val comments =
@@ -1133,7 +1155,7 @@ fun normalizeFofToCnf (problem as {comments,...}) =
             val prob = mkCnfProblem {comments = comments,
                                      names = names,
                                      roles = roles,
-                                     problem = problem}
+                                     problem = p}
           in
             (prob,i)
           end

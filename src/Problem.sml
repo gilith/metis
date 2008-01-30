@@ -1,6 +1,6 @@
 (* ========================================================================= *)
-(* SOME SAMPLE PROBLEMS TO TEST PROOF PROCEDURES                             *)
-(* Copyright (c) 2001-2006 Joe Hurd, distributed under the GNU GPL version 2 *)
+(* CNF PROBLEMS                                                              *)
+(* Copyright (c) 2001-2008 Joe Hurd, distributed under the GNU GPL version 2 *)
 (* ========================================================================= *)
 
 structure Problem :> Problem =
@@ -12,27 +12,51 @@ open Useful;
 (* Problems.                                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-type problem = Thm.clause list;
+type problem =
+     {axioms : Thm.clause list,
+      conjecture : Thm.clause list};
 
-fun size cls =
-    {clauses = length cls,
-     literals = foldl (fn (cl,n) => n + LiteralSet.size cl) 0 cls,
-     symbols = foldl (fn (cl,n) => n + LiteralSet.symbols cl) 0 cls,
-     typedSymbols = foldl (fn (cl,n) => n + LiteralSet.typedSymbols cl) 0 cls};
+fun toClauses {axioms,conjecture} = axioms @ conjecture;
+
+fun size prob =
+    let
+      fun lits (cl,n) = n + LiteralSet.size cl
+
+      fun syms (cl,n) = n + LiteralSet.symbols cl
+
+      fun typedSyms (cl,n) = n + LiteralSet.typedSymbols cl
+
+      val cls = toClauses prob
+    in
+      {clauses = length cls,
+       literals = foldl lits 0 cls,
+       symbols = foldl syms 0 cls,
+       typedSymbols = foldl typedSyms 0 cls}
+    end;
 
 local
   fun clauseToFormula cl =
       Formula.listMkDisj (LiteralSet.transform Literal.toFormula cl);
 in
-  fun toFormula cls = Formula.listMkConj (map clauseToFormula cls);
+  fun toFormula prob =
+      Formula.listMkConj (map clauseToFormula (toClauses prob));
 
-  fun toGoal cls =
-      Formula.Imp
-        (Formula.listMkConj (map (Formula.generalize o clauseToFormula) cls),
-         Formula.False);
+  fun toGoal {axioms,conjecture} =
+      let
+        val clToFm = Formula.generalize o clauseToFormula
+        val clsToFm = Formula.listMkConj o map clToFm
+
+        val fm = Formula.False
+        val fm =
+            if null conjecture then fm
+            else Formula.Imp (clsToFm conjecture, fm)
+        val fm = Formula.Imp (clsToFm axioms, fm)
+      in
+        fm
+      end;
 end;
 
-fun toString cls = Formula.toString (toFormula cls);
+fun toString prob = Formula.toString (toFormula prob);
 
 (* ------------------------------------------------------------------------- *)
 (* Categorizing problems.                                                    *)
@@ -61,8 +85,10 @@ type category =
       equality : equality,
       horn : horn};
 
-fun categorize cls =
+fun categorize prob =
     let
+      val cls = toClauses prob
+
       val rels =
           let
             fun f (cl,set) = NameAritySet.union set (LiteralSet.relations cl)
