@@ -513,7 +513,15 @@ val _ = pvFm (nnf (F`~(~(p <=> q) <=> r) <=> ~(p <=> ~(q <=> r))`));
 val () = SAY "Conjunctive normal form";
 (* ------------------------------------------------------------------------- *)
 
-val cnf = pvFm o Problem.toFormula o Normalize.cnf o Formula.Not o Formula.generalize o F;
+local
+  fun clauseToFormula cl =
+      Formula.listMkDisj (LiteralSet.transform Literal.toFormula cl);
+in
+  fun clausesToFormula cls = Formula.listMkConj (map clauseToFormula cls);
+end;
+
+val cnf = pvFm o clausesToFormula o Normalize.cnf o
+          Formula.Not o Formula.generalize o F;
 
 val _ = cnf `p \/ ~p`;
 val _ = cnf `~((p /\ (q \/ r /\ s)) /\ (~p \/ ~q \/ ~s))`;

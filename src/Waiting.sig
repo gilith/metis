@@ -51,7 +51,9 @@ type distance
 
 val default : parameters
 
-val new : parameters -> Clause.clause list -> waiting
+val new :
+    parameters ->
+    {axioms : Clause.clause list, conjecture : Clause.clause list} -> waiting
 
 val size : waiting -> int
 

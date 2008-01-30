@@ -49,7 +49,7 @@ val defaultModels : modelParameters list =
               Model.fixedSet]},
       initialPerturbations = 100,
       checks = 20,
-      perturbations = 1,
+      perturbations = 0,
       weight = 1.0}];
                      
 val default : parameters =
@@ -88,7 +88,8 @@ fun mkModelClause cl =
 
 val mkModelClauses = map mkModelClause;
 
-fun perturbModel model cls =
+fun perturbModel _ [] = K ()
+  | perturbModel model cls =
     let
       val modelSize = {size = Model.size model}
 
@@ -111,11 +112,11 @@ fun perturbModel model cls =
       perturbClauses
     end;
 
-fun initialModel cls parm =
+fun initialModel axioms parm =
     let
       val {model,initialPerturbations,...} : modelParameters = parm
       val m = Model.new model
-      val () = perturbModel m cls initialPerturbations
+      val () = perturbModel m axioms initialPerturbations
     in
       m
     end;
@@ -232,22 +233,23 @@ fun add waiting (_,[]) = waiting
 local
   fun cmp ((w1,_),(w2,_)) = Real.compare (w1,w2);
 
-  fun empty parameters mcls =
+  fun empty parameters axioms =
       let
         val {models = modelParameters, ...} = parameters
         val clauses = Heap.new cmp
-        and models = map (initialModel mcls) modelParameters
+        and models = map (initialModel axioms) modelParameters
       in
         Waiting {parameters = parameters, clauses = clauses, models = models}
       end;
 in
-  fun new parameters cls =
+  fun new parameters {axioms,conjecture} =
       let
-        val mcls = mkModelClauses cls
+        val mAxioms = mkModelClauses axioms
+        and mConjecture = mkModelClauses conjecture
 
-        val waiting = empty parameters mcls
+        val waiting = empty parameters mAxioms
       in
-        add' waiting 0.0 mcls cls
+        add' waiting 0.0 (mAxioms @ mConjecture) (axioms @ conjecture)
       end;
 end;
 

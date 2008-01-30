@@ -16,15 +16,15 @@ type parameters =
 
 type resolution
 
-type clauses = {axioms : Thm.thm list, conjecture : Thm.thm list}
-
 (* ------------------------------------------------------------------------- *)
 (* Basic operations.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
 val default : parameters
 
-val new : parameters -> clauses -> resolution
+val new :
+    parameters -> {axioms : Thm.thm list, conjecture : Thm.thm list} ->
+    resolution
 
 val active : resolution -> Active.active
 

@@ -999,8 +999,8 @@ local
               val names = LiteralSetMap.insert names (lits,name)
               val roles = LiteralSetMap.insert roles (lits,role)
               val (axioms,conjecture) =
-                  if roleIsCnfConjecture role then (lits :: axioms, conjecture)
-                  else (axioms, lits :: conjecture)
+                  if roleIsCnfConjecture role then (axioms, lits :: conjecture)
+                  else (lits :: axioms, conjecture)
             in
               (names,roles,axioms,conjecture)
             end
@@ -1061,8 +1061,8 @@ local
 
         val cls = map fst clauses
         val (axioms,conjecture) =
-            if role = ROLE_AXIOM then (cls @ axioms, conjecture)
-            else (axioms, cls @ conjecture)
+            if roleIsCnfConjecture role then (axioms, cls @ conjecture)
+            else (cls @ axioms, conjecture)
 
         val definitions = defs @ definitions
         and problem = {axioms = axioms, conjecture = conjecture}
@@ -1224,8 +1224,11 @@ end;
 local
   fun refute problem =
       let
-        val {problem = cls, ...} = destCnfProblem problem
-        val res = Resolution.new Resolution.default (map Thm.axiom cls)
+        val {problem = {axioms,conjecture}, ...} = destCnfProblem problem
+        val axioms = map Thm.axiom axioms
+        and conjecture = map Thm.axiom conjecture
+        val prob = {axioms = axioms, conjecture = conjecture}
+        val res = Resolution.new Resolution.default prob
       in
         case Resolution.loop res of
           Resolution.Contradiction _ => true

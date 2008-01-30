@@ -761,16 +761,18 @@ val factor = fn active => fn cls =>
 (* Create a new active clause set and initialize clauses.                    *)
 (* ------------------------------------------------------------------------- *)
 
-fun new parameters ths =
+fun new parameters {axioms,conjecture} =
     let
       val {clause,...} = parameters
 
       fun mk_clause th =
           Clause.mk {parameters = clause, id = Clause.newId (), thm = th}
 
-      val cls = map mk_clause ths
+      val active = empty parameters
+      val (active,axioms) = factor active (map mk_clause axioms)
+      val (active,conjecture) = factor active (map mk_clause conjecture)
     in
-      factor (empty parameters) cls
+      (active, {axioms = axioms, conjecture = conjecture})
     end;
 
 (* ------------------------------------------------------------------------- *)

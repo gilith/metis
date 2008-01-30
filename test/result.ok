@@ -404,8 +404,8 @@ lives agatha /\ lives butler /\ lives charles /\
 (!X. ~hates X agatha \/ ~hates X butler \/ ~hates X charles) /\
 hates agatha agatha /\ hates agatha charles /\
 (!X Y. ~killed X Y \/ hates X Y) /\ (!X. ~hates agatha X \/ hates butler X) /\
-(!X. ~lives X \/ hates butler X \/ richer X agatha) /\
-(killed butler agatha \/ killed charles agatha) ==> F
+(!X. ~lives X \/ hates butler X \/ richer X agatha) ==>
+killed butler agatha \/ killed charles agatha ==> F
 
 parsing NUMBERED_FORMULAS.tptp... ok
 p ==> p

@@ -22,8 +22,6 @@ datatype resolution =
        active : Active.active,
        waiting : Waiting.waiting};
 
-type clauses = {axioms : Thm.thm list, conjecture : Thm.thm list};
-
 (* ------------------------------------------------------------------------- *)
 (* Basic operations.                                                         *)
 (* ------------------------------------------------------------------------- *)

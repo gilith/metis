@@ -77,7 +77,7 @@ end;
 
 val VERSION = "2.0";
 
-val versionString = "Metis "^VERSION^" (release 20080129)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20080130)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -312,8 +312,15 @@ local
         ()
       end;
 
-  fun refute cls =
-      Resolution.loop (Resolution.new Resolution.default (map Thm.axiom cls));
+  fun refute {axioms,conjecture} =
+      let
+        val axioms = map Thm.axiom axioms
+        and conjecture = map Thm.axiom conjecture
+        val problem = {axioms = axioms, conjecture = conjecture}
+        val resolution = Resolution.new Resolution.default problem
+      in
+        Resolution.loop resolution
+      end
 in
   fun prove filename =
       let

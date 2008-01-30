@@ -33,7 +33,9 @@ val saturated : active -> Clause.clause list
 (* Create a new active clause set and initialize clauses.                    *)
 (* ------------------------------------------------------------------------- *)
 
-val new : parameters -> Thm.thm list -> active * Clause.clause list
+val new :
+    parameters -> {axioms : Thm.thm list, conjecture : Thm.thm list} ->
+    active * {axioms : Clause.clause list, conjecture : Clause.clause list}
 
 (* ------------------------------------------------------------------------- *)
 (* Add a clause into the active set and deduce all consequences.             *)
