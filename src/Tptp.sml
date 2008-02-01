@@ -1309,13 +1309,8 @@ local
       | NONE => ppAtom pp atm;
 
   fun ppLiteralTstp pp (pol,atm) =
-      if pol then ppAtomTstp pp atm
-      else
-        (Parser.beginBlock pp Parser.Inconsistent 2;
-         Parser.addString pp "~";
-         Parser.addBreak pp (1,0);
-         ppAtomTstp pp atm;
-         Parser.endBlock pp);
+      (if pol then () else Parser.addString pp "~ ";
+       ppAtomTstp pp atm);
 
   val ppTermInfo = Parser.ppBracket "$fot(" ")" ppTermTstp;
 
@@ -1401,10 +1396,7 @@ in
               val role =
                   case LiteralSetMap.peek roles cl of
                     SOME role => role
-                  | NONE =>
-                    if is_axiom then ROLE_AXIOM
-                    else if LiteralSet.null cl then ROLE_THEOREM
-                    else ROLE_PLAIN
+                  | NONE => if is_axiom then ROLE_AXIOM else ROLE_PLAIN
               val cl' = mapSubstClause maps sub (clauseFromLiteralSet cl)
             in
               Parser.addString p (name ^ ",");

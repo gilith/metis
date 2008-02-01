@@ -77,7 +77,7 @@ end;
 
 val VERSION = "2.0";
 
-val versionString = "Metis "^VERSION^" (release 20080130)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20080201)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -198,9 +198,7 @@ local
                         | SOME set =>
                           let
                             val used = StringSet.union set used
-                            val role =
-                                if LiteralSet.null cl then Tptp.ROLE_THEOREM
-                                else Tptp.ROLE_PLAIN
+                            val role = Tptp.ROLE_PLAIN
                             val roles = LiteralSetMap.insert roles (cl,role)
                           in
                             (used,roles)
