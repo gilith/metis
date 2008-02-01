@@ -75,7 +75,7 @@ in
       processor = beginOpt endOpt (fn _ => TEST := true)}];
 end;
 
-val VERSION = "2.0";
+val VERSION = "2.1";
 
 val versionString = "Metis "^VERSION^" (release 20080201)"^"\n";
 
