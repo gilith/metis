@@ -429,6 +429,9 @@ p '1' ==> p 1
 parsing QUOTED_TERMS_SPECIAL.tptp... ok
 $times_int 2 3 = 6 ==> '$times_int' 2 3 = 6
 
+parsing RENAMING_VARIABLES.tptp... ok
+!V_X Y. ?Z. p V_X \/ p Y ==> p Z
+
 --------------------------------------------------------------------------
 Clauses
 

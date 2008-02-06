@@ -758,15 +758,27 @@ end;
 (* ------------------------------------------------------------------------- *)
 
 local
-  fun explodeAlpha s = List.filter Char.isAlpha (explode s);
+  fun isTptpChar #"_" = true
+    | isTptpChar c = Char.isAlphaNum c;
+
+  val isTptpInitialChar = Char.isAlpha;
+
+  fun explodeTptp s =
+      let
+        val l = explode s
+        val l = List.filter isTptpChar l
+        val l = dropWhile (not o isTptpInitialChar) l
+      in
+        l
+      end;
 in
   fun mkTptpName s n =
-      case explodeAlpha n of
+      case explodeTptp n of
         [] => s
       | c :: cs => implode (Char.toLower c :: cs);
 
   fun mkTptpVar n =
-      case explodeAlpha n of
+      case explodeTptp n of
         [] => "X"
       | c :: cs => implode (Char.toUpper c :: cs);
 
