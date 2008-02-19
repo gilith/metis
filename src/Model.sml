@@ -436,7 +436,7 @@ fun fixedList {size = N} =
       val {functions = funcs, relations = rels} = fixedOverflowNum {size = N}
 
       fun functions ("nil",[]) = funcs ("0",[])
-        | functions ("::",[x]) = funcs ("suc",[x])
+        | functions ("::",[_,y]) = funcs ("suc",[y])
         | functions ("@",[x,y]) = funcs ("+",[x,y])
         | functions _ = NONE
 
