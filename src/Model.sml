@@ -431,6 +431,20 @@ fun fixedSet {size = N} =
       {functions = functions, relations = relations}
     end;
 
+fun fixedList {size = N} =
+    let
+      val {functions = funcs, relations = rels} = fixedOverflowNum {size = N}
+
+      fun functions ("nil",[]) = funcs ("0",[])
+        | functions ("::",[x]) = funcs ("suc",[x])
+        | functions ("@",[x,y]) = funcs ("+",[x,y])
+        | functions _ = NONE
+
+      fun relations _ = NONE
+    in
+      {functions = functions, relations = relations}
+    end;
+
 (* ------------------------------------------------------------------------- *)
 (* A type of random finite mapping Z^n -> Z.                                 *)
 (* ------------------------------------------------------------------------- *)

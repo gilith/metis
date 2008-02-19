@@ -35,6 +35,8 @@ val fixedOverflowInt : fixed  (* <numerals> suc pre + - * exp div mod *)
 
 val fixedSet : fixed  (* empty univ union intersect compl card in subset *)
 
+val fixedList : fixed  (* nil :: @ *)
+
 (* ------------------------------------------------------------------------- *)
 (* A type of random finite models.                                           *)
 (* ------------------------------------------------------------------------- *)
