@@ -781,13 +781,14 @@ pr = p1 * py + n1 * ny /\ nr = p1 * ny + n1 * py ==> pl = pr /\ nl = nr`},
              "  !l k. finite l /\\ finite k ==> rev (rev l @ k) = rev k @ l",
              "and then applying list induction."],
  goal = `
-finite nil /\ (!h t. finite (h :: t) <=> finite t) /\ (!l. nil @ l = l) /\
-(!h t l. (h :: t) @ l = h :: t @ l) /\ rev nil = nil /\
-(!h t. rev (h :: t) = rev t @ h :: nil) /\ (!l. l @ nil = l) /\
-(!l1 l2 l3. l1 @ l2 @ l3 = (l1 @ l2) @ l3) ==>
+finite nil /\ (!h t. finite (h :: t) <=> finite t) /\
+(!l1 l2. finite (l1 @ l2) <=> finite l1 /\ finite l2) /\
+(!l. nil @ l = l) /\ (!h t l. (h :: t) @ l = h :: t @ l) /\
+rev nil = nil /\ (!h t. rev (h :: t) = rev t @ h :: nil) /\
+(!l. l @ nil = l) /\ (!l1 l2 l3. l1 @ l2 @ l3 = (l1 @ l2) @ l3) ==>
 (!k. finite k ==> rev (rev nil @ k) = rev k @ nil) /\
 !t.
-  (!k. finite k ==> rev (rev t @ k) = rev k @ t) ==>
+  finite t ==> (!k. finite k ==> rev (rev t @ k) = rev k @ t) ==>
   !h k. finite k ==> rev (rev (h :: t) @ k) = rev k @ h :: t`},
 
 (* ------------------------------------------------------------------------- *)
