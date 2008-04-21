@@ -825,9 +825,28 @@ rev nil = nil /\ (!h t. rev (h :: t) = rev t @ h :: nil) /\
 (!x y z. x * (y * z) = x * y * z) /\ (!x. e * x = x) /\ (!x. x * e = x) /\
 (!x. x * x = e) ==> !x y. x * y = y * x`},
 
+{name = "DOUBLE_DISTRIB",
+ comments = ["From a John Harrison post to hol-info on 2008-04-15"],
+ goal = `
+(!x y z. x * y * z = x * z * (y * z)) /\
+(!x y z. z * (x * y) = z * x * (z * y)) ==>
+!a b c. a * b * (c * a) = a * c * (b * a)`},
+
 (* ------------------------------------------------------------------------- *)
 (* Ring theory examples.                                                     *)
 (* ------------------------------------------------------------------------- *)
+
+{name = "CONWAY_2",
+ comments = ["From a John Harrison post to hol-info on 2008-04-15"],
+ goal = `
+(!x. 0 + x = x) /\ (!x y. x + y = y + x) /\
+(!x y z. x + (y + z) = x + y + z) /\ (!x. 1 * x = x) /\ (!x. x * 1 = x) /\
+(!x y z. x * (y * z) = x * y * z) /\ (!x. 0 * x = 0) /\ (!x. x * 0 = 0) /\
+(!x y z. x * (y + z) = x * y + x * z) /\
+(!x y z. (x + y) * z = x * z + y * z) /\
+(!x y. star (x * y) = 1 + x * star (y * x) * y) /\
+(!x y. star (x + y) = star (star (x) * y) * star (x)) ==>
+!a. star (star (star (star (a)))) = star (star (star (a)))`},
 
 {name = "JACOBSON_2",
  comments = [],
