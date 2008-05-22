@@ -77,7 +77,7 @@ end;
 
 val VERSION = "2.1";
 
-val versionString = "Metis "^VERSION^" (release 20080421)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20080522)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -392,6 +392,11 @@ in
             refuteAll [] problems
           end
       end;
+
+  fun proveAll filenames =
+      List.all
+        (if !QUIET then prove else fn filename => prove filename orelse true)
+        filenames;
 end;
 
 (* ------------------------------------------------------------------------- *)
@@ -403,10 +408,9 @@ let
 (*DEBUG
   val () = print "Running in DEBUG mode.\n"
 *)
-  val success = List.all prove work
-  val return = not (!QUIET) orelse success
+  val success = proveAll work
 in
-  exit {message = NONE, usage = false, success = return}
+  exit {message = NONE, usage = false, success = success}
 end
 handle Error s => die (PROGRAM^" failed:\n" ^ s)
      | Bug s => die ("BUG found in "^PROGRAM^" program:\n" ^ s);

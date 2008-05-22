@@ -1,0 +1,274 @@
+---------------------------------------------------------------------------
+Problem: data/problems/all/MGT019+2.tptp
+
+Goal:
+~(!E T.
+    environment E /\
+    subpopulations first_movers efficient_producers E T ==>
+    greater (disbanding_rate first_movers T)
+      (disbanding_rate efficient_producers T)) /\
+(!T.
+   greater (disbanding_rate first_movers T)
+     (disbanding_rate efficient_producers T) /\
+   greater_or_equal (founding_rate efficient_producers T)
+     (founding_rate first_movers T) ==>
+   greater (growth_rate efficient_producers T)
+     (growth_rate first_movers T)) /\
+(!X Y. greater_or_equal X Y ==> greater X Y \/ X = Y) /\
+(!E.
+   environment E /\ stable E ==>
+   ?To.
+     in_environment E To /\
+     !T.
+       subpopulations first_movers efficient_producers E T /\
+       greater_or_equal T To ==>
+       greater_or_equal (founding_rate efficient_producers T)
+         (founding_rate first_movers T)) ==>
+!E.
+  environment E /\ stable E ==>
+  ?To.
+    in_environment E To /\
+    !T.
+      subpopulations first_movers efficient_producers E T /\
+      greater_or_equal T To ==>
+      greater (growth_rate efficient_producers T)
+        (growth_rate first_movers T)
+
+Clauses:
+~greater (disbanding_rate first_movers skolemFOFtoCNF_T)
+   (disbanding_rate efficient_producers skolemFOFtoCNF_T) /\
+environment skolemFOFtoCNF_E /\
+subpopulations first_movers efficient_producers skolemFOFtoCNF_E
+  skolemFOFtoCNF_T /\
+(~greater (disbanding_rate first_movers $T)
+    (disbanding_rate efficient_producers $T) \/
+ ~greater_or_equal (founding_rate efficient_producers $T)
+    (founding_rate first_movers $T) \/
+ greater (growth_rate efficient_producers $T)
+   (growth_rate first_movers $T)) /\
+(~greater_or_equal $X $Y \/ $X = $Y \/ greater $X $Y) /\
+(~environment $E \/ ~stable $E \/
+ in_environment $E (skolemFOFtoCNF_To $E)) /\
+(~environment $E \/ ~greater_or_equal $T (skolemFOFtoCNF_To $E) \/
+ ~stable $E \/ ~subpopulations first_movers efficient_producers $E $T \/
+ greater_or_equal (founding_rate efficient_producers $T)
+   (founding_rate first_movers $T)) /\ environment skolemFOFtoCNF_E_1 /\
+stable skolemFOFtoCNF_E_1 /\
+(~greater (growth_rate efficient_producers (skolemFOFtoCNF_T_1 $To))
+    (growth_rate first_movers (skolemFOFtoCNF_T_1 $To)) \/
+ ~in_environment skolemFOFtoCNF_E_1 $To) /\
+(~in_environment skolemFOFtoCNF_E_1 $To \/
+ greater_or_equal (skolemFOFtoCNF_T_1 $To) $To) /\
+(~in_environment skolemFOFtoCNF_E_1 $To \/
+ subpopulations first_movers efficient_producers skolemFOFtoCNF_E_1
+   (skolemFOFtoCNF_T_1 $To))
+
+SZS status CounterSatisfiable for data/problems/all/MGT019+2.tptp
+
+SZS output start Saturated for data/problems/all/MGT019+2.tptp
+|- ~greater (disbanding_rate first_movers skolemFOFtoCNF_T)
+      (disbanding_rate efficient_producers skolemFOFtoCNF_T)
+|- environment skolemFOFtoCNF_E
+|- subpopulations first_movers efficient_producers skolemFOFtoCNF_E
+     skolemFOFtoCNF_T
+|- ~greater (disbanding_rate first_movers $T)
+      (disbanding_rate efficient_producers $T) \/
+   ~greater_or_equal (founding_rate efficient_producers $T)
+      (founding_rate first_movers $T) \/
+   greater (growth_rate efficient_producers $T)
+     (growth_rate first_movers $T)
+|- ~greater_or_equal $X $Y \/ $X = $Y \/ greater $X $Y
+|- ~environment $E \/ ~stable $E \/
+   in_environment $E (skolemFOFtoCNF_To $E)
+|- ~environment $E \/ ~greater_or_equal $T (skolemFOFtoCNF_To $E) \/
+   ~stable $E \/ ~subpopulations first_movers efficient_producers $E $T \/
+   greater_or_equal (founding_rate efficient_producers $T)
+     (founding_rate first_movers $T)
+|- environment skolemFOFtoCNF_E_1
+|- stable skolemFOFtoCNF_E_1
+|- ~greater (growth_rate efficient_producers (skolemFOFtoCNF_T_1 $To))
+      (growth_rate first_movers (skolemFOFtoCNF_T_1 $To)) \/
+   ~in_environment skolemFOFtoCNF_E_1 $To
+|- ~in_environment skolemFOFtoCNF_E_1 $To \/
+   greater_or_equal (skolemFOFtoCNF_T_1 $To) $To
+|- ~in_environment skolemFOFtoCNF_E_1 $To \/
+   subpopulations first_movers efficient_producers skolemFOFtoCNF_E_1
+     (skolemFOFtoCNF_T_1 $To)
+|- in_environment skolemFOFtoCNF_E_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)
+|- greater_or_equal
+     (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1))
+     (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)
+|- subpopulations first_movers efficient_producers skolemFOFtoCNF_E_1
+     (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1))
+|- skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1) =
+   skolemFOFtoCNF_To skolemFOFtoCNF_E_1 \/
+   greater (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1))
+     (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)
+|- ~greater_or_equal skolemFOFtoCNF_T
+      (skolemFOFtoCNF_To skolemFOFtoCNF_E) \/ ~stable skolemFOFtoCNF_E \/
+   greater_or_equal (founding_rate efficient_producers skolemFOFtoCNF_T)
+     (founding_rate first_movers skolemFOFtoCNF_T)
+|- greater_or_equal
+     (founding_rate efficient_producers
+        (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
+     (founding_rate first_movers
+        (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
+|- founding_rate efficient_producers
+     (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)) =
+   founding_rate first_movers
+     (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)) \/
+   greater
+     (founding_rate efficient_producers
+        (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
+     (founding_rate first_movers
+        (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
+|- ~greater
+      (disbanding_rate first_movers
+         (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
+      (disbanding_rate efficient_producers
+         (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1))) \/
+   greater
+     (growth_rate efficient_producers
+        (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
+     (growth_rate first_movers
+        (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
+SZS output end Saturated for data/problems/all/MGT019+2.tptp
+
+---------------------------------------------------------------------------
+Problem: data/problems/all/SWV010+1.tptp
+
+Goal:
+a_holds (key at t) /\ party_of_protocol a /\
+message (sent a b (a, an_a_nonce)) /\ a_stored (b, an_a_nonce) /\
+(!U V W X Y Z.
+   message (sent t a (triple (encrypt (quadruple Y Z W V) at) X U)) /\
+   a_stored (Y, Z) ==>
+   message (sent a Y (X, encrypt U W)) /\ a_holds (key W Y)) /\
+b_holds (key bt t) /\ party_of_protocol b /\ fresh_to_b an_a_nonce /\
+(!U V.
+   message (sent U b (U, V)) /\ fresh_to_b V ==>
+   message
+     (sent b t
+        (triple b (generate_b_nonce V)
+           (encrypt (triple U V (generate_expiration_time V)) bt))) /\
+   b_stored (U, V)) /\
+(!V X Y.
+   message
+     (sent X b
+        (encrypt (triple X V (generate_expiration_time Y)) bt,
+         encrypt (generate_b_nonce Y) V)) /\ b_stored (X, Y) ==>
+   b_holds (key V X)) /\ t_holds (key at a) /\ t_holds (key bt b) /\
+party_of_protocol t /\
+(!U V W X Y Z X1.
+   message (sent U t (triple U V (encrypt (triple W X Y) Z))) /\
+   t_holds (key Z U) /\ t_holds (key X1 W) ==>
+   message
+     (sent t W
+        (triple (encrypt (quadruple U X (generate_key X) Y) X1)
+           (encrypt (triple W (generate_key X) Y) Z) V))) ==> F
+
+Clauses:
+a_holds (key at t) /\ party_of_protocol a /\
+message (sent a b (a, an_a_nonce)) /\ a_stored (b, an_a_nonce) /\
+(~a_stored ($Y, $Z) \/
+ ~message (sent t a (triple (encrypt (quadruple $Y $Z $W $V) at) $X $U)) \/
+ a_holds (key $W $Y)) /\
+(~a_stored ($Y, $Z) \/
+ ~message (sent t a (triple (encrypt (quadruple $Y $Z $W $V) at) $X $U)) \/
+ message (sent a $Y ($X, encrypt $U $W))) /\ b_holds (key bt t) /\
+party_of_protocol b /\ fresh_to_b an_a_nonce /\
+(~fresh_to_b $V \/ ~message (sent $U b ($U, $V)) \/ b_stored ($U, $V)) /\
+(~fresh_to_b $V \/ ~message (sent $U b ($U, $V)) \/
+ message
+   (sent b t
+      (triple b (generate_b_nonce $V)
+         (encrypt (triple $U $V (generate_expiration_time $V)) bt)))) /\
+(~b_stored ($X, $Y) \/
+ ~message
+    (sent $X b
+       (encrypt (triple $X $V (generate_expiration_time $Y)) bt,
+        encrypt (generate_b_nonce $Y) $V)) \/ b_holds (key $V $X)) /\
+t_holds (key at a) /\ t_holds (key bt b) /\ party_of_protocol t /\
+(~message (sent $U t (triple $U $V (encrypt (triple $W $X $Y) $Z))) \/
+ ~t_holds (key $X1 $W) \/ ~t_holds (key $Z $U) \/
+ message
+   (sent t $W
+      (triple (encrypt (quadruple $U $X (generate_key $X) $Y) $X1)
+         (encrypt (triple $W (generate_key $X) $Y) $Z) $V)))
+
+SZS status Satisfiable for data/problems/all/SWV010+1.tptp
+
+SZS output start Saturated for data/problems/all/SWV010+1.tptp
+|- a_holds (key at t)
+|- party_of_protocol a
+|- message (sent a b (a, an_a_nonce))
+|- a_stored (b, an_a_nonce)
+|- ~a_stored ($Y, $Z) \/
+   ~message
+      (sent t a (triple (encrypt (quadruple $Y $Z $W $V) at) $X $U)) \/
+   a_holds (key $W $Y)
+|- ~a_stored ($Y, $Z) \/
+   ~message
+      (sent t a (triple (encrypt (quadruple $Y $Z $W $V) at) $X $U)) \/
+   message (sent a $Y ($X, encrypt $U $W))
+|- b_holds (key bt t)
+|- party_of_protocol b
+|- fresh_to_b an_a_nonce
+|- ~fresh_to_b $V \/ ~message (sent $U b ($U, $V)) \/ b_stored ($U, $V)
+|- ~fresh_to_b $V \/ ~message (sent $U b ($U, $V)) \/
+   message
+     (sent b t
+        (triple b (generate_b_nonce $V)
+           (encrypt (triple $U $V (generate_expiration_time $V)) bt)))
+|- ~b_stored ($X, $Y) \/
+   ~message
+      (sent $X b
+         (encrypt (triple $X $V (generate_expiration_time $Y)) bt,
+          encrypt (generate_b_nonce $Y) $V)) \/ b_holds (key $V $X)
+|- t_holds (key at a)
+|- t_holds (key bt b)
+|- party_of_protocol t
+|- ~message (sent $U t (triple $U $V (encrypt (triple $W $X $Y) $Z))) \/
+   ~t_holds (key $X1 $W) \/ ~t_holds (key $Z $U) \/
+   message
+     (sent t $W
+        (triple (encrypt (quadruple $U $X (generate_key $X) $Y) $X1)
+           (encrypt (triple $W (generate_key $X) $Y) $Z) $V))
+|- b_stored (a, an_a_nonce)
+|- message
+     (sent b t
+        (triple b (generate_b_nonce an_a_nonce)
+           (encrypt
+              (triple a an_a_nonce (generate_expiration_time an_a_nonce))
+              bt)))
+|- ~t_holds (key $_32 a) \/
+   message
+     (sent t a
+        (triple
+           (encrypt
+              (quadruple b an_a_nonce (generate_key an_a_nonce)
+                 (generate_expiration_time an_a_nonce)) $_32)
+           (encrypt
+              (triple a (generate_key an_a_nonce)
+                 (generate_expiration_time an_a_nonce)) bt)
+           (generate_b_nonce an_a_nonce)))
+|- message
+     (sent t a
+        (triple
+           (encrypt
+              (quadruple b an_a_nonce (generate_key an_a_nonce)
+                 (generate_expiration_time an_a_nonce)) at)
+           (encrypt
+              (triple a (generate_key an_a_nonce)
+                 (generate_expiration_time an_a_nonce)) bt)
+           (generate_b_nonce an_a_nonce)))
+|- message
+     (sent a b
+        (encrypt
+           (triple a (generate_key an_a_nonce)
+              (generate_expiration_time an_a_nonce)) bt,
+         encrypt (generate_b_nonce an_a_nonce) (generate_key an_a_nonce)))
+|- a_holds (key (generate_key an_a_nonce) b)
+|- b_holds (key (generate_key an_a_nonce) a)
+SZS output end Saturated for data/problems/all/SWV010+1.tptp
+
