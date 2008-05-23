@@ -12,7 +12,7 @@
 TEMPFILE = Makefile-temp-file
 
 TEMP += $(TEMPFILE) \
-        cnf.tptp saturated.tptp \
+        cnf.tptp saturation.tptp \
 	bin/mlton/*.ssa bin/mlton/*.ssa2 \
         bin/mlton/benchmark \
         mlmon.out profile-*
@@ -238,13 +238,13 @@ status-test: $(METIS)
 
 .PHONY: std-test
 std-test: $(METIS)
-	ulimit -t $(TEST_TIME_LIMIT) ; find $(NONEQUALITY_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show goal --show clauses --show size --show category --show proof --show saturated $$_");' 2>&1 | tee std-log
-	ulimit -t $(TEST_TIME_LIMIT) ; find $(EQUALITY_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show goal --show clauses --show size --show category --show proof --show saturated $$_");' 2>&1 | tee -a std-log
+	ulimit -t $(TEST_TIME_LIMIT) ; find $(NONEQUALITY_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show goal --show clauses --show size --show category --show proof --show saturation $$_");' 2>&1 | tee std-log
+	ulimit -t $(TEST_TIME_LIMIT) ; find $(EQUALITY_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show goal --show clauses --show size --show category --show proof --show saturation $$_");' 2>&1 | tee -a std-log
 
 .PHONY: tptp-test
 tptp-test: $(METIS)
-	ulimit -t $(TEST_TIME_LIMIT) ; find $(TPTP_CNF_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show proof --show saturated $$_");' 2>&1 | tee tptp-log
-#	ulimit -t $(TEST_TIME_LIMIT) ; find $(TPTP_FOF_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show proof --show saturated $$_");' 2>&1 | tee -a tptp-log
+	ulimit -t $(TEST_TIME_LIMIT) ; find $(TPTP_CNF_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show proof --show saturation $$_");' 2>&1 | tee tptp-log
+#	ulimit -t $(TEST_TIME_LIMIT) ; find $(TPTP_FOF_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show proof --show saturation $$_");' 2>&1 | tee -a tptp-log
 
 .PHONY: tests
 tests: status-test std-test tptp-test
@@ -311,7 +311,7 @@ doc/example-fof-proof.txt: $(EXAMPLE_FOF_PROOF) $(METIS)
 	$(METIS) --show name --show goal --show clauses --show proof $(EXAMPLE_FOF_PROOF) > $@
 
 doc/example-fof-model.txt: $(EXAMPLE_FOF_MODEL) $(METIS)
-	$(METIS) --show name --show goal --show clauses --show saturated $(EXAMPLE_FOF_MODEL) > $@
+	$(METIS) --show name --show goal --show clauses --show saturation $(EXAMPLE_FOF_MODEL) > $@
 
 doc/logical-kernel.txt: src/Thm.sig Makefile.dev
 	perl -n -e 'if (defined($$a)) { if ($$a++ > 0) { s/: clause -/: Clause.clause -/; print STDOUT $$_; } } elsif ($$_ =~ /Primitive rules of inference/) { $$a = 0; print STDOUT "signature Thm =\n"; }' < $< > $@

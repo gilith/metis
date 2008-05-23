@@ -34,7 +34,7 @@ val QUIET = ref false;
 
 val TEST = ref false;
 
-val ITEMS = ["name","goal","clauses","size","category","proof","saturated"];
+val ITEMS = ["name","goal","clauses","size","category","proof","saturation"];
 
 val show_items = map (fn s => (s, ref false)) ITEMS;
 
@@ -77,7 +77,7 @@ end;
 
 val VERSION = "2.1";
 
-val versionString = "Metis "^VERSION^" (release 20080522)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20080523)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -270,21 +270,21 @@ local
           end;
   end;
 
-  fun display_saturated filename ths =
-      if notshowing "saturated" then ()
+  fun display_saturation filename ths =
+      if notshowing "saturation" then ()
       else
         let
 (*DEBUG
-          val () = Tptp.write {filename = "saturated.tptp"}
+          val () = Tptp.write {filename = "saturation.tptp"}
                      (Tptp.mkCnfProblem
-                        {comments = ["Saturated clause set for " ^ filename],
+                        {comments = ["Saturation clause set for " ^ filename],
                          names = Tptp.noClauseNames,
                          roles = Tptp.noClauseRoles,
                          problem = map Thm.clause ths})
 *)
-          val () = print ("\nSZS output start Saturated for " ^ filename ^ "\n")
+          val () = print ("\nSZS output start Saturation for " ^ filename ^ "\n")
           val () = app (fn th => print (Thm.toString th ^ "\n")) ths
-          val () = print ("SZS output end Saturated for " ^ filename ^ "\n\n")
+          val () = print ("SZS output end Saturation for " ^ filename ^ "\n\n")
         in
           ()
         end;
@@ -343,7 +343,7 @@ in
                  true)
               | Resolution.Satisfiable ths =>
                 (display_status filename Tptp.STATUS_SATISFIABLE;
-                 display_saturated filename ths;
+                 display_saturation filename ths;
                  false)
           end
         else
@@ -381,7 +381,7 @@ in
                               Tptp.STATUS_SATISFIABLE
 
                         val () = display_status filename status
-                        val () = display_saturated filename ths
+                        val () = display_saturation filename ths
                       in
                         false
                       end

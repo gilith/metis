@@ -65,7 +65,7 @@ stable skolemFOFtoCNF_E_1 /\
 
 SZS status CounterSatisfiable for data/problems/all/MGT019+2.tptp
 
-SZS output start Saturated for data/problems/all/MGT019+2.tptp
+SZS output start Saturation for data/problems/all/MGT019+2.tptp
 |- ~greater (disbanding_rate first_movers skolemFOFtoCNF_T)
       (disbanding_rate efficient_producers skolemFOFtoCNF_T)
 |- environment skolemFOFtoCNF_E
@@ -132,7 +132,7 @@ SZS output start Saturated for data/problems/all/MGT019+2.tptp
         (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
      (growth_rate first_movers
         (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
-SZS output end Saturated for data/problems/all/MGT019+2.tptp
+SZS output end Saturation for data/problems/all/MGT019+2.tptp
 
 ---------------------------------------------------------------------------
 Problem: data/problems/all/SWV010+1.tptp
@@ -198,7 +198,7 @@ t_holds (key at a) /\ t_holds (key bt b) /\ party_of_protocol t /\
 
 SZS status Satisfiable for data/problems/all/SWV010+1.tptp
 
-SZS output start Saturated for data/problems/all/SWV010+1.tptp
+SZS output start Saturation for data/problems/all/SWV010+1.tptp
 |- a_holds (key at t)
 |- party_of_protocol a
 |- message (sent a b (a, an_a_nonce))
@@ -270,5 +270,5 @@ SZS output start Saturated for data/problems/all/SWV010+1.tptp
          encrypt (generate_b_nonce an_a_nonce) (generate_key an_a_nonce)))
 |- a_holds (key (generate_key an_a_nonce) b)
 |- b_holds (key (generate_key an_a_nonce) a)
-SZS output end Saturated for data/problems/all/SWV010+1.tptp
+SZS output end Saturation for data/problems/all/SWV010+1.tptp
 
