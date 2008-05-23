@@ -52,16 +52,16 @@ while (my $line = <STDIN>) {
         $state = 'status';
     }
 
-    if ($line =~ /^SZS output start Saturated for (.*)$/) {
+    if ($line =~ /^SZS output start Saturation for (.*)$/) {
         ($1 eq $name) or die;
         ($1 eq $name) or die;
         ($state eq 'status' or $state eq 'time') or die;
-        $state = 'saturated.' . $state;
+        $state = 'saturation.' . $state;
     }
 
-    if ($line =~ /^SZS output end Saturated for (.*)$/) {
+    if ($line =~ /^SZS output end Saturation for (.*)$/) {
         ($1 eq $name) or die;
-        ($state =~ /^saturated\.([[:alpha:]]+)$/) or die;
+        ($state =~ /^saturation\.([[:alpha:]]+)$/) or die;
         $state = $1;
     }
 
@@ -86,7 +86,7 @@ while (my $line = <STDIN>) {
 
     if ($line eq 'Command terminated abnormally.') {
         ($state eq 'status') or ($state eq 'time') or
-        ($state =~ /^proof\./) or ($state =~ /^saturated\./) or die;
+        ($state =~ /^proof\./) or ($state =~ /^saturation\./) or die;
         $status = 'ResourceOut';
         $state = 'time';
     }

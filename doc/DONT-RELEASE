@@ -3,7 +3,7 @@ CVS
 metis/cnf.tptp
 metis/graph.png
 metis/Makefile.dev
-metis/saturated.tptp
+metis/saturation.tptp
 metis/std-log
 metis/tptp-log
 metis/data/problems/tptp-cnf

@@ -72,7 +72,7 @@ fun iterate resolution =
     in
       case Waiting.remove waiting of
         NONE =>
-        Decided (Satisfiable (map Clause.thm (Active.saturated active)))
+        Decided (Satisfiable (map Clause.thm (Active.saturation active)))
       | SOME ((d,cl),waiting) =>
         if Clause.isContradiction cl then
           Decided (Contradiction (Clause.thm cl))

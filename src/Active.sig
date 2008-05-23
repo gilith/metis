@@ -27,7 +27,7 @@ val default : parameters
 
 val size : active -> int
 
-val saturated : active -> Clause.clause list
+val saturation : active -> Clause.clause list
 
 (* ------------------------------------------------------------------------- *)
 (* Create a new active clause set and initialize clauses.                    *)

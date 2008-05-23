@@ -108,7 +108,7 @@ in
       let
 (*TRACE2
         val ppCls = Parser.ppList Clause.pp
-        val () = Parser.ppTrace ppCls "Active.checkSaturated: clauses" cls
+        val () = Parser.ppTrace ppCls "Active.isSaturated: clauses" cls
 *)
         val red = Units.empty
         val rw = Rewrite.new (KnuthBendixOrder.compare ordering)
@@ -120,7 +120,8 @@ in
       end;
 
   fun checkSaturated ordering subs cls =
-      if isSaturated ordering subs cls then () else raise Bug "unsaturated";
+      if isSaturated ordering subs cls then ()
+      else raise Bug "Active.checkSaturated";
 end;
 
 (* ------------------------------------------------------------------------- *)
@@ -201,7 +202,7 @@ fun clauses (Active {clauses = cls, ...}) =
       IntMap.foldr add [] cls
     end;
 
-fun saturated active =
+fun saturation active =
     let
       fun remove (cl,(cls,subs)) =
           let
