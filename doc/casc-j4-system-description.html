@@ -1,0 +1,90 @@
+<html>
+
+<head>
+<title>CASC J4 System Description: Metis 2.1</title>
+</head>
+
+<body>
+<H2>Metis 2.1</H2>
+J. Hurd<BR>
+Galois, Inc., USA<BR>
+<tt>joe[@]gilith.com</tt>
+
+<H3>Architecture</H3>
+
+<p>Metis 2.1 [<a href="#References">Hur03</A>] is a proof tactic used
+in the
+<a href="http://hol.sourceforge.net/">HOL4</a> interactive theorem
+prover. It works by converting a higher order logic goal to a set of
+clauses in first order logic, with the property that a refutation of
+the clause set can be translated to a higher order logic proof of the
+original goal.</p>
+
+<p>Experiments with various first order calculi
+[<a href="#References">Hur03</a>] have shown a <em>given clause
+algorithm</em> and ordered resolution to best suit this application,
+and that is what Metis 2.1 implements. Since equality often appears in
+interactive theorem prover goals, Metis 2.1 also implements the
+ordered paramodulation calculus.</p>
+
+<H3>Implementation</H3>
+
+<p>Metis 2.1 is written in Standard ML, for ease of integration with
+HOL4. It uses indexes for resolution, paramodulation, (forward)
+subsumption and demodulation. It keeps the <em>Active</em> clause set
+reduced with respect to all the unit equalities so far derived.</p>
+
+<p>In addition to standard size and distance measures, Metis 2.1 uses
+finite models to weight clauses in the <em>Passive</em> set. When
+integrated with higher order logic, a finite model is manually
+constructed to interpret standard functions and relations in such a
+way as to make many standard axioms true and negated goals false.
+Non-standard functions and relations are interpreted randomly, but
+with a bias towards making negated goals false. Since it is part of
+the CASC competition rules that standard functions and relations are
+obfuscated, Metis 2.1 will back off to the biased random
+interpretation of all functions and relations (except equality), using a
+finite model with 4 elements.</p>
+
+<p>Metis 2.1 reads problems in TPTP format and outputs detailed proofs
+in TSTP format, where each proof step is one of 6 simple inference
+rules. Metis 2.1 implements a complete calculus, so when the set of
+clauses is saturated it can soundly declare the input problem to be
+unprovable (and outputs the saturation set).</p>
+
+<p>Metis 2.1 is free software, released under the GPL. It can be
+downloaded from
+<PRE>
+    <A HREF="http://www.gilith.com/software/metis">http://www.gilith.com/software/metis</A></PRE></p>
+
+<H3>Strategies</H3>
+
+<p>Metis 2.1 uses a fixed strategy for every input problem. Negative
+literals are always chosen in favour of positive literals, and terms
+are ordered using the Knuth-Bendix ordering with uniform symbol weight
+and precedence favouring reduced arity.</p>
+
+<H3>Expected Competition Performance</H3>
+
+<p>The major change between Metis 2.0, which was entered into CASC 21,
+and Metis 2.1 is the TSTP proof format. There were only minor changes
+to the core proof engine, so Metis 2.1 is expected to perform at
+approximately the same level and end up in the lower half of the
+table.</p>
+
+<a name="References"><H3>References</H3></a>
+<dl>
+<dt>Hur03</dt>
+<dd> Hurd J. (September 2003),
+     <STRONG><a href="http://www.cl.cam.ac.uk/~jeh1004/research/papers/metis.html">First-Order Proof Tactics in Higher-Order Logic Theorem Provers</a></STRONG>,
+     Archer M., Di Vito B., Mu&ntilde;oz C.,
+     <EM>Design and Application of Strategies/Tactics in Higher Order Logics (STRATA 2003)</EM>
+     (Rome, Italy),
+     pp.56-68,
+     NASA Technical Report CP-2003-212448,
+     NASA.</dd>
+</DL>
+<P>
+
+</body>
+</html>
