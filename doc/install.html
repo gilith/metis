@@ -27,19 +27,34 @@
 
 <hr />
 
+<h3>Installing the Metis Mac OS X Binary</h3>
+
+<ol>
+
+<li><a href="download.html">Download</a>
+
+the <tt>metis</tt> file.</li>
+
+<li>Make it executable with the command <tt>chmod +x metis</tt></li>
+
+<li>Test it with the command <tt>./metis &#45;&#45;help</tt></li>
+
+<li>If the test results in a usage message, the installation was
+successful.</li>
+
+</ol>
+
 <h3>Installing Metis from Source</h3>
 
-<p>Compiling and running the interpreted version of Metis requires an
-installation of
+<p>Installing Metis from source requires an installation of either
 
-<a href="http://www.dina.dk/~sestoft/mosml.html">Moscow ML</a>.<br />
+<a href="http://www.mlton.org/">MLton</a>
 
-Compiling and running the native code version of Metis requires an
-installation of
+or
 
-<a href="http://www.mlton.org/">MLton</a>.<br />
+<a href="http://www.dina.dk/~sestoft/mosml.html">Moscow ML</a>,
 
-Both versions use GNU Make and Perl.
+as well as standard system tools including GNU Make and Perl.</p>
 
 <ol>
 
@@ -52,32 +67,45 @@ the <tt>metis.tar.gz</tt> file.</li>
 <li>There will be a new directory called <tt>metis</tt>. Change to
 this directory.</li>
 
-<li>Type <tt>make clean</tt> to clean out any object files, then
+<li>To build using
+
+<a href="http://www.mlton.org/">MLton</a>:
+
 <ul>
 
-<li><strong>either</strong> <tt>make mosml</tt> to build the Moscow ML version,
+<li>Build with the command <tt>make mlton</tt></li>
 
-<li><strong>or</strong> <tt>make mlton</tt> to build the MLton version.</li>
+<li>Test with the command <tt>bin/mlton/metis &#45;&#45;help</tt></li>
 
 </ul>
 </li>
 
-<li>Test your installation by executing
+<li>To build using
+
+<a href="http://www.dina.dk/~sestoft/mosml.html">Moscow ML</a>:
+
 <ul>
 
-<li><strong>either</strong> <tt>bin/mosml/metis --help</tt> to run
-the Moscow ML version,
+<li>Build with the command <tt>make mosml</tt></li>
 
-<li><strong>or</strong> <tt>bin/mlton/metis --help</tt> to run the
-MLton version.</li></li>
+<li>Test with the command <tt>bin/mosml/metis &#45;&#45;help</tt></li>
 
 </ul>
 </li>
 
-<li>If a usage message appears, the installation was successful.</li>
+<li>If the test results in a usage message, the installation was
+successful.</li>
 
 </ol>
-</p>
+
+<p>If anything goes wrong, you can use the command <tt>make clean</tt>
+to clean out any object files.</p>
+
+<h3>Troubleshooting</h3>
+
+<p>To report bugs or obtain help, please email
+
+<a href="mailto:joe@gilith.com">joe@gilith.com</a></p>
 
 <hr />
 

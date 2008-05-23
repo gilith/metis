@@ -320,12 +320,14 @@ doc/logical-kernel.txt: src/Thm.sig Makefile.dev
 documentation: doc/example-cnf-proof.txt doc/example-fof-proof.txt doc/example-fof-model.txt doc/logical-kernel.txt
 
 .PHONY: tarball
-tarball: clean doc/DONT-RELEASE Makefile.dev
+tarball: doc/DONT-RELEASE Makefile.dev
+	$(MAKE) clean
 	cd .. ; tar cvzhf metis/release/metis.tar.gz --exclude-from metis/doc/DONT-RELEASE metis
 
 .PHONY: release
-release: release-stamp mosml mlton documentation status-test tarball
+release: release-stamp tarball mosml mlton status-test documentation
 	rm -f $(RELEASE_DIR)/*.html $(RELEASE_DIR)/*.jpg $(RELEASE_DIR)/*.txt
+	cp -v $(METIS) $(RELEASE_DIR)/
 	cp -v doc/*.html doc/*.jpg doc/*.txt $(RELEASE_DIR)/
 	rsync -azv --delete --checksum --size-only --exclude=.cvsignore --exclude=CVS -e ssh $(RELEASE_DIR)/ gilith@gilith.com:public_html/software/metis
 
