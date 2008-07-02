@@ -65,7 +65,7 @@ val pp =
       (fn w => "Waiting{" ^ Int.toString (size w) ^ "}")
       Parser.ppString;
 
-(*DEBUG
+(*MetisDebug
 val pp =
     Parser.ppMap
       (fn Waiting {clauses,...} =>
@@ -162,7 +162,7 @@ local
 in
   fun clauseWeight (parm : parameters) mods dist mcl cl =
       let
-(*TRACE3
+(*MetisTrace3
         val () = Parser.ppTrace Clause.pp "Waiting.clauseWeight: cl" cl
 *)
         val {symbolsWeight,literalsWeight,models,...} = parm
@@ -170,7 +170,7 @@ in
         val symbolsW = Math.pow (clauseSymbols lits, symbolsWeight)
         val literalsW = Math.pow (clauseLiterals lits, literalsWeight)
         val modelsW = checkModels models mods mcl
-(*TRACE4
+(*MetisTrace4
         val () = trace ("Waiting.clauseWeight: dist = " ^
                         Real.toString dist ^ "\n")
         val () = trace ("Waiting.clauseWeight: symbolsW = " ^
@@ -181,7 +181,7 @@ in
                         Real.toString modelsW ^ "\n")
 *)
         val weight = dist * symbolsW * literalsW * modelsW + priority cl
-(*TRACE3
+(*MetisTrace3
         val () = trace ("Waiting.clauseWeight: weight = " ^
                         Real.toString weight ^ "\n")
 *)
@@ -218,14 +218,14 @@ fun add' waiting dist mcls cls =
 fun add waiting (_,[]) = waiting
   | add waiting (dist,cls) =
     let
-(*TRACE3
+(*MetisTrace3
       val () = Parser.ppTrace pp "Waiting.add: waiting" waiting
       val () = Parser.ppTrace (Parser.ppList Clause.pp) "Waiting.add: cls" cls
 *)
 
       val waiting = add' waiting dist (mkModelClauses cls) cls 
 
-(*TRACE3
+(*MetisTrace3
       val () = Parser.ppTrace pp "Waiting.add: waiting" waiting
 *)
     in

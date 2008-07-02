@@ -21,13 +21,14 @@ TEMP += $(TEMPFILE) \
 # The ML preprocessor.
 ###############################################################################
 
-#MLPP_OPTS += -r 'DEBUG'
-#MLPP_OPTS += -r 'DEBUG|TRACE[0-1]'
-#MLPP_OPTS += -r 'DEBUG|TRACE[0-2]'
-#MLPP_OPTS += -r 'DEBUG|TRACE[0-3]'
-#MLPP_OPTS += -r 'DEBUG|TRACE[0-4]'
-#MLPP_OPTS += -r 'DEBUG|TRACE[0-5]'
-#MLPP_OPTS += -r 'DEBUG|TRACE[0-6]'
+#MLPP_OPTS += -r 'MetisDebug'
+#MLPP_OPTS += -r 'MetisDebug|BasicDebug'
+#MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-1]'
+#MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-2]'
+#MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-3]'
+#MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-4]'
+#MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-5]'
+#MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-6]'
 
 ###############################################################################
 # The Moscow ML compiler.

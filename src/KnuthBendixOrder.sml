@@ -93,7 +93,7 @@ fun weightTerm weight =
 fun weightLowerBound (w as Weight (m,c)) =
     if NameMap.exists (fn (_,n) => n < 0) m then NONE else SOME c;
 
-(*DEBUG
+(*MetisDebug
 fun ppWeightList pp =
     let
       fun coeffToString n =
@@ -176,7 +176,7 @@ fun compare {weight,precedence} =
       fn (tm1,tm2) => if tm1 = tm2 then SOME EQUAL else weightCmp tm1 tm2
     end;
 
-(*TRACE7
+(*MetisTrace7
 val compare = fn kbo => fn (tm1,tm2) =>
     let
       val () = Parser.ppTrace Term.pp "KnuthBendixOrder.compare: tm1" tm1

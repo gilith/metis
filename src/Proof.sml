@@ -139,7 +139,7 @@ in
         Parser.addNewline p;
         Parser.endBlock p
       end
-(*DEBUG
+(*MetisDebug
       handle Error err => raise Bug ("Proof.pp: shouldn't fail:\n" ^ err);
 *)
 
@@ -172,7 +172,7 @@ local
       let
         fun recon [] =
             let
-(*TRACE3
+(*MetisTrace3
               val () = Parser.ppTrace LiteralSet.pp "reconstructSubst: cl" cl
               val () = Parser.ppTrace LiteralSet.pp "reconstructSubst: cl'" cl'
 *)
@@ -194,7 +194,7 @@ local
       in
         Subst.normalize (recon [(LiteralSet.toList cl, Subst.empty)])
       end
-(*DEBUG
+(*MetisDebug
       handle Error err =>
         raise Bug ("Proof.recontructSubst: shouldn't fail:\n" ^ err);
 *)
@@ -214,14 +214,14 @@ local
            if not (LiteralSet.null lits) then LiteralSet.pick lits
            else raise Bug "can't reconstruct Resolve rule"
          end)
-(*DEBUG
+(*MetisDebug
       handle Error err =>
         raise Bug ("Proof.recontructResolvant: shouldn't fail:\n" ^ err);
 *)
 
   fun reconstructEquality cl =
       let
-(*TRACE3
+(*MetisTrace3
         val () = Parser.ppTrace LiteralSet.pp "Proof.reconstructEquality: cl" cl
 *)
 
@@ -264,7 +264,7 @@ local
             | ([l1],[l2]) => [(l1,l1,l2),(l1,l2,l1)]
             | _ => raise Bug "reconstructEquality: malformed"
 
-(*TRACE3
+(*MetisTrace3
         val ppCands =
             Parser.ppList (Parser.ppTriple Literal.pp Literal.pp Literal.pp)
         val () = Parser.ppTrace ppCands
@@ -275,7 +275,7 @@ local
           SOME info => info
         | NONE => raise Bug "can't reconstruct Equality rule"
       end
-(*DEBUG
+(*MetisDebug
       handle Error err =>
         raise Bug ("Proof.recontructEquality: shouldn't fail:\n" ^ err);
 *)
@@ -304,7 +304,7 @@ local
 in
   fun thmToInference th =
       let
-(*TRACE3
+(*MetisTrace3
         val () = Parser.ppTrace Thm.pp "Proof.thmToInference: th" th
 *)
 
@@ -312,17 +312,17 @@ in
 
         val thmInf = Thm.inference th
 
-(*TRACE3
+(*MetisTrace3
         val ppThmInf = Parser.ppPair Thm.ppInferenceType (Parser.ppList Thm.pp)
         val () = Parser.ppTrace ppThmInf "Proof.thmToInference: thmInf" thmInf
 *)
 
         val inf = reconstruct cl thmInf
 
-(*TRACE3
+(*MetisTrace3
         val () = Parser.ppTrace ppInference "Proof.thmToInference: inf" inf
 *)
-(*DEBUG
+(*MetisDebug
         val () =
             let
               val th' = inferenceToThm inf
@@ -340,7 +340,7 @@ in
       in
         inf
       end
-(*DEBUG
+(*MetisDebug
       handle Error err =>
         raise Bug ("Proof.thmToInference: shouldn't fail:\n" ^ err);
 *)
@@ -372,11 +372,11 @@ local
 in
   fun proof th =
       let
-(*TRACE3
+(*MetisTrace3
         val () = Parser.ppTrace Thm.pp "Proof.proof: th" th
 *)
         val (m,_) = buildProof (th, (Map.new thmCompare, []))
-(*TRACE3
+(*MetisTrace3
         val () = Parser.ppTrace Parser.ppInt "Proof.proof: size" (Map.size m)
 *)
       in

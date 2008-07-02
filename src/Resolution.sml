@@ -65,7 +65,7 @@ datatype state =
 fun iterate resolution =
     let
       val Resolution {parameters,active,waiting} = resolution
-(*TRACE2
+(*MetisTrace2
       val () = Parser.ppTrace Active.pp "Resolution.iterate: active" active
       val () = Parser.ppTrace Waiting.pp "Resolution.iterate: waiting" waiting
 *)
@@ -78,7 +78,7 @@ fun iterate resolution =
           Decided (Contradiction (Clause.thm cl))
         else
           let
-(*TRACE1
+(*MetisTrace1
             val () = Parser.ppTrace Clause.pp "Resolution.iterate: cl" cl
 *)
             val (active,cls) = Active.add active cl

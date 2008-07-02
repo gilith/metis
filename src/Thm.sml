@@ -177,7 +177,7 @@ fun resolve lit (th1 as Thm (cl1,_)) (th2 as Thm (cl2,_)) =
       Thm (LiteralSet.union cl1' cl2', (Resolve,[th1,th2]))
     end;
 
-(*DEBUG
+(*MetisDebug
 val resolve = fn lit => fn pos => fn neg =>
     resolve lit pos neg
     handle Error err =>

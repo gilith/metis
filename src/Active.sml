@@ -106,7 +106,7 @@ local
 in
   fun isSaturated ordering subs cls =
       let
-(*TRACE2
+(*MetisTrace2
         val ppCls = Parser.ppList Clause.pp
         val () = Parser.ppTrace ppCls "Active.isSaturated: clauses" cls
 *)
@@ -216,7 +216,7 @@ fun saturation active =
       val (cls,_) = foldl remove ([], Subsume.new ()) cls
       val (cls,subs) = foldl remove ([], Subsume.new ()) cls
 
-(*DEBUG
+(*MetisDebug
       val Active {parameters,...} = active
       val {clause,...} = parameters
       val {ordering,...} = clause
@@ -237,7 +237,7 @@ val pp =
       Parser.ppMap toStr Parser.ppString
     end;
 
-(*DEBUG
+(*MetisDebug
 local
   open Parser;
 
@@ -273,7 +273,7 @@ in
        addString p ",";
        addBreak p (1,0);
        ppRewrite p rewrite;
-(*TRACE5
+(*MetisTrace5
        addString p ",";
        addBreak p (1,0);
        ppSubterms p subterms;
@@ -315,16 +315,16 @@ fun simplify simp units rewr subs =
              end
     end;
 
-(*DEBUG
+(*MetisDebug
 val simplify = fn simp => fn units => fn rewr => fn subs => fn cl =>
     let
       fun traceCl s = Parser.ppTrace Clause.pp ("Active.simplify: " ^ s)
-(*TRACE4
+(*MetisTrace4
       val ppClOpt = Parser.ppOption Clause.pp
       val () = traceCl "cl" cl
 *)
       val cl' = simplify simp units rewr subs cl
-(*TRACE4
+(*MetisTrace4
       val () = Parser.ppTrace ppClOpt "Active.simplify: cl'" cl'
 *)
       val () =
@@ -460,7 +460,7 @@ fun deduceResolution literals cl (lit as (_,atm), acc) =
           case total (Clause.resolve cl_lit) (cl,lit) of
             SOME cl' => cl' :: acc
           | NONE => acc
-(*TRACE4
+(*MetisTrace4
       val () = Parser.ppTrace Literal.pp "Active.deduceResolution: lit" lit
 *)
     in
@@ -559,7 +559,7 @@ local
                     
               fun addRed ((cl,tm),acc) =
                   let
-(*TRACE5
+(*MetisTrace5
                     val () = Parser.ppTrace Clause.pp "Active.addRed: cl" cl
                     val () = Parser.ppTrace Term.pp "Active.addRed: tm" tm
 *)
@@ -570,7 +570,7 @@ local
                     else IntSet.add acc id
                   end
 
-(*TRACE5
+(*MetisTrace5
               val () = Parser.ppTrace Term.pp "Active.addReduce: l" l
               val () = Parser.ppTrace Term.pp "Active.addReduce: r" r
               val () = Parser.ppTrace Parser.ppBool "Active.addReduce: ord" ord
@@ -602,7 +602,7 @@ local
       if choose_clause_rewritables active ids then clause_rewritables active
       else rewrite_rewritables active ids;
 
-(*DEBUG
+(*MetisDebug
   val rewritables = fn active => fn ids =>
       let
         val clause_ids = clause_rewritables active
@@ -658,21 +658,21 @@ in
       if Rewrite.isReduced rewrite then (active,[])
       else
         let
-(*TRACE3
+(*MetisTrace3
           val () = trace "Active.extract_rewritables: inter-reducing\n"
 *)
           val (rewrite,ids) = Rewrite.reduce' rewrite
           val active = setRewrite active rewrite
           val ids = rewritables active ids
           val cls = IntSet.transform (IntMap.get clauses) ids
-(*TRACE3
+(*MetisTrace3
           val ppCls = Parser.ppList Clause.pp
           val () = Parser.ppTrace ppCls "Active.extract_rewritables: cls" cls
 *)
         in
           (delete active ids, cls)
         end
-(*DEBUG
+(*MetisDebug
         handle Error err =>
           raise Bug ("Active.extract_rewritables: shouldn't fail\n" ^ err);
 *)
@@ -746,7 +746,7 @@ in
   fun factor active cls = factor' active [] cls;
 end;
 
-(*TRACE4
+(*MetisTrace4
 val factor = fn active => fn cls =>
     let
       val ppCls = Parser.ppList Clause.pp
@@ -788,14 +788,14 @@ fun add active cl =
       else if not (Clause.equalThms cl cl') then factor active [cl']
       else
         let
-(*TRACE3
+(*MetisTrace3
           val () = Parser.ppTrace Clause.pp "Active.add: cl" cl
 *)
           val active = addClause active cl
           val cl = Clause.freshVars cl
           val cls = deduce active cl
           val (active,cls) = factor active cls
-(*TRACE2
+(*MetisTrace2
           val ppCls = Parser.ppList Clause.pp
           val () = Parser.ppTrace ppCls "Active.add: cls" cls
 *)

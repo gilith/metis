@@ -61,7 +61,7 @@ fun equations (Rewrite {known,...}) =
 
 val pp = Parser.ppMap equations (Parser.ppList Rule.ppEquation);
 
-(*DEBUG
+(*MetisDebug
 local
   fun orientOptionToString ort =
       case ort of
@@ -107,7 +107,7 @@ in
        beginBlock p Inconsistent 1;
        addString p "{";
        ppKnown p known;
-(*TRACE5
+(*MetisTrace5
        addString p ",";
        addBreak p (1,0);
        ppRedexes p redexes;
@@ -191,7 +191,7 @@ fun add (rw as Rewrite {known,...}) (id,eqn) =
             Rewrite
               {order = order, known = known, redexes = redexes,
                subterms = subterms, waiting = waiting}
-(*TRACE5
+(*MetisTrace5
         val () = Parser.ppTrace pp "Rewrite.add: result" rw
 *)
       in
@@ -328,7 +328,7 @@ fun rewriteIdEqn' order known redexes id (eqn as (l_r,th)) =
          else if not (Thm.negateMember lit litTh) then litTh
          else Thm.resolve lit th litTh)
     end
-(*DEBUG
+(*MetisDebug
     handle Error err => raise Error ("Rewrite.rewriteIdEqn':\n" ^ err);
 *)
 
@@ -377,14 +377,14 @@ fun rewriteIdLiteralsRule' order known redexes id lits th =
 fun rewriteIdRule' order known redexes id th =
     rewriteIdLiteralsRule' order known redexes id (Thm.clause th) th;
 
-(*DEBUG
+(*MetisDebug
 val rewriteIdRule' = fn order => fn known => fn redexes => fn id => fn th =>
     let
-(*TRACE6
+(*MetisTrace6
       val () = Parser.ppTrace Thm.pp "Rewrite.rewriteIdRule': th" th
 *)
       val result = rewriteIdRule' order known redexes id th
-(*TRACE6
+(*MetisTrace6
       val () = Parser.ppTrace Thm.pp "Rewrite.rewriteIdRule': result" result
 *)
       val _ = not (thmReducible order known id result) orelse
@@ -569,7 +569,7 @@ local
 in
   fun rebuild rpl spl rw =
       let
-(*TRACE5
+(*MetisTrace5
         val ppPl = Parser.ppMap IntSet.toList (Parser.ppList Parser.ppInt)
         val () = Parser.ppTrace ppPl "Rewrite.rebuild: rpl" rpl
         val () = Parser.ppTrace ppPl "Rewrite.rebuild: spl" spl
@@ -608,15 +608,15 @@ fun reduce' rw =
     if isReduced rw then (rw,[])
     else reduceAcc (IntSet.empty,IntSet.empty,IntSet.empty,rw,IntSet.empty);
 
-(*DEBUG
+(*MetisDebug
 val reduce' = fn rw =>
     let
-(*TRACE4
+(*MetisTrace4
       val () = Parser.ppTrace pp "Rewrite.reduce': rw" rw
 *)
       val Rewrite {known,order,...} = rw
       val result as (Rewrite {known = known', ...}, _) = reduce' rw
-(*TRACE4
+(*MetisTrace4
       val ppResult = Parser.ppPair pp (Parser.ppList Parser.ppInt)
       val () = Parser.ppTrace ppResult "Rewrite.reduce': result" result
 *)

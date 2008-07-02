@@ -118,7 +118,7 @@ fun transEqn (eqn1 as ((x,y), th1)) (eqn2 as ((_,z), th2)) =
              th
            end);
 
-(*DEBUG
+(*MetisDebug
 val transEqn = fn eqn1 => fn eqn2 =>
     transEqn eqn1 eqn2
     handle Error err =>
@@ -206,7 +206,7 @@ fun rewrConv (eqn as ((x,y), eqTh)) path tm =
         (tm',th)
       end;
 
-(*DEBUG
+(*MetisDebug
 val rewrConv = fn eqn as ((x,y),eqTh) => fn path => fn tm =>
     rewrConv eqn path tm
     handle Error err =>
@@ -250,7 +250,7 @@ fun repeatTopDownConv conv =
       f
     end;
 
-(*DEBUG
+(*MetisDebug
 val repeatTopDownConv = fn conv => fn tm =>
     repeatTopDownConv conv tm
     handle Error err => raise Error ("repeatTopDownConv: " ^ err);
@@ -322,7 +322,7 @@ fun rewrLiterule (eqn as ((x,y),eqTh)) path lit =
         (lit',th)
       end;
 
-(*DEBUG
+(*MetisDebug
 val rewrLiterule = fn eqn => fn path => fn lit =>
     rewrLiterule eqn path lit
     handle Error err =>
@@ -389,7 +389,7 @@ fun literalRule literule lit th =
       else Thm.resolve lit th litTh
     end;
 
-(*DEBUG
+(*MetisDebug
 val literalRule = fn literule => fn lit => fn th =>
     literalRule literule lit th
     handle Error err =>
@@ -679,7 +679,7 @@ local
       end
     | init_edges acc apart ((sub,edge) :: sub_edges) =
       let
-(*DEBUG
+(*MetisDebug
         val () = if not (Subst.null sub) then ()
                  else raise Bug "Rule.factor.init_edges: empty subst"
 *)
@@ -732,11 +732,11 @@ local
 in
   fun factor' cl =
       let
-(*TRACE6
+(*MetisTrace6
         val () = Parser.ppTrace LiteralSet.pp "Rule.factor': cl" cl
 *)
         val edges = mk_edges [] [] (LiteralSet.toList cl)
-(*TRACE6
+(*MetisTrace6
         val ppEdgesSize = Parser.ppMap length Parser.ppInt
         val ppEdgel = Parser.ppList ppEdge
         val ppEdges = Parser.ppList (Parser.ppTriple ppEdgel Subst.pp ppEdgel)
@@ -744,7 +744,7 @@ in
         val () = Parser.ppTrace ppEdges "Rule.factor': edges" edges
 *)
         val result = fact [] edges
-(*TRACE6
+(*MetisTrace6
         val ppResult = Parser.ppList Subst.pp
         val () = Parser.ppTrace ppResult "Rule.factor': result" result
 *)

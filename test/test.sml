@@ -33,10 +33,6 @@ val () = installPP Clause.pp;
 
 val time = Portable.time;
 
-(*DEBUG
-  val () = print "Running in DEBUG mode.\n"
-*)
-
 (* ------------------------------------------------------------------------- *)
 (* Problem data.                                                             *)
 (* ------------------------------------------------------------------------- *)
@@ -57,9 +53,9 @@ fun partialOrderToString (SOME LESS) = "SOME LESS"
   | partialOrderToString NONE = "NONE";
 
 fun SAY s =
-  print
-  ("-------------------------------------" ^
-   "-------------------------------------\n" ^ s ^ "\n\n");
+    print
+      ("-------------------------------------" ^
+       "-------------------------------------\n" ^ s ^ "\n\n");
 
 fun printval p x = (print (PP.pp_to_string 79 p x ^ "\n\n"); x);
 

@@ -274,7 +274,7 @@ in
       genSubsumes pred subsume (SOME (LiteralSet.size cl)) cl;
 end;
 
-(*TRACE4
+(*MetisTrace4
 val subsumes = fn pred => fn subsume => fn cl =>
     let
       val ppCl = LiteralSet.pp

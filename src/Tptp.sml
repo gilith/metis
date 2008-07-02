@@ -866,7 +866,7 @@ local
             end
 
         val (avoid,sub) = mkTptpVars (formulaFreeVars fm)
-(*TRACE5
+(*MetisTrace5
         val () = Parser.ppTrace Subst.pp "Tptp.alpha: sub" sub
 *)
       in
@@ -1456,7 +1456,7 @@ in
         List.foldl (ppStep p) (true,noClauseNames,0) prf;
         Parser.endBlock p
       end
-(*DEBUG
+(*MetisDebug
       handle Error err => raise Bug ("Tptp.ppProof: shouldn't fail:\n" ^ err);
 *)
 end;

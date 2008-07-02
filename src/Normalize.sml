@@ -171,7 +171,7 @@ fun polarity True = true
   | polarity (Exists _) = true
   | polarity (Forall _) = false;
 
-(*DEBUG
+(*MetisDebug
 val polarity = fn f =>
     let
       val res1 = compare (f, negate f) = LESS
@@ -662,7 +662,7 @@ local
       end;
 
   fun cnfFm avoid fm =
-(*TRACE5
+(*MetisTrace5
       let
         val fm' = cnfFm' avoid fm
         val () = Parser.ppTrace pp "Normalize.cnfFm: fm" fm
@@ -794,7 +794,7 @@ in
         else
           let
             val (cl',def) = minBreak countClauses fm (cl,NONE)
-(*TRACE1
+(*MetisTrace1
             val () =
                 case def of
                   NONE => ()
@@ -1029,7 +1029,7 @@ in
       end;
 end;
 
-(*TRACE2
+(*MetisTrace2
 val simplify = fn simp => fn fm =>
     let
       val fm' = simplify simp fm
@@ -1117,7 +1117,7 @@ local
             val simp = simplifyAdd simp fm_prf
             fun add (f,l) =
                 (toClause f, prf) :: l
-(*DEBUG
+(*MetisDebug
                 handle Error err =>
                   (Parser.ppTrace pp "Normalize.def_cnf_formula: f" f;
                    raise Bug ("Normalize.cnfStateAdd.def_cnf_formula: "^err))

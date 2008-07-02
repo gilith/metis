@@ -274,13 +274,14 @@ local
       if notshowing "saturation" then ()
       else
         let
-(*DEBUG
+(*MetisDebug
           val () = Tptp.write {filename = "saturation.tptp"}
                      (Tptp.mkCnfProblem
                         {comments = ["Saturation clause set for " ^ filename],
                          names = Tptp.noClauseNames,
                          roles = Tptp.noClauseRoles,
-                         problem = map Thm.clause ths})
+                         problem = {axioms = [],
+                                    conjecture = map Thm.clause ths}})
 *)
           val () = print ("\nSZS output start Saturation for " ^ filename ^ "\n")
           val () = app (fn th => print (Thm.toString th ^ "\n")) ths
@@ -295,7 +296,7 @@ local
 
   fun display_problem filename cls =
       let
-(*DEBUG
+(*MetisDebug
           val () = Tptp.write {filename = "cnf.tptp"}
                      (Tptp.mkCnfProblem
                         {comments = ["CNF clauses for " ^ filename],
@@ -405,9 +406,9 @@ end;
 
 val () =
 let
-(*DEBUG
-  val () = print "Running in DEBUG mode.\n"
-*)
+  (*BasicDebug val () = print "Running in basic DEBUG mode.\n" *)
+  (*MetisDebug val () = print "Running in metis DEBUG mode.\n" *)
+
   val success = proveAll work
 in
   exit {message = NONE, usage = false, success = success}
