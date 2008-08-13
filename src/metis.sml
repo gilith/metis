@@ -36,12 +36,16 @@ val TEST = ref false;
 
 val ITEMS = ["name","goal","clauses","size","category","proof","saturation"];
 
+val extended_items = ["all"] @ ITEMS @ ["none"];
+
 val show_items = map (fn s => (s, ref false)) ITEMS;
 
 fun show_ref s =
     case List.find (equal s o fst) show_items of
       NONE => raise Bug ("item " ^ s ^ " not found")
     | SOME (_,r) => r;
+
+fun show_set b = app (fn (_,r) => r := b) show_items;
 
 fun showing s = not (!QUIET) andalso (s = "status" orelse !(show_ref s));
 
@@ -51,9 +55,13 @@ fun showing_any () = List.exists showing ITEMS;
 
 fun notshowing_any () = not (showing_any ());
 
-fun show s = case show_ref s of r => r := true;
+fun show "all" = show_set true
+  | show "none" = show_set false
+  | show s = case show_ref s of r => r := true;
 
-fun hide s = case show_ref s of r => r := false;
+fun hide "all" = show_set false
+  | hide "none" = show_set true
+  | hide s = case show_ref s of r => r := false;
 
 local
   open Useful Options;
@@ -62,11 +70,11 @@ in
     [{switches = ["--show"], arguments = ["ITEM"],
       description = "show ITEM (see below for list)",
       processor =
-        beginOpt (enumOpt ITEMS endOpt) (fn _ => fn s => show s)},
+        beginOpt (enumOpt extended_items endOpt) (fn _ => fn s => show s)},
      {switches = ["--hide"], arguments = ["ITEM"],
       description = "hide ITEM (see below for list)",
       processor =
-        beginOpt (enumOpt ITEMS endOpt) (fn _ => fn s => hide s)},
+        beginOpt (enumOpt extended_items endOpt) (fn _ => fn s => hide s)},
      {switches = ["-q","--quiet"], arguments = [],
       description = "Run quietly; indicate provability with return value",
       processor = beginOpt endOpt (fn _ => QUIET := true)},
@@ -84,7 +92,7 @@ val programOptions =
      version = versionString,
      header = "usage: "^PROGRAM^" [option ...] problem.tptp ...\n" ^
               "Proves the input TPTP problem files.\n",
-     footer = "Possible ITEMs are {" ^ join "," ITEMS ^ "}.\n" ^
+     footer = "Possible ITEMs are {" ^ join "," extended_items ^ "}.\n" ^
               "Problems can be read from standard input using the " ^
               "special - filename.\n",
      options = specialOptions @ Options.basicOptions};

@@ -239,8 +239,8 @@ status-test: $(METIS)
 
 .PHONY: std-test
 std-test: $(METIS)
-	ulimit -t $(TEST_TIME_LIMIT) ; find $(NONEQUALITY_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show goal --show clauses --show size --show category --show proof --show saturation $$_");' 2>&1 | tee std-log
-	ulimit -t $(TEST_TIME_LIMIT) ; find $(EQUALITY_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show goal --show clauses --show size --show category --show proof --show saturation $$_");' 2>&1 | tee -a std-log
+	ulimit -t $(TEST_TIME_LIMIT) ; find $(NONEQUALITY_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show all $$_");' 2>&1 | tee std-log
+	ulimit -t $(TEST_TIME_LIMIT) ; find $(EQUALITY_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show all $$_");' 2>&1 | tee -a std-log
 
 .PHONY: tptp-test
 tptp-test: $(METIS)
