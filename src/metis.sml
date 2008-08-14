@@ -36,7 +36,7 @@ val TEST = ref false;
 
 val ITEMS = ["name","goal","clauses","size","category","proof","saturation"];
 
-val extended_items = ["all"] @ ITEMS @ ["none"];
+val extended_items = "all" :: ITEMS;
 
 val show_items = map (fn s => (s, ref false)) ITEMS;
 
@@ -56,11 +56,9 @@ fun showing_any () = List.exists showing ITEMS;
 fun notshowing_any () = not (showing_any ());
 
 fun show "all" = show_set true
-  | show "none" = show_set false
   | show s = case show_ref s of r => r := true;
 
 fun hide "all" = show_set false
-  | hide "none" = show_set true
   | hide s = case show_ref s of r => r := false;
 
 local
@@ -85,7 +83,7 @@ end;
 
 val VERSION = "2.1";
 
-val versionString = "Metis "^VERSION^" (release 20080703)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20080814)"^"\n";
 
 val programOptions =
     {name = PROGRAM,

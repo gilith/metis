@@ -1278,11 +1278,6 @@ local
         bump
       end;
 
-  fun ppThm prevNames p th =
-      case LiteralSetMap.peek prevNames (Thm.clause th) of
-        SOME name => Parser.addString p name
-      | NONE => raise Error "previous theorem not found";
-
   fun mapSubstTerm maps sub tm =
       let
         val {functionMap, relationMap = _} = maps
@@ -1335,13 +1330,14 @@ local
   val ppSubstInfo =
       Parser.ppMap
         Subst.toList
-        (Parser.ppSequence ","
-           (Parser.ppBracket "[" "]" (Parser.ppBinop "," ppVar ppTermInfo)));
+        (Parser.ppList
+           (Parser.ppBracket "bind(" ")"
+              (Parser.ppBinop "," ppVar ppTermInfo)));
 
   val ppResolveInfo = ppAtomInfo;
 
   val ppReflInfo = ppTermInfo;
-        
+
   fun ppEqualityInfo pp (lit,path,res) =
       (ppLiteralInfo pp lit;
        Parser.addString pp ",";
@@ -1355,7 +1351,7 @@ local
       case inf of
         Proof.Axiom _ => raise Bug "ppInfInfo"
       | Proof.Assume a => ppAssumeInfo pp (mapSubstAtom maps sub a)
-      | Proof.Subst (s,_) => ppSubstInfo pp (mapSubstSubst maps sub s)
+      | Proof.Subst _ => ()
       | Proof.Resolve (r,_,_) => ppResolveInfo pp (mapSubstAtom maps sub r)
       | Proof.Refl t => ppReflInfo pp (mapSubstTerm maps sub t)
       | Proof.Equality (l,p,t) =>
@@ -1372,6 +1368,20 @@ local
        Parser.addString p "[],";
        Parser.addBreak p (1,0);
        Parser.ppMap StringSet.toList (Parser.ppList Parser.ppString) p prf);
+
+  fun ppThm prevNames p th =
+      case LiteralSetMap.peek prevNames (Thm.clause th) of
+        SOME name => Parser.addString p name
+      | NONE => raise Error "previous theorem not found";
+
+  fun ppThmSub prevNames maps sub p (th,s) =
+      if Subst.null s then ppThm prevNames p th
+      else
+        let
+          val s = mapSubstSubst maps sub s
+        in
+          Parser.ppBinop " :" (ppThm prevNames) ppSubstInfo p (th,s)
+        end;
 in
   fun ppProof avoid prefix names roles proofs p prf =
       let
@@ -1385,23 +1395,26 @@ in
             let
               val name = Thm.inferenceTypeToString (Proof.inferenceType inf)
               val name = String.map Char.toLower name
+              val parentSubs =
+                  case inf of
+                    Proof.Subst (s,th) => [(th,s)]
+                  | _ => map (fn th => (th,Subst.empty)) (Proof.parents inf)
             in
               Parser.addString p (name ^ ",");
               Parser.addBreak p (1,0);
               Parser.ppBracket "[" "]" (ppInfInfo maps sub) p inf;
-              case Proof.parents inf of
-                [] => ()
-              | ths =>
+              if null parentSubs then ()
+              else
                 (Parser.addString p ",";
                  Parser.addBreak p (1,0);
-                 Parser.ppList (ppThm prevNames) p ths)
+                 Parser.ppList (ppThmSub prevNames maps sub) p parentSubs)
             end
 
         fun ppTaut p inf =
             (Parser.addString p "tautology,";
              Parser.addBreak p (1,0);
              Parser.ppBracket "[" "]" (ppInf noClauseNames) p inf)
-             
+
         fun ppStepInfo prevNames p (name,cl,inf) =
             let
               val is_axiom = case inf of Proof.Axiom _ => true | _ => false
