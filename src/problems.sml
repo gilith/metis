@@ -84,6 +84,16 @@ T`},
 (!x y. p x y ==> f x = f y) /\ (!x. f (g x) = f x) /\ p (g a) (g b) ==>
 f a = f b`},
 
+{name = "SLEDGEHAMMER",
+ comments = ["From Tobias Nipkow: A ==> A takes 1 minute in sledgehammer."],
+ goal = `
+(!x y z t.
+   (x @ y = z @ t) <=>
+   (?u. x = z @ u /\ u @ y = t \/ x @ u = z /\ y = u @ t)) ==>
+!x y z t.
+  (x @ y = z @ t) <=>
+  (?u. x = z @ u /\ u @ y = t \/ x @ u = z /\ y = u @ t)`},
+
 (* ------------------------------------------------------------------------- *)
 (* Propositional Logic.                                                      *)
 (* ------------------------------------------------------------------------- *)
