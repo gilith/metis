@@ -21,8 +21,11 @@ Parser.sml
 Portable.sig
 PortableMlton.sml
 PortableMosml.sml
+PortablePolyml.sml
 PP.sig
 PP.sml
+Random.sig
+Random.sml
 RandomMap.sml
 RandomSet.sml
 Set.sig

@@ -4,10 +4,18 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Dummy versions of Moscow ML declarations to stop MLton barfing.           *)
+(* Dummy versions of Moscow ML declarations to stop real compilers barfing.  *)
 (* ------------------------------------------------------------------------- *)
 
 (*mlton
+val quotation = ref true;
+val quietdec  = ref true;
+val loadPath  = ref ([] : string list);
+val load = fn (_ : string) => ();
+val installPP = fn (_ : 'a Parser.pp) => ();
+*)
+
+(*polyml
 val quotation = ref true;
 val quietdec  = ref true;
 val loadPath  = ref ([] : string list);

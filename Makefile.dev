@@ -76,6 +76,7 @@ src/Parser.sml: ../basic/src/Parser.sml $(COPY) ; @$(COPY) $< $@
 src/Portable.sig: ../basic/src/Portable.sig $(COPY) ; @$(COPY) $< $@
 src/PortableMosml.sml: ../basic/src/PortableMosml.sml $(COPY) ; @$(COPY) $< $@
 src/PortableMlton.sml: ../basic/src/PortableMlton.sml $(COPY) ; @$(COPY) $< $@
+src/PortablePolyml.sml: ../basic/src/PortablePolyml.sml $(COPY) ; @$(COPY) $< $@
 src/PP.sig: ../basic/src/PP.sig $(COPY) ; @$(COPY) $< $@
 src/PP.sml: ../basic/src/PP.sml $(COPY) ; @$(COPY) $< $@
 src/Random.sig: ../basic/src/Random.sig $(COPY) ; @$(COPY) $< $@

@@ -19,7 +19,7 @@ default: mosml
 TMPFILE1 = /tmp/test-make-file1
 TMPFILE2 = /tmp/test-make-file2
 
-TEMP = $(TMPFILE1) $(TMPFILE2) mosml-result mlton-result
+TEMP = $(TMPFILE1) $(TMPFILE2) mosml-result mlton-result polyml-result
 
 .PHONY: clean
 clean:
@@ -60,5 +60,23 @@ mlton-diff:
 	@rm -f $(TMPFILE1) $(TMPFILE2)
 
 mlton-result: ../bin/mlton/selftest
+	rm -f $@
+	$< 2>&1 | tee $@
+
+###############################################################################
+# The Poly/ML self-test
+###############################################################################
+
+.PHONY: polyml
+polyml: polyml-result polyml-diff
+
+.PHONY: polyml-diff
+polyml-diff:
+	@grep -v $(IGNORE) <result.ok >$(TMPFILE1)
+	@grep -v $(IGNORE) <polyml-result >$(TMPFILE2)
+	@diff -c $(TMPFILE1) $(TMPFILE2)
+	@rm -f $(TMPFILE1) $(TMPFILE2)
+
+polyml-result: ../bin/polyml/selftest
 	rm -f $@
 	$< 2>&1 | tee $@

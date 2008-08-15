@@ -19,7 +19,9 @@ default: mosml
 TEMP = $(MOSML_TARGETS) \
        bin/mosml/*.sml bin/mosml/*.ui bin/mosml/*.uo bin/mosml/a.out \
        $(MLTON_TARGETS) \
-       bin/mlton/*.sml bin/mlton/*.mlb
+       bin/mlton/*.sml bin/mlton/*.mlb \
+       $(POLYML_TARGETS) \
+       bin/polyml/*.sml bin/polyml/*.o
 
 .PHONY: clean
 clean:
@@ -166,6 +168,56 @@ mlton-info:
 .PHONY: mlton
 mlton: mlton-info $(MLTON_TARGETS)
 	$(MAKE) -C test mlton
+
+###############################################################################
+# Building using Poly/ML.
+###############################################################################
+
+POLYML = poly
+
+POLYML_OPTS =
+
+POLYML_SRC = \
+  src/PP.sig src/PP.sml \
+  src/Random.sig src/Random.sml \
+  src/Portable.sig src/PortablePolyml.sml \
+  $(SRC)
+
+POLYML_TARGETS = \
+  bin/polyml/selftest \
+  bin/polyml/problems2tptp \
+  bin/polyml/metis
+
+bin/polyml/%.sml: src/%.sml $(POLYML_SRC)
+	@$(MLPP) $(MLPP_OPTS) -c polyml $(POLYML_SRC) > $@
+	@echo 'fun main () = let' >> $@
+	@$(MLPP) $(MLPP_OPTS) -c polyml $< >> $@
+	@echo "in () end; PolyML.export(\"$(basename $(notdir $<))\", main);" >> $@
+
+bin/polyml/%.o: bin/polyml/%.sml
+	cd bin/polyml ; $(POLYML) $(POLYML_OPTS) < $(notdir $<)
+
+bin/polyml/%: bin/polyml/%.o
+	@echo
+	@echo '*****************************'
+	@echo '* Compile a Poly/ML program *'
+	@echo '*****************************'
+	@echo
+	@echo $@
+	cd bin/polyml && $(CC) -o $(notdir $@) $(notdir $<) -lpolymain -lpolyml
+	@echo
+
+.PHONY: polyml-info
+polyml-info:
+	@echo
+	@echo '***************************************'
+	@echo '* Build and test the Poly/ML programs *'
+	@echo '***************************************'
+	@echo
+
+.PHONY: polyml
+polyml: polyml-info $(POLYML_TARGETS)
+	$(MAKE) -C test polyml
 
 ###############################################################################
 # Development.
