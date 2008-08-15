@@ -195,7 +195,7 @@ bin/polyml/%.sml: src/%.sml $(POLYML_SRC)
 	@echo "in () end; PolyML.export(\"$(basename $(notdir $<))\", main);" >> $@
 
 bin/polyml/%.o: bin/polyml/%.sml
-	cd bin/polyml ; $(POLYML) $(POLYML_OPTS) < $(notdir $<)
+	cd bin/polyml ; echo "use \"$(notdir $<)\";" | $(POLYML) $(POLYML_OPTS)
 
 bin/polyml/%: bin/polyml/%.o
 	@echo
