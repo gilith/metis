@@ -70,11 +70,7 @@ fun symbols ((_,atm) : literal) = Atom.symbols atm;
 (* A total comparison function for literals.                                 *)
 (* ------------------------------------------------------------------------- *)
 
-fun compare ((pol1,atm1),(pol2,atm2)) =
-    case boolCompare (pol1,pol2) of
-      LESS => GREATER
-    | EQUAL => Atom.compare (atm1,atm2)
-    | GREATER => LESS;
+val compare = prodCompare boolCompare Atom.compare;
 
 (* ------------------------------------------------------------------------- *)
 (* Subterms.                                                                 *)
