@@ -10,6 +10,6 @@ type name = string
 
 val compare : name * name -> order
 
-val pp : name Parser.pp
+val pp : name Print.pp
 
 end

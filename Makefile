@@ -56,7 +56,8 @@ SRC = \
   src/Sharing.sig src/Sharing.sml \
   src/Stream.sig src/Stream.sml \
   src/Heap.sig src/Heap.sml \
-  src/Parser.sig src/Parser.sml \
+  src/Print.sig src/Print.sml \
+  src/Parse.sig src/Parse.sml \
   src/Name.sig src/Name.sml \
   src/Term.sig src/Term.sml \
   src/Subst.sig src/Subst.sml \
@@ -130,7 +131,6 @@ MLTON = mlton
 MLTON_OPTS = -runtime 'ram-slop 0.4'
 
 MLTON_SRC = \
-  src/PP.sig src/PP.sml \
   src/Portable.sig src/PortableMlton.sml \
   $(SRC)
 

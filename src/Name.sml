@@ -10,7 +10,7 @@ type name = string;
 
 val compare = String.compare;
 
-val pp = Parser.ppString;
+val pp = Print.ppString;
 
 end
 
@@ -27,9 +27,9 @@ struct
   end;
 
   val pp =
-      Parser.ppMap
+      Print.ppMap
         toList
-        (Parser.ppBracket "{" "}" (Parser.ppSequence "," Name.pp));
+        (Print.ppBracket "{" "}" (Print.ppOpList "," Name.pp));
 
 end
 
@@ -57,7 +57,7 @@ fun compare ((n1,i1),(n2,i2)) =
     | EQUAL => Int.compare (i1,i2)
     | GREATER => GREATER;
 
-val pp = Parser.ppMap (fn (n,i) => n ^ "/" ^ Int.toString i) Parser.ppString;
+val pp = Print.ppMap (fn (n,i) => n ^ "/" ^ Int.toString i) Print.ppString;
 
 end
 
@@ -76,9 +76,9 @@ struct
   val allNullary = all NameArity.nullary;
 
   val pp =
-      Parser.ppMap
+      Print.ppMap
         toList
-        (Parser.ppBracket "{" "}" (Parser.ppSequence "," NameArity.pp));
+        (Print.ppBracket "{" "}" (Print.ppOpList "," NameArity.pp));
 
 end
 
