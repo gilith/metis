@@ -112,7 +112,7 @@ val () = if null work then usage "no input problem files" else ();
 local
   fun display_sep () =
       if notshowing_any () then ()
-      else print (nChars #"-" (!Parser.lineLength) ^ "\n");
+      else print (nChars #"-" (!Print.lineLength) ^ "\n");
 
   fun display_name filename =
       if notshowing "name" then ()

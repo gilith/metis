@@ -53,11 +53,12 @@ val default : parameters
 
 val new :
     parameters ->
-    {axioms : Clause.clause list, conjecture : Clause.clause list} -> waiting
+    {axioms : Clause.clause list,
+     conjecture : Clause.clause list} -> waiting
 
 val size : waiting -> int
 
-val pp : waiting Parser.pp
+val pp : waiting Print.pp
 
 (* ------------------------------------------------------------------------- *)
 (* Adding new clauses.                                                       *)

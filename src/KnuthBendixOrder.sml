@@ -94,29 +94,29 @@ fun weightLowerBound (w as Weight (m,c)) =
     if NameMap.exists (fn (_,n) => n < 0) m then NONE else SOME c;
 
 (*MetisDebug
-fun ppWeightList pp =
+val ppWeightList =
     let
       fun coeffToString n =
           if n < 0 then "~" ^ coeffToString (~n)
           else if n = 1 then ""
           else Int.toString n
 
-      fun pp_tm pp ("",n) = Parser.ppInt pp n
-        | pp_tm pp (v,n) = Parser.ppString pp (coeffToString n ^ v)
+      fun pp_tm ("",n) = Print.ppInt n
+        | pp_tm (v,n) = Print.ppString (coeffToString n ^ v)
     in
-      fn [] => Parser.ppInt pp 0
-       | tms => Parser.ppSequence " +" pp_tm pp tms
+      fn [] => Print.ppInt 0
+       | tms => Print.ppOpList " +" pp_tm tms
     end;
 
-fun ppWeight pp (Weight (m,c)) =
+fun ppWeight (Weight (m,c)) =
     let
       val l = NameMap.toList m
       val l = if c = 0 then l else l @ [("",c)]
     in
-      ppWeightList pp l
+      ppWeightList l
     end;
 
-val weightToString = Parser.toString ppWeight;
+val weightToString = Print.toString ppWeight;
 *)
 
 (* ------------------------------------------------------------------------- *)
@@ -179,14 +179,14 @@ fun compare {weight,precedence} =
 (*MetisTrace7
 val compare = fn kbo => fn (tm1,tm2) =>
     let
-      val () = Parser.ppTrace Term.pp "KnuthBendixOrder.compare: tm1" tm1
-      val () = Parser.ppTrace Term.pp "KnuthBendixOrder.compare: tm2" tm2
+      val () = Print.trace Term.pp "KnuthBendixOrder.compare: tm1" tm1
+      val () = Print.trace Term.pp "KnuthBendixOrder.compare: tm2" tm2
       val result = compare kbo (tm1,tm2)
       val () =
           case result of
             NONE => trace "KnuthBendixOrder.compare: result = Incomparable\n"
           | SOME x =>
-            Parser.ppTrace Parser.ppOrder "KnuthBendixOrder.compare: result" x
+            Print.trace Print.ppOrder "KnuthBendixOrder.compare: result" x
     in
       result
     end;

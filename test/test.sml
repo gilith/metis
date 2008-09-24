@@ -12,7 +12,6 @@ val quotation = ref true;
 val quietdec  = ref true;
 val loadPath  = ref ([] : string list);
 val load = fn (_ : string) => ();
-val installPP = fn (_ : 'a Parser.pp) => ();
 *)
 
 (*polyml
@@ -20,7 +19,6 @@ val quotation = ref true;
 val quietdec  = ref true;
 val loadPath  = ref ([] : string list);
 val load = fn (_ : string) => ();
-val installPP = fn (_ : 'a Parser.pp) => ();
 *)
 
 (* ------------------------------------------------------------------------- *)
@@ -31,13 +29,6 @@ val () = loadPath := !loadPath @ ["../bin/mosml"];
 val () = app load ["Options"];
 
 open Useful;
-
-val () = installPP Term.pp;
-val () = installPP Formula.pp;
-val () = installPP Subst.pp;
-val () = installPP Thm.pp;
-val () = installPP Rewrite.pp;
-val () = installPP Clause.pp;
 
 val time = Portable.time;
 
@@ -65,22 +56,22 @@ fun SAY s =
       ("-------------------------------------" ^
        "-------------------------------------\n" ^ s ^ "\n\n");
 
-fun printval p x = (print (PP.pp_to_string 79 p x ^ "\n\n"); x);
+fun printval p x = (print (Print.toString p x ^ "\n\n"); x);
 
 fun mkCl p th = Clause.mk {parameters = p, id = Clause.newId (), thm = th};
 
-val pvBool = printval Parser.ppBool
-and pvPo = printval (Parser.ppMap partialOrderToString Parser.ppString)
+val pvBool = printval Print.ppBool
+and pvPo = printval (Print.ppMap partialOrderToString Print.ppString)
 and pvFm = printval Formula.pp
-and pvFms = printval (Parser.ppList Formula.pp)
+and pvFms = printval (Print.ppList Formula.pp)
 and pvThm = printval Thm.pp
-and pvEqn : Rule.equation -> Rule.equation = printval (Parser.ppMap snd Thm.pp)
-and pvNet = printval (LiteralNet.pp Parser.ppInt)
+and pvEqn : Rule.equation -> Rule.equation = printval (Print.ppMap snd Thm.pp)
+and pvNet = printval (LiteralNet.pp Print.ppInt)
 and pvRw = printval Rewrite.pp
 and pvU = printval Units.pp
 and pvLits = printval LiteralSet.pp
 and pvCl = printval Clause.pp
-and pvCls = printval (Parser.ppList Clause.pp);
+and pvCls = printval (Print.ppList Clause.pp);
 
 val T = Term.parse
 and A = Atom.parse
@@ -149,7 +140,7 @@ val () = SAY "The parser and pretty-printer";
 
 fun prep l = (chop_newline o String.concat o map unquote) l;
 
-fun mini_print n = withRef (Parser.lineLength,n) Formula.toString;
+fun mini_print n = withRef (Print.lineLength,n) Formula.toString;
 
 fun testlen_pp n q =
     (fn s => test_fun I s ((mini_print n o Formula.fromString) s))
@@ -345,7 +336,7 @@ val () =
       (unify_and_apply
          (Term.Fn ("f", [Term.Var "x"]))
          (Term.Fn ("f", [Term.Fn ("c", [])])));
-      
+
 val () = test_tm `f 0 0 0` (unify_and_apply (T`f 0 $x $x`) (T`f $y $y $z`));
 
 fun f x y = (printval Subst.pp (Atom.unify Subst.empty x y); ());
@@ -658,9 +649,9 @@ local
       val g = prep goal
       val p =
           Formula.fromString g
-          handle Parser.NoParse =>
+          handle Print.NoParse =>
                  raise Error ("failed to parse problem " ^ name)
-        
+
       val () =
         case List.find (fn (n,_) => n = name) acc of NONE => ()
         | SOME _ => same name
@@ -670,7 +661,7 @@ local
         | SOME (n,_) => dup n name
 
       val _ =
-        test_fun I g (mini_print (!Parser.lineLength) p)
+        test_fun I g (mini_print (!Print.lineLength) p)
         handle e => (print ("Error in problem " ^ name ^ "\n\n"); raise e)
     in
       (name,p) :: acc

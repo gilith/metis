@@ -171,8 +171,8 @@ local
         fun recon [] =
             let
 (*MetisTrace3
-              val () = Parser.ppTrace LiteralSet.pp "reconstructSubst: cl" cl
-              val () = Parser.ppTrace LiteralSet.pp "reconstructSubst: cl'" cl'
+              val () = Print.trace LiteralSet.pp "reconstructSubst: cl" cl
+              val () = Print.trace LiteralSet.pp "reconstructSubst: cl'" cl'
 *)
             in
               raise Bug "can't reconstruct Subst rule"
@@ -220,7 +220,7 @@ local
   fun reconstructEquality cl =
       let
 (*MetisTrace3
-        val () = Parser.ppTrace LiteralSet.pp "Proof.reconstructEquality: cl" cl
+        val () = Print.trace LiteralSet.pp "Proof.reconstructEquality: cl" cl
 *)
 
         fun sync s t path (f,a) (f',a') =
@@ -264,8 +264,8 @@ local
 
 (*MetisTrace3
         val ppCands =
-            Parser.ppList (Parser.ppTriple Literal.pp Literal.pp Literal.pp)
-        val () = Parser.ppTrace ppCands
+            Print.ppList (Print.ppTriple Literal.pp Literal.pp Literal.pp)
+        val () = Print.trace ppCands
                    "Proof.reconstructEquality: candidates" candidates
 *)
       in
@@ -303,7 +303,7 @@ in
   fun thmToInference th =
       let
 (*MetisTrace3
-        val () = Parser.ppTrace Thm.pp "Proof.thmToInference: th" th
+        val () = Print.trace Thm.pp "Proof.thmToInference: th" th
 *)
 
         val cl = Thm.clause th
@@ -311,14 +311,14 @@ in
         val thmInf = Thm.inference th
 
 (*MetisTrace3
-        val ppThmInf = Parser.ppPair Thm.ppInferenceType (Parser.ppList Thm.pp)
-        val () = Parser.ppTrace ppThmInf "Proof.thmToInference: thmInf" thmInf
+        val ppThmInf = Print.ppPair Thm.ppInferenceType (Print.ppList Thm.pp)
+        val () = Print.trace ppThmInf "Proof.thmToInference: thmInf" thmInf
 *)
 
         val inf = reconstruct cl thmInf
 
 (*MetisTrace3
-        val () = Parser.ppTrace ppInference "Proof.thmToInference: inf" inf
+        val () = Print.trace ppInference "Proof.thmToInference: inf" inf
 *)
 (*MetisDebug
         val () =
@@ -371,11 +371,11 @@ in
   fun proof th =
       let
 (*MetisTrace3
-        val () = Parser.ppTrace Thm.pp "Proof.proof: th" th
+        val () = Print.trace Thm.pp "Proof.proof: th" th
 *)
         val (m,_) = buildProof (th, (Map.new thmCompare, []))
 (*MetisTrace3
-        val () = Parser.ppTrace Parser.ppInt "Proof.proof: size" (Map.size m)
+        val () = Print.trace Print.ppInt "Proof.proof: size" (Map.size m)
 *)
       in
         case Map.peek m th of

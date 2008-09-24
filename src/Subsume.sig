@@ -20,7 +20,7 @@ val insert : 'a subsume -> Thm.clause * 'a -> 'a subsume
 
 val filter : ('a -> bool) -> 'a subsume -> 'a subsume
 
-val pp : 'a subsume Parser.pp
+val pp : 'a subsume Print.pp
 
 val toString : 'a subsume -> string
 

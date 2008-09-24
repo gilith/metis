@@ -26,7 +26,7 @@ fun size (Units net) = LiteralNet.size net;
 
 fun toString units = "U{" ^ Int.toString (size units) ^ "}";
 
-val pp = Parser.ppMap toString Parser.ppString;
+val pp = Print.ppMap toString Print.ppString;
 
 (* ------------------------------------------------------------------------- *)
 (* Add units into the store.                                                 *)

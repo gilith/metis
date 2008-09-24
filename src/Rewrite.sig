@@ -34,7 +34,7 @@ val equations : rewrite -> equation list
 
 val toString : rewrite -> string
 
-val pp : rewrite Parser.pp
+val pp : rewrite Print.pp
 
 (* ------------------------------------------------------------------------- *)
 (* Add equations into the system.                                            *)

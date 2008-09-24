@@ -632,7 +632,7 @@ val newSkolemFunction =
 fun skolemize fv bv fm =
     let
       val fv = NameSet.transform Term.Var fv
-               
+
       fun mk (v,s) = Subst.insert s (v, Term.Fn (newSkolemFunction v, fv))
     in
       subst (NameSet.foldl mk Subst.empty bv) fm
@@ -652,7 +652,7 @@ local
                 in
                   (NameSet.add a v', Subst.insert s (v, Term.Var v'))
                 end
-              
+
             val avoid = NameSet.union (NameSet.union avoid fv) bv
 
             val (_,sub) = NameSet.foldl ren (avoid,Subst.empty) captured
@@ -665,8 +665,8 @@ local
 (*MetisTrace5
       let
         val fm' = cnfFm' avoid fm
-        val () = Parser.ppTrace pp "Normalize.cnfFm: fm" fm
-        val () = Parser.ppTrace pp "Normalize.cnfFm: fm'" fm'
+        val () = Print.trace pp "Normalize.cnfFm: fm" fm
+        val () = Print.trace pp "Normalize.cnfFm: fm'" fm'
       in
         fm'
       end
@@ -712,7 +712,7 @@ local
         minBreakSet countClauses countXor2 countFalse XorSet s best
       | Exists (_,_,_,f) => minBreak countClauses f best
       | Forall (_,_,_,f) => minBreak countClauses f best
-                            
+
   and minBreakSet countClauses count2 count0 mkSet fmSet best =
       let
         fun cumulatives fms =
@@ -799,9 +799,9 @@ in
                 case def of
                   NONE => ()
                 | SOME d =>
-                  Parser.ppTrace pp ("defCNF: before = " ^ Real.toString cl ^
-                                     ", after = " ^ Real.toString cl' ^
-                                     ", definition") d
+                  Print.trace pp ("defCNF: before = " ^ Real.toString cl ^
+                                  ", after = " ^ Real.toString cl' ^
+                                  ", definition") d
 *)
           in
             def
@@ -988,7 +988,7 @@ in
               (case Map.peek formula fm of
                  NONE => NONE
                | SOME (fm,p) => try_simp_top fm (combineProofs prf p))
-              
+
         and simp_sub fm prf =
             case fm of
               And (_,_,s) =>
@@ -1030,14 +1030,15 @@ in
 end;
 
 (*MetisTrace2
-val simplify = fn simp => fn fm =>
+val simplify = fn simp => fn fm_prf =>
     let
-      val fm' = simplify simp fm
+      val (fm,_) = fm_prf
+      val fm_prf' as (fm',_) = simplify simp fm_prf
       val () = if compare (fm,fm') = EQUAL then ()
-               else (Parser.ppTrace pp "Normalize.simplify: fm" fm;
-                     Parser.ppTrace pp "Normalize.simplify: fm'" fm')
+               else (Print.trace pp "Normalize.simplify: fm" fm;
+                     Print.trace pp "Normalize.simplify: fm'" fm')
     in
-      fm'
+      fm_prf'
     end;
 *)
 
@@ -1119,7 +1120,7 @@ local
                 (toClause f, prf) :: l
 (*MetisDebug
                 handle Error err =>
-                  (Parser.ppTrace pp "Normalize.def_cnf_formula: f" f;
+                  (Print.trace pp "Normalize.def_cnf_formula: f" f;
                    raise Bug ("Normalize.cnfStateAdd.def_cnf_formula: "^err))
 *)
           in

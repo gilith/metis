@@ -44,11 +44,11 @@ fun active (Resolution {active = a, ...}) = a;
 fun waiting (Resolution {waiting = w, ...}) = w;
 
 val pp =
-    Parser.ppMap
+    Print.ppMap
       (fn Resolution {active,waiting,...} =>
           "Resolution(" ^ Int.toString (Active.size active) ^
           "<-" ^ Int.toString (Waiting.size waiting) ^ ")")
-      Parser.ppString;
+      Print.ppString;
 
 (* ------------------------------------------------------------------------- *)
 (* The main proof loop.                                                      *)
@@ -66,8 +66,8 @@ fun iterate resolution =
     let
       val Resolution {parameters,active,waiting} = resolution
 (*MetisTrace2
-      val () = Parser.ppTrace Active.pp "Resolution.iterate: active" active
-      val () = Parser.ppTrace Waiting.pp "Resolution.iterate: waiting" waiting
+      val () = Print.trace Active.pp "Resolution.iterate: active" active
+      val () = Print.trace Waiting.pp "Resolution.iterate: waiting" waiting
 *)
     in
       case Waiting.remove waiting of
@@ -79,7 +79,7 @@ fun iterate resolution =
         else
           let
 (*MetisTrace1
-            val () = Parser.ppTrace Clause.pp "Resolution.iterate: cl" cl
+            val () = Print.trace Clause.pp "Resolution.iterate: cl" cl
 *)
             val (active,cls) = Active.add active cl
             val waiting = Waiting.add waiting (d,cls)

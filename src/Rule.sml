@@ -733,20 +733,20 @@ in
   fun factor' cl =
       let
 (*MetisTrace6
-        val () = Parser.ppTrace LiteralSet.pp "Rule.factor': cl" cl
+        val () = Print.trace LiteralSet.pp "Rule.factor': cl" cl
 *)
         val edges = mk_edges [] [] (LiteralSet.toList cl)
 (*MetisTrace6
-        val ppEdgesSize = Parser.ppMap length Parser.ppInt
-        val ppEdgel = Parser.ppList ppEdge
-        val ppEdges = Parser.ppList (Parser.ppTriple ppEdgel Subst.pp ppEdgel)
-        val () = Parser.ppTrace ppEdgesSize "Rule.factor': |edges|" edges
-        val () = Parser.ppTrace ppEdges "Rule.factor': edges" edges
+        val ppEdgesSize = Print.ppMap length Print.ppInt
+        val ppEdgel = Print.ppList ppEdge
+        val ppEdges = Print.ppList (Print.ppTriple ppEdgel Subst.pp ppEdgel)
+        val () = Print.trace ppEdgesSize "Rule.factor': |edges|" edges
+        val () = Print.trace ppEdges "Rule.factor': edges" edges
 *)
         val result = fact [] edges
 (*MetisTrace6
-        val ppResult = Parser.ppList Subst.pp
-        val () = Parser.ppTrace ppResult "Rule.factor': result" result
+        val ppResult = Print.ppList Subst.pp
+        val () = Print.trace ppResult "Rule.factor': result" result
 *)
       in
         result

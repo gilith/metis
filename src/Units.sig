@@ -24,7 +24,7 @@ val size : units -> int
 
 val toString : units -> string
 
-val pp : units Parser.pp
+val pp : units Print.pp
 
 (* ------------------------------------------------------------------------- *)
 (* Add units into the store.                                                 *)

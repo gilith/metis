@@ -80,22 +80,22 @@ fun mapTerm functionMap =
 fun mapAtom {functionMap,relationMap} (p,a) =
     (findMapping relationMap (p, length a), map (mapTerm functionMap) a);
 
-fun mapLit maps (p,a) : Literal.literal = (p, mapAtom maps a);
+fun mapLit fr (p,a) : Literal.literal = (p, mapAtom fr a);
 
-fun mapLitSet maps =
+fun mapLitSet fr =
     let
-      fun inc (lit,set) = LiteralSet.add set (mapLit maps lit)
+      fun inc (lit,set) = LiteralSet.add set (mapLit fr lit)
     in
       LiteralSet.foldl inc LiteralSet.empty
     end;
 
-fun mapFof maps =
+fun mapFof fr =
     let
       open Formula
 
       fun form True = True
         | form False = False
-        | form (Atom a) = Atom (mapAtom maps a)
+        | form (Atom a) = Atom (mapAtom fr a)
         | form (Not p) = Not (form p)
         | form (And (p,q)) = And (form p, form q)
         | form (Or (p,q)) = Or (form p, form q)
@@ -187,10 +187,10 @@ fun literalSubst sub lit =
       Boolean _ => lit
     | Literal l => Literal (Literal.subst sub l);
 
-fun mapLiteral maps lit =
+fun mapLiteral fr lit =
     case lit of
       Boolean _ => lit
-    | Literal l => Literal (mapLit maps l)
+    | Literal l => Literal (mapLit fr l)
 
 fun destLiteral (Literal l) = l
   | destLiteral _ = raise Error "destLiteral";
@@ -199,87 +199,77 @@ fun destLiteral (Literal l) = l
 (* Printing formulas using TPTP syntax.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-val ppVar = Parser.ppString;
+val ppVar = Print.ppString;
 
 local
-  fun term pp (Term.Var v) = ppVar pp v
-    | term pp (Term.Fn (c,[])) = Parser.addString pp c
-    | term pp (Term.Fn (f,tms)) =
-      (Parser.beginBlock pp Parser.Inconsistent 2;
-       Parser.addString pp (f ^ "(");
-       Parser.ppSequence "," term pp tms;
-       Parser.addString pp ")";
-       Parser.endBlock pp);
+  fun term (Term.Var v) = ppVar v
+    | term (Term.Fn (c,[])) = Print.addString c
+    | term (Term.Fn (f,tms)) =
+      Print.blockProgram Print.Inconsistent 2
+        [Print.addString (f ^ "("),
+         Print.ppOpList "," term tms,
+         Print.addString ")"];
 in
-  fun ppTerm pp tm =
-      (Parser.beginBlock pp Parser.Inconsistent 0;
-       term pp tm;
-       Parser.endBlock pp);
+  fun ppTerm tm = Print.block Print.Inconsistent 0 (term tm);
 end;
 
-fun ppAtom pp atm = ppTerm pp (Term.Fn atm);
+fun ppAtom atm = ppTerm (Term.Fn atm);
 
 local
   open Formula;
 
-  fun fof pp (fm as And _) = assoc_binary pp ("&", stripConj fm)
-    | fof pp (fm as Or _) = assoc_binary pp ("|", stripDisj fm)
-    | fof pp (Imp a_b) = nonassoc_binary pp ("=>",a_b)
-    | fof pp (Iff a_b) = nonassoc_binary pp ("<=>",a_b)
-    | fof pp fm = unitary pp fm
+  val neg = Print.sequence (Print.addString "~") (Print.addBreak 1);
 
-  and nonassoc_binary pp (s,a_b) =
-      Parser.ppBinop (" " ^ s) unitary unitary pp a_b
+  fun fof fm =
+      case fm of
+        And _ => assoc_binary ("&", stripConj fm)
+      | Or _ => assoc_binary ("|", stripDisj fm)
+      | Imp a_b => nonassoc_binary ("=>",a_b)
+      | Iff a_b => nonassoc_binary ("<=>",a_b)
+      | _ => unitary fm
 
-  and assoc_binary pp (s,l) = Parser.ppSequence (" " ^ s) unitary pp l
+  and nonassoc_binary (s,a_b) = Print.ppOp2 (" " ^ s) unitary unitary a_b
 
-  and unitary pp fm =
-      if isForall fm then quantified pp ("!", stripForall fm)
-      else if isExists fm then quantified pp ("?", stripExists fm)
-      else if atom pp fm then ()
-      else if isNeg fm then
-        let
-          fun pr () = (Parser.addString pp "~"; Parser.addBreak pp (1,0))
-          val (n,fm) = Formula.stripNeg fm
-        in
-          Parser.beginBlock pp Parser.Inconsistent 2;
-          funpow n pr ();
-          unitary pp fm;
-          Parser.endBlock pp
-        end
-      else
-        (Parser.beginBlock pp Parser.Inconsistent 1;
-         Parser.addString pp "(";
-         fof pp fm;
-         Parser.addString pp ")";
-         Parser.endBlock pp)
+  and assoc_binary (s,l) = Print.ppOpList (" " ^ s) unitary l
 
-  and quantified pp (q,(vs,fm)) =
-      (Parser.beginBlock pp Parser.Inconsistent 2;
-       Parser.addString pp (q ^ " ");
-       Parser.beginBlock pp Parser.Inconsistent (String.size q);
-       Parser.addString pp "[";
-       Parser.ppSequence "," ppVar pp vs;
-       Parser.addString pp "] :";
-       Parser.endBlock pp;
-       Parser.addBreak pp (1,0);
-       unitary pp fm;
-       Parser.endBlock pp)
-      
-  and atom pp True = (Parser.addString pp "$true"; true)
-    | atom pp False = (Parser.addString pp "$false"; true)
-    | atom pp fm =
-      case total destEq fm of
-        SOME a_b => (Parser.ppBinop " =" ppTerm ppTerm pp a_b; true)
-      | NONE =>
-        case total destNeq fm of
-          SOME a_b => (Parser.ppBinop " !=" ppTerm ppTerm pp a_b; true)
-        | NONE => case fm of Atom atm => (ppAtom pp atm; true) | _ => false;
+  and unitary fm =
+      case fm of
+        True => Print.addString "$true"
+      | False => Print.addString "$false"
+      | Forall _ => quantified ("!", stripForall fm)
+      | Exists _ => quantified ("?", stripExists fm)
+      | Not _ =>
+        (case total destNeq fm of
+           SOME a_b => Print.ppOp2 " !=" ppTerm ppTerm a_b
+         | NONE =>
+           let
+             val (n,fm) = Formula.stripNeg fm
+           in
+             Print.blockProgram Print.Inconsistent 2
+               [Print.duplicate n neg,
+                unitary fm]
+           end)
+      | Atom atm =>
+        (case total destEq fm of
+           SOME a_b => Print.ppOp2 " =" ppTerm ppTerm a_b
+         | NONE => ppAtom atm)
+      | _ =>
+        Print.blockProgram Print.Inconsistent 1
+          [Print.addString "(",
+           fof fm,
+           Print.addString ")"]
+
+  and quantified (q,(vs,fm)) =
+      Print.blockProgram Print.Inconsistent 2
+        [Print.addString (q ^ " "),
+         Print.blockProgram Print.Inconsistent (String.size q)
+           [Print.addString "[",
+            Print.ppOpList "," ppVar vs,
+            Print.addString "] :"],
+         Print.addBreak 1,
+         unitary fm]
 in
-  fun ppFof pp fm =
-      (Parser.beginBlock pp Parser.Inconsistent 0;
-       fof pp fm;
-       Parser.endBlock pp);
+  fun ppFof fm = Print.block Print.Inconsistent 0 (fof fm);
 end;
 
 (* ------------------------------------------------------------------------- *)
@@ -314,7 +304,7 @@ val clauseFreeVars =
 
 fun clauseSubst sub lits = map (literalSubst sub) lits;
 
-fun mapClause maps lits = map (mapLiteral maps) lits;
+fun mapClause fr lits = map (mapLiteral fr) lits;
 
 fun clauseToFormula lits = Formula.listMkDisj (map literalToFormula lits);
 
@@ -326,7 +316,7 @@ fun clauseFromLiteralSet cl =
 
 fun clauseFromThm th = clauseFromLiteralSet (Thm.clause th);
 
-val ppClause = Parser.ppMap clauseToFormula ppFof;
+val ppClause = Print.ppMap clauseToFormula ppFof;
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP formulas.                                                            *)
@@ -355,10 +345,10 @@ fun formulaRelations (CnfFormula {clause,...}) = clauseRelations clause
 fun formulaFreeVars (CnfFormula {clause,...}) = clauseFreeVars clause
   | formulaFreeVars (FofFormula {formula,...}) = Formula.freeVars formula;
 
-fun mapFormula maps (CnfFormula {name,role,clause}) =
-    CnfFormula {name = name, role = role, clause = mapClause maps clause}
-  | mapFormula maps (FofFormula {name,role,formula}) =
-    FofFormula {name = name, role = role, formula = mapFof maps formula};
+fun mapFormula fr (CnfFormula {name,role,clause}) =
+    CnfFormula {name = name, role = role, clause = mapClause fr clause}
+  | mapFormula fr (FofFormula {name,role,formula}) =
+    FofFormula {name = name, role = role, formula = mapFof fr formula};
 
 val formulasFunctions =
     let
@@ -380,30 +370,28 @@ fun formulaIsConjecture (CnfFormula {role,...}) = roleIsCnfConjecture role
 (* Parsing and pretty-printing *)
 
 local
-  fun ppGen ppX pp (gen,name,role,x) =
-      (Parser.beginBlock pp Parser.Inconsistent (size gen + 1);
-       Parser.addString pp (gen ^ "(" ^ name ^ ",");
-       Parser.addBreak pp (1,0);
-       Parser.addString pp (role ^ ",");
-       Parser.addBreak pp (1,0);
-       Parser.beginBlock pp Parser.Consistent 1;
-       Parser.addString pp "(";
-       ppX pp x;
-       Parser.addString pp ")";
-       Parser.endBlock pp;
-       Parser.addString pp ").";
-       Parser.endBlock pp);
+  fun ppGen ppX (gen,name,role,x) =
+      Print.blockProgram Print.Inconsistent (size gen + 1)
+        [Print.addString (gen ^ "(" ^ name ^ ","),
+         Print.addBreak 1,
+         Print.addString (role ^ ","),
+         Print.addBreak 1,
+         Print.blockProgram Print.Consistent 1
+           [Print.addString "(",
+            ppX x,
+            Print.addString ")"],
+         Print.addString ")."];
 in
-  fun ppFormula pp (CnfFormula {name,role,clause}) =
-      ppGen ppClause pp ("cnf",name,role,clause)
-    | ppFormula pp (FofFormula {name,role,formula}) =
-      ppGen ppFof pp ("fof",name,role,formula);
+  fun ppFormula (CnfFormula {name,role,clause}) =
+      ppGen ppClause ("cnf",name,role,clause)
+    | ppFormula (FofFormula {name,role,formula}) =
+      ppGen ppFof ("fof",name,role,formula);
 end;
 
-val formulaToString = Parser.toString ppFormula;
+val formulaToString = Print.toString ppFormula;
 
 local
-  open Parser;
+  open Parse;
 
   infixr 8 ++
   infixr 7 >>
@@ -592,7 +580,7 @@ local
 
   fun fofFormulaParser input =
       (binaryFormulaParser || unitaryFormulaParser) input
-  
+
   and binaryFormulaParser input =
       (nonAssocBinaryFormulaParser || assocBinaryFormulaParser) input
 
@@ -656,7 +644,7 @@ local
   fun fofFormulaParser input =
       ((unitaryFormulaParser ++ optional binaryFormulaParser) >>
        (fn (f,NONE) => f | (f, SOME t) => t f)) input
-  
+
   and binaryFormulaParser input =
       (nonAssocBinaryFormulaParser || assocBinaryFormulaParser) input
 
@@ -730,9 +718,9 @@ local
 
   fun parseChars parser chars =
       let
-        val tokens = Parser.everything (lexer >> singleton) chars
+        val tokens = Parse.everything (lexer >> singleton) chars
       in
-        Parser.everything (parser >> singleton) tokens
+        Parse.everything (parser >> singleton) tokens
       end;
 
   fun canParseString parser s =
@@ -743,7 +731,7 @@ local
           [_] => true
         | _ => false
       end
-      handle NoParse => false;
+      handle Parse.NoParse => false;
 in
   val parseFormula = parseChars formulaParser;
 
@@ -796,7 +784,7 @@ fun mkAddTptpVar v (a,s) =
 
 local
   fun addTptpVar (v,a_s) = snd (mkAddTptpVar v a_s)
-in                          
+in
   fun mkTptpVars vs =
       let
         val (avoid,vs) = NameSet.partition isTptpVar vs
@@ -867,7 +855,7 @@ local
 
         val (avoid,sub) = mkTptpVars (formulaFreeVars fm)
 (*MetisTrace5
-        val () = Parser.ppTrace Subst.pp "Tptp.alpha: sub" sub
+        val () = Print.trace Subst.pp "Tptp.alpha: sub" sub
 *)
       in
         case fm of
@@ -879,7 +867,7 @@ local
             {name = name, role = role, formula = alpha avoid sub formula}
       end;
 
-  fun formulaToTptp maps fm = alphaFormula (mapFormula maps fm);
+  fun formulaToTptp fr fm = alphaFormula (mapFormula fr fm);
 in
   fun formulasToTptp formulas =
       let
@@ -889,9 +877,9 @@ in
         val functionMap = mkMap funcs mkTptpFunc (!functionMapping)
         and relationMap = mkMap rels mkTptpRel (!relationMapping)
 
-        val maps = {functionMap = functionMap, relationMap = relationMap}
+        val fr = {functionMap = functionMap, relationMap = relationMap}
       in
-        map (formulaToTptp maps) formulas
+        map (formulaToTptp fr) formulas
       end;
 end;
 
@@ -899,10 +887,10 @@ fun formulasFromTptp formulas =
     let
       val functionMap = mappingFromTptp (!functionMapping)
       and relationMap = mappingFromTptp (!relationMapping)
-                        
-      val maps = {functionMap = functionMap, relationMap = relationMap}
+
+      val fr = {functionMap = functionMap, relationMap = relationMap}
     in
-      map (mapFormula maps) formulas
+      map (mapFormula fr) formulas
     end;
 
 (* ------------------------------------------------------------------------- *)
@@ -1066,7 +1054,7 @@ local
         fun addClause ((cl,prf),(roles,proofs)) =
             (LiteralSetMap.insert roles (cl,role),
              LiteralSetMap.insert proofs (cl,prf))
-            
+
         val {definitions = defs, clauses} = new
         and {definitions,roles,problem,proofs} : normalizedFof = acc
         val {axioms,conjecture} = problem
@@ -1190,8 +1178,8 @@ fun goal problem =
 local
   fun stripComments acc strm =
       case strm of
-        Stream.NIL => (rev acc, Stream.NIL)
-      | Stream.CONS (line,rest) =>
+        Stream.Nil => (rev acc, Stream.Nil)
+      | Stream.Cons (line,rest) =>
         case total destComment line of
           SOME s => stripComments (s :: acc) (rest ())
         | NONE => (rev acc, Stream.filter (not o isComment) strm);
@@ -1217,12 +1205,12 @@ end;
 local
   fun mkCommentLine comment = mkComment comment ^ "\n";
 
-  fun formulaStream _ [] () = Stream.NIL
+  fun formulaStream _ [] () = Stream.Nil
     | formulaStream start (h :: t) () =
       let
         val s = formulaToString h ^ "\n"
       in
-        Stream.CONS (if start then s else "\n" ^ s, formulaStream false t)
+        Stream.Cons (if start then s else "\n" ^ s, formulaStream false t)
       end;
 in
   fun write {filename} {comments,formulas} =
@@ -1278,16 +1266,16 @@ local
         bump
       end;
 
-  fun mapSubstTerm maps sub tm =
+  fun mapSubstTerm fr sub tm =
       let
-        val {functionMap, relationMap = _} = maps
+        val {functionMap, relationMap = _} = fr
       in
         Subst.subst sub (mapTerm functionMap tm)
       end;
 
-  fun mapSubstAtom maps sub atm = Atom.subst sub (mapAtom maps atm);
+  fun mapSubstAtom fr sub atm = Atom.subst sub (mapAtom fr atm);
 
-  fun mapSubstSubst maps sub =
+  fun mapSubstSubst fr sub =
       let
         fun inc (v,tm,s) =
             let
@@ -1296,7 +1284,7 @@ local
                     NONE => v
                   | SOME vt => Term.destVar vt
 
-              val tm = mapSubstTerm maps sub tm
+              val tm = mapSubstTerm fr sub tm
             in
               Subst.insert s (v,tm)
             end
@@ -1304,94 +1292,97 @@ local
         Subst.foldl inc Subst.empty
       end;
 
-  fun mapSubstLiteral maps sub lit = Literal.subst sub (mapLit maps lit);
+  fun mapSubstLiteral fr sub lit = Literal.subst sub (mapLit fr lit);
 
-  fun mapSubstClause maps sub cl = clauseSubst sub (mapClause maps cl);
+  fun mapSubstClause fr sub cl = clauseSubst sub (mapClause fr cl);
 
   val ppTermTstp = ppTerm;
 
-  fun ppAtomTstp pp atm =
+  fun ppAtomTstp atm =
       case total Atom.destEq atm of
-        SOME (a,b) => ppAtom pp ("$equal",[a,b])
-      | NONE => ppAtom pp atm;
+        SOME (a,b) => ppAtom ("$equal",[a,b])
+      | NONE => ppAtom atm;
 
-  fun ppLiteralTstp pp (pol,atm) =
-      (if pol then () else Parser.addString pp "~ ";
-       ppAtomTstp pp atm);
+  fun ppLiteralTstp (pol,atm) =
+      Print.sequence
+        (if pol then Print.skip else Print.addString "~ ")
+        (ppAtomTstp atm);
 
-  val ppTermInfo = Parser.ppBracket "$fot(" ")" ppTermTstp;
+  val ppTermInfo = Print.ppBracket "$fot(" ")" ppTermTstp;
 
-  val ppAtomInfo = Parser.ppBracket "$cnf(" ")" ppAtomTstp;
+  val ppAtomInfo = Print.ppBracket "$cnf(" ")" ppAtomTstp;
 
-  val ppLiteralInfo = Parser.ppBracket "$cnf(" ")" ppLiteralTstp;
+  val ppLiteralInfo = Print.ppBracket "$cnf(" ")" ppLiteralTstp;
 
   val ppAssumeInfo = ppAtomInfo;
 
   val ppSubstInfo =
-      Parser.ppMap
+      Print.ppMap
         Subst.toList
-        (Parser.ppList
-           (Parser.ppBracket "bind(" ")"
-              (Parser.ppBinop "," ppVar ppTermInfo)));
+        (Print.ppList
+           (Print.ppBracket "bind(" ")"
+              (Print.ppOp2 "," ppVar ppTermInfo)));
 
   val ppResolveInfo = ppAtomInfo;
 
   val ppReflInfo = ppTermInfo;
 
-  fun ppEqualityInfo pp (lit,path,res) =
-      (ppLiteralInfo pp lit;
-       Parser.addString pp ",";
-       Parser.addBreak pp (1,0);
-       Term.ppPath pp path;
-       Parser.addString pp ",";
-       Parser.addBreak pp (1,0);
-       ppTermInfo pp res);
+  fun ppEqualityInfo (lit,path,res) =
+      Print.program
+        [ppLiteralInfo lit,
+         Print.addString ",",
+         Print.addBreak 1,
+         Term.ppPath path,
+         Print.addString ",",
+         Print.addBreak 1,
+         ppTermInfo res];
 
-  fun ppInfInfo maps sub pp inf =
+  fun ppInfInfo fr sub inf =
       case inf of
         Proof.Axiom _ => raise Bug "ppInfInfo"
-      | Proof.Assume a => ppAssumeInfo pp (mapSubstAtom maps sub a)
-      | Proof.Subst _ => ()
-      | Proof.Resolve (r,_,_) => ppResolveInfo pp (mapSubstAtom maps sub r)
-      | Proof.Refl t => ppReflInfo pp (mapSubstTerm maps sub t)
+      | Proof.Assume a => ppAssumeInfo (mapSubstAtom fr sub a)
+      | Proof.Subst _ => Print.skip
+      | Proof.Resolve (r,_,_) => ppResolveInfo (mapSubstAtom fr sub r)
+      | Proof.Refl t => ppReflInfo (mapSubstTerm fr sub t)
       | Proof.Equality (l,p,t) =>
         let
-          val l = mapSubstLiteral maps sub l
-          and t = mapSubstTerm maps sub t
+          val l = mapSubstLiteral fr sub l
+          and t = mapSubstTerm fr sub t
         in
-          ppEqualityInfo pp (l,p,t)
+          ppEqualityInfo (l,p,t)
         end;
 
-  fun ppAxiomProof p prf =
-      (Parser.addString p "fof_to_cnf,";
-       Parser.addBreak p (1,0);
-       Parser.addString p "[],";
-       Parser.addBreak p (1,0);
-       Parser.ppMap StringSet.toList (Parser.ppList Parser.ppString) p prf);
+  fun ppAxiomProof prf =
+      Print.program
+        [Print.addString "fof_to_cnf,",
+         Print.addBreak 1,
+         Print.addString "[],",
+         Print.addBreak 1,
+         Print.ppMap StringSet.toList (Print.ppList Print.ppString) prf];
 
-  fun ppThm prevNames p th =
+  fun ppThm prevNames th =
       case LiteralSetMap.peek prevNames (Thm.clause th) of
-        SOME name => Parser.addString p name
+        SOME name => Print.addString name
       | NONE => raise Error "previous theorem not found";
 
-  fun ppThmSub prevNames maps sub p (th,s) =
-      if Subst.null s then ppThm prevNames p th
+  fun ppThmSub prevNames fr sub (th,s) =
+      if Subst.null s then ppThm prevNames th
       else
         let
-          val s = mapSubstSubst maps sub s
+          val s = mapSubstSubst fr sub s
         in
-          Parser.ppBinop " :" (ppThm prevNames) ppSubstInfo p (th,s)
+          Print.ppOp2 " :" (ppThm prevNames) ppSubstInfo (th,s)
         end;
 in
-  fun ppProof avoid prefix names roles proofs p prf =
+  fun ppProof avoid prefix names roles proofs prf =
       let
-        val maps =
+        val fr =
             {functionMap = mappingToTptp (!functionMapping),
              relationMap = mappingToTptp (!relationMapping)}
 
         val (_,sub) = mkTptpVars (Proof.freeVars prf)
 
-        fun ppInf prevNames p inf =
+        fun ppInf prevNames inf =
             let
               val name = Thm.inferenceTypeToString (Proof.inferenceType inf)
               val name = String.map Char.toLower name
@@ -1400,56 +1391,60 @@ in
                     Proof.Subst (s,th) => [(th,s)]
                   | _ => map (fn th => (th,Subst.empty)) (Proof.parents inf)
             in
-              Parser.addString p (name ^ ",");
-              Parser.addBreak p (1,0);
-              Parser.ppBracket "[" "]" (ppInfInfo maps sub) p inf;
-              if null parentSubs then ()
-              else
-                (Parser.addString p ",";
-                 Parser.addBreak p (1,0);
-                 Parser.ppList (ppThmSub prevNames maps sub) p parentSubs)
+              Print.program
+                ([Print.addString (name ^ ","),
+                  Print.addBreak 1,
+                  Print.ppBracket "[" "]" (ppInfInfo fr sub) inf] @
+                 (if null parentSubs then []
+                  else
+                    [Print.addString ",",
+                     Print.addBreak 1,
+                     Print.ppList (ppThmSub prevNames fr sub) parentSubs]))
             end
 
-        fun ppTaut p inf =
-            (Parser.addString p "tautology,";
-             Parser.addBreak p (1,0);
-             Parser.ppBracket "[" "]" (ppInf noClauseNames) p inf)
+        fun ppTaut inf =
+            Print.program
+              [Print.addString "tautology,",
+               Print.addBreak 1,
+               Print.ppBracket "[" "]" (ppInf noClauseNames) inf]
 
-        fun ppStepInfo prevNames p (name,cl,inf) =
+        fun ppStepInfo prevNames (name,cl,inf) =
             let
               val is_axiom = case inf of Proof.Axiom _ => true | _ => false
               val role =
                   case LiteralSetMap.peek roles cl of
                     SOME role => role
                   | NONE => if is_axiom then ROLE_AXIOM else ROLE_PLAIN
-              val cl' = mapSubstClause maps sub (clauseFromLiteralSet cl)
+              val cl' = mapSubstClause fr sub (clauseFromLiteralSet cl)
             in
-              Parser.addString p (name ^ ",");
-              Parser.addBreak p (1,0);
-              Parser.addString p (role ^ ",");
-              Parser.addBreak p (1,0);
-              Parser.ppBracket "(" ")" ppClause p cl';
-              if is_axiom then
-                case LiteralSetMap.peek proofs cl of
-                  NONE => ()
-                | SOME axiomPrf =>
-                  (Parser.addString p ",";
-                   Parser.addBreak p (1,0);
-                   Parser.ppBracket "inference(" ")" ppAxiomProof p axiomPrf)
-              else
-                let
-                  val is_tautology = null (Proof.parents inf)
-                in
-                  Parser.addString p ",";
-                  Parser.addBreak p (1,0);
-                  if is_tautology then
-                    Parser.ppBracket "introduced(" ")" ppTaut p inf
+              Print.program
+                ([Print.addString (name ^ ","),
+                  Print.addBreak 1,
+                  Print.addString (role ^ ","),
+                  Print.addBreak 1,
+                  Print.ppBracket "(" ")" ppClause cl'] @
+                 (if is_axiom then
+                    case LiteralSetMap.peek proofs cl of
+                      NONE => []
+                    | SOME axiomPrf =>
+                      [Print.addString ",",
+                       Print.addBreak 1,
+                       Print.ppBracket "inference(" ")" ppAxiomProof axiomPrf]
                   else
-                    Parser.ppBracket "inference(" ")" (ppInf prevNames) p inf
-                end
+                    let
+                      val is_tautology = null (Proof.parents inf)
+                    in
+                      [Print.addString ",",
+                       Print.addBreak 1,
+                       (if is_tautology then
+                          Print.ppBracket "introduced(" ")" ppTaut inf
+                        else
+                          Print.ppBracket "inference(" ")"
+                            (ppInf prevNames) inf)]
+                    end))
             end
 
-        fun ppStep p ((th,inf),(start,prevNames,i)) =
+        fun ppStep (th,inf) (start,prevNames,i) =
             let
               val cl = Thm.clause th
               val (name,i) =
@@ -1457,17 +1452,17 @@ in
                     SOME name => (name,i)
                   | NONE => newThmName avoid prefix i
             in
-              if start then () else Parser.addNewline p;
-              Parser.ppBracket
-                "cnf(" ")" (ppStepInfo prevNames) p (name,cl,inf);
-              Parser.addString p ".";
-              Parser.addNewline p;
-              (false, LiteralSetMap.insert prevNames (cl,name), i)
+              (Print.program
+                 [(if start then Print.skip else Print.addNewline),
+                  Print.ppBracket "cnf(" ")"
+                    (ppStepInfo prevNames) (name,cl,inf),
+                  Print.addString ".",
+                  Print.addNewline],
+                (false, LiteralSetMap.insert prevNames (cl,name), i))
             end
       in
-        Parser.beginBlock p Parser.Consistent 0;
-        List.foldl (ppStep p) (true,noClauseNames,0) prf;
-        Parser.endBlock p
+        Print.blockProgram Print.Consistent 0
+          (fst (maps ppStep prf (true,noClauseNames,0)))
       end
 (*MetisDebug
       handle Error err => raise Bug ("Tptp.ppProof: shouldn't fail:\n" ^ err);
@@ -1476,6 +1471,6 @@ end;
 
 fun writeProof {filename,avoid,prefix,names,roles,proofs} =
     Stream.toTextFile {filename = filename} o
-    Parser.toStream (ppProof avoid prefix names roles proofs);
+    Print.toStream (ppProof avoid prefix names roles proofs);
 
 end

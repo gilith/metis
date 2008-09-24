@@ -46,17 +46,17 @@ datatype clause = Clause of clauseInfo;
 val showId = ref false;
 
 local
-  val ppIdThm = Parser.ppPair Parser.ppInt Thm.pp;
+  val ppIdThm = Print.ppPair Print.ppInt Thm.pp;
 in
-  fun pp p (Clause {id,thm,...}) =
-      if !showId then ppIdThm p (id,thm) else Thm.pp p thm;
+  fun pp (Clause {id,thm,...}) =
+      if !showId then ppIdThm (id,thm) else Thm.pp thm;
 end;
 
 (* ------------------------------------------------------------------------- *)
 (* Basic operations.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
-val default : parameters = 
+val default : parameters =
     {ordering = KnuthBendixOrder.default,
      orderLiterals = PositiveLiteralOrder,
      orderTerms = true};
@@ -145,9 +145,9 @@ fun largestLiterals (Clause {parameters,thm,...}) =
 val largestLiterals = fn cl =>
     let
       val ppResult = LiteralSet.pp
-      val () = Parser.ppTrace pp "Clause.largestLiterals: cl" cl
+      val () = Print.trace pp "Clause.largestLiterals: cl" cl
       val result = largestLiterals cl
-      val () = Parser.ppTrace ppResult "Clause.largestLiterals: result" result
+      val () = Print.trace ppResult "Clause.largestLiterals: result" result
     in
       result
     end;
@@ -218,9 +218,9 @@ fun rewrite rewr (cl as Clause {parameters,id,thm}) =
           end
 
 (*MetisTrace4
-      val () = Parser.ppTrace Rewrite.pp "Clause.rewrite: rewr" rewr
-      val () = Parser.ppTrace Parser.ppInt "Clause.rewrite: id" id
-      val () = Parser.ppTrace pp "Clause.rewrite: cl" cl
+      val () = Print.trace Rewrite.pp "Clause.rewrite: rewr" rewr
+      val () = Print.trace Print.ppInt "Clause.rewrite: id" id
+      val () = Print.trace pp "Clause.rewrite: cl" cl
 *)
 
       val thm =
@@ -231,7 +231,7 @@ fun rewrite rewr (cl as Clause {parameters,id,thm}) =
       val result = Clause {parameters = parameters, id = id, thm = thm}
 
 (*MetisTrace4
-      val () = Parser.ppTrace pp "Clause.rewrite: result" result
+      val () = Print.trace pp "Clause.rewrite: result" result
 *)
     in
       result
@@ -256,9 +256,9 @@ fun factor (cl as Clause {parameters,thm,...}) =
 (*MetisTrace5
 val factor = fn cl =>
     let
-      val () = Parser.ppTrace pp "Clause.factor: cl" cl
+      val () = Print.trace pp "Clause.factor: cl" cl
       val result = factor cl
-      val () = Parser.ppTrace (Parser.ppList pp) "Clause.factor: result" result
+      val () = Print.trace (Print.ppList pp) "Clause.factor: result" result
     in
       result
     end;
@@ -267,16 +267,16 @@ val factor = fn cl =>
 fun resolve (cl1,lit1) (cl2,lit2) =
     let
 (*MetisTrace5
-      val () = Parser.ppTrace pp "Clause.resolve: cl1" cl1
-      val () = Parser.ppTrace Literal.pp "Clause.resolve: lit1" lit1
-      val () = Parser.ppTrace pp "Clause.resolve: cl2" cl2
-      val () = Parser.ppTrace Literal.pp "Clause.resolve: lit2" lit2
+      val () = Print.trace pp "Clause.resolve: cl1" cl1
+      val () = Print.trace Literal.pp "Clause.resolve: lit1" lit1
+      val () = Print.trace pp "Clause.resolve: cl2" cl2
+      val () = Print.trace Literal.pp "Clause.resolve: lit2" lit2
 *)
       val Clause {parameters, thm = th1, ...} = cl1
       and Clause {thm = th2, ...} = cl2
       val sub = Literal.unify Subst.empty lit1 (Literal.negate lit2)
 (*MetisTrace5
-      val () = Parser.ppTrace Subst.pp "Clause.resolve: sub" sub
+      val () = Print.trace Subst.pp "Clause.resolve: sub" sub
 *)
       val lit1 = Literal.subst sub lit1
       val lit2 = Literal.negate lit1
@@ -294,11 +294,11 @@ fun resolve (cl1,lit1) (cl2,lit2) =
               raise Error "resolve: clause2: ordering constraints"
       val th = Thm.resolve lit1 th1 th2
 (*MetisTrace5
-      val () = Parser.ppTrace Thm.pp "Clause.resolve: th" th
+      val () = Print.trace Thm.pp "Clause.resolve: th" th
 *)
       val cl = Clause {parameters = parameters, id = newId (), thm = th}
 (*MetisTrace5
-      val () = Parser.ppTrace pp "Clause.resolve: cl" cl
+      val () = Print.trace pp "Clause.resolve: cl" cl
 *)
     in
       cl
@@ -307,10 +307,10 @@ fun resolve (cl1,lit1) (cl2,lit2) =
 fun paramodulate (cl1,lit1,ort,tm1) (cl2,lit2,path,tm2) =
     let
 (*MetisTrace5
-      val () = Parser.ppTrace pp "Clause.paramodulate: cl1" cl1
-      val () = Parser.ppTrace Literal.pp "Clause.paramodulate: lit1" lit1
-      val () = Parser.ppTrace pp "Clause.paramodulate: cl2" cl2
-      val () = Parser.ppTrace Literal.pp "Clause.paramodulate: lit2" lit2
+      val () = Print.trace pp "Clause.paramodulate: cl1" cl1
+      val () = Print.trace Literal.pp "Clause.paramodulate: lit1" lit1
+      val () = Print.trace pp "Clause.paramodulate: cl2" cl2
+      val () = Print.trace Literal.pp "Clause.paramodulate: lit2" lit2
 *)
       val Clause {parameters, thm = th1, ...} = cl1
       and Clause {thm = th2, ...} = cl2
@@ -341,7 +341,7 @@ fun paramodulate (cl1,lit1,ort,tm1) (cl2,lit2,path,tm2) =
               raise Error "paramodulate: equation: ordering constraints"
       val th = Rule.rewrRule eqn lit2 path th2
 (*MetisTrace5
-      val () = Parser.ppTrace Thm.pp "Clause.paramodulate: th" th
+      val () = Print.trace Thm.pp "Clause.paramodulate: th" th
 *)
     in
       Clause {parameters = parameters, id = newId (), thm = th}

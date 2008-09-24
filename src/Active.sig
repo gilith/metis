@@ -10,7 +10,10 @@ sig
 (* A type of active clause sets.                                             *)
 (* ------------------------------------------------------------------------- *)
 
-type simplify = {subsume : bool, reduce : bool, rewrite : bool}
+type simplify =
+     {subsume : bool,
+      reduce : bool,
+      rewrite : bool}
 
 type parameters =
      {clause : Clause.parameters,
@@ -47,6 +50,6 @@ val add : active -> Clause.clause -> active * Clause.clause list
 (* Pretty printing.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
-val pp : active Parser.pp
+val pp : active Print.pp
 
 end

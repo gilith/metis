@@ -100,6 +100,6 @@ val paramodulate :
 
 val showId : bool ref
 
-val pp : clause Parser.pp
+val pp : clause Print.pp
 
 end
