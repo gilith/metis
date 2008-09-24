@@ -34,110 +34,108 @@ fun inferenceType (Axiom _) = Thm.Axiom
   | inferenceType (Equality _) = Thm.Equality;
 
 local
-  fun ppAssume pp atm = (Parser.addBreak pp (1,0); Atom.pp pp atm);
+  fun ppAssume atm = Print.sequence (Print.addBreak 1) (Atom.pp atm);
 
-  fun ppSubst ppThm pp (sub,thm) =
-      (Parser.addBreak pp (1,0);
-       Parser.beginBlock pp Parser.Inconsistent 1;
-       Parser.addString pp "{";
-       Parser.ppBinop " =" Parser.ppString Subst.pp pp ("sub",sub);
-       Parser.addString pp ",";
-       Parser.addBreak pp (1,0);
-       Parser.ppBinop " =" Parser.ppString ppThm pp ("thm",thm);
-       Parser.addString pp "}";
-       Parser.endBlock pp);
+  fun ppSubst ppThm (sub,thm) =
+      Print.sequence (Print.addBreak 1)
+        (Print.blockProgram Print.Inconsistent 1
+           [Print.addString "{",
+            Print.ppOp2 " =" Print.ppString Subst.pp ("sub",sub),
+            Print.addString ",",
+            Print.addBreak 1,
+            Print.ppOp2 " =" Print.ppString ppThm ("thm",thm),
+            Print.addString "}"]);
 
-  fun ppResolve ppThm pp (res,pos,neg) =
-      (Parser.addBreak pp (1,0);
-       Parser.beginBlock pp Parser.Inconsistent 1;
-       Parser.addString pp "{";
-       Parser.ppBinop " =" Parser.ppString Atom.pp pp ("res",res);
-       Parser.addString pp ",";
-       Parser.addBreak pp (1,0);
-       Parser.ppBinop " =" Parser.ppString ppThm pp ("pos",pos);
-       Parser.addString pp ",";
-       Parser.addBreak pp (1,0);
-       Parser.ppBinop " =" Parser.ppString ppThm pp ("neg",neg);
-       Parser.addString pp "}";
-       Parser.endBlock pp);
+  fun ppResolve ppThm (res,pos,neg) =
+      Print.sequence (Print.addBreak 1)
+        (Print.blockProgram Print.Inconsistent 1
+           [Print.addString "{",
+            Print.ppOp2 " =" Print.ppString Atom.pp ("res",res),
+            Print.addString ",",
+            Print.addBreak 1,
+            Print.ppOp2 " =" Print.ppString ppThm ("pos",pos),
+            Print.addString ",",
+            Print.addBreak 1,
+            Print.ppOp2 " =" Print.ppString ppThm ("neg",neg),
+            Print.addString "}"]);
 
-  fun ppRefl pp tm = (Parser.addBreak pp (1,0); Term.pp pp tm);
+  fun ppRefl tm = Print.sequence (Print.addBreak 1) (Term.pp tm);
 
-  fun ppEquality pp (lit,path,res) =
-      (Parser.addBreak pp (1,0);
-       Parser.beginBlock pp Parser.Inconsistent 1;
-       Parser.addString pp "{";
-       Parser.ppBinop " =" Parser.ppString Literal.pp pp ("lit",lit);
-       Parser.addString pp ",";
-       Parser.addBreak pp (1,0);
-       Parser.ppBinop " =" Parser.ppString Term.ppPath pp ("path",path);
-       Parser.addString pp ",";
-       Parser.addBreak pp (1,0);
-       Parser.ppBinop " =" Parser.ppString Term.pp pp ("res",res);
-       Parser.addString pp "}";
-       Parser.endBlock pp);
+  fun ppEquality (lit,path,res) =
+      Print.sequence (Print.addBreak 1)
+        (Print.blockProgram Print.Inconsistent 1
+           [Print.addString "{",
+            Print.ppOp2 " =" Print.ppString Literal.pp ("lit",lit),
+            Print.addString ",",
+            Print.addBreak 1,
+            Print.ppOp2 " =" Print.ppString Term.ppPath ("path",path),
+            Print.addString ",",
+            Print.addBreak 1,
+            Print.ppOp2 " =" Print.ppString Term.pp ("res",res),
+            Print.addString "}"]);
 
-  fun ppInf ppAxiom ppThm pp inf =
+  fun ppInf ppAxiom ppThm inf =
       let
         val infString = Thm.inferenceTypeToString (inferenceType inf)
       in
-        Parser.beginBlock pp Parser.Inconsistent (size infString + 1);
-        Parser.ppString pp infString;
-        case inf of
-          Axiom cl => ppAxiom pp cl
-        | Assume x => ppAssume pp x
-        | Subst x => ppSubst ppThm pp x
-        | Resolve x => ppResolve ppThm pp x
-        | Refl x => ppRefl pp x
-        | Equality x => ppEquality pp x;
-        Parser.endBlock pp
+        Print.block Print.Inconsistent (size infString + 1)
+          (Print.sequence
+             (Print.addString infString)
+             (case inf of
+                Axiom cl => ppAxiom cl
+              | Assume x => ppAssume x
+              | Subst x => ppSubst ppThm x
+              | Resolve x => ppResolve ppThm x
+              | Refl x => ppRefl x
+              | Equality x => ppEquality x))
       end;
 
-  fun ppAxiom pp cl =
-      (Parser.addBreak pp (1,0);
-       Parser.ppMap
-         LiteralSet.toList
-         (Parser.ppBracket "{" "}" (Parser.ppSequence "," Literal.pp)) pp cl);
+  fun ppAxiom cl =
+      Print.sequence
+        (Print.addBreak 1)
+        (Print.ppMap
+           LiteralSet.toList
+           (Print.ppBracket "{" "}" (Print.ppOpList "," Literal.pp)) cl);
 in
   val ppInference = ppInf ppAxiom Thm.pp;
 
-  fun pp p prf =
+  fun pp prf =
       let
         fun thmString n = "(" ^ Int.toString n ^ ")"
-                          
+
         val prf = enumerate prf
 
-        fun ppThm p th =
+        fun ppThm th =
+            Print.addString
             let
               val cl = Thm.clause th
 
               fun pred (_,(th',_)) = LiteralSet.equal (Thm.clause th') cl
             in
               case List.find pred prf of
-                NONE => Parser.addString p "(?)"
-              | SOME (n,_) => Parser.addString p (thmString n)
+                NONE => "(?)"
+              | SOME (n,_) => thmString n
             end
 
         fun ppStep (n,(th,inf)) =
             let
               val s = thmString n
             in
-              Parser.beginBlock p Parser.Consistent (1 + size s);
-              Parser.addString p (s ^ " ");
-              Thm.pp p th;
-              Parser.addBreak p (2,0);
-              Parser.ppBracket "[" "]" (ppInf (K (K ())) ppThm) p inf;
-              Parser.endBlock p;
-              Parser.addNewline p
+              Print.sequence
+                (Print.blockProgram Print.Consistent (1 + size s)
+                   [Print.addString (s ^ " "),
+                    Thm.pp th,
+                    Print.addBreak 2,
+                    Print.ppBracket "[" "]" (ppInf (K Print.skip) ppThm) inf])
+                Print.addNewline
             end
       in
-        Parser.beginBlock p Parser.Consistent 0;
-        Parser.addString p "START OF PROOF";
-        Parser.addNewline p;
-        app ppStep prf;
-        Parser.addString p "END OF PROOF";
-        Parser.addNewline p;
-        Parser.endBlock p
+        Print.blockProgram Print.Consistent 0
+          [Print.addString "START OF PROOF",
+           Print.addNewline,
+           Print.program (map ppStep prf),
+           Print.addString "END OF PROOF",
+           Print.addNewline]
       end
 (*MetisDebug
       handle Error err => raise Bug ("Proof.pp: shouldn't fail:\n" ^ err);
@@ -145,9 +143,9 @@ in
 
 end;
 
-val inferenceToString = Parser.toString ppInference;
+val inferenceToString = Print.toString ppInference;
 
-val toString = Parser.toString pp;
+val toString = Print.toString pp;
 
 (* ------------------------------------------------------------------------- *)
 (* Reconstructing single inferences.                                         *)
@@ -234,7 +232,7 @@ local
                   val path = i :: path
                 in
                   if tm = s andalso tm' = t then SOME (rev path)
-                  else 
+                  else
                     case (tm,tm') of
                       (Term.Fn f_a, Term.Fn f_a') => sync s t path f_a f_a'
                     | _ => NONE

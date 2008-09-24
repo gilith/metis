@@ -176,9 +176,9 @@ val splitGoal : formula -> formula list
 (* Parsing and pretty-printing.                                              *)
 (* ------------------------------------------------------------------------- *)
 
-type quotation = formula Parser.quotation
+type quotation = formula Parse.quotation
 
-val pp : formula Parser.pp
+val pp : formula Print.pp
 
 val toString : formula -> string
 

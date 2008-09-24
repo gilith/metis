@@ -227,13 +227,13 @@ fun nonVarTypedSubterms (_,tms) =
 (* Parsing and pretty printing.                                              *)
 (* ------------------------------------------------------------------------- *)
 
-val pp = Parser.ppMap Term.Fn Term.pp;
+val pp = Print.ppMap Term.Fn Term.pp;
 
-val toString = Parser.toString pp;
+val toString = Print.toString pp;
 
 fun fromString s = Term.destFn (Term.fromString s);
 
-val parse = Parser.parseQuotation Term.toString fromString;
+val parse = Parse.parseQuotation Term.toString fromString;
 
 end
 

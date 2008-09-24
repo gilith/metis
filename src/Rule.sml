@@ -76,9 +76,9 @@ fun symEq lit th =
 
 type equation = (Term.term * Term.term) * Thm.thm;
 
-fun ppEquation pp (eqn as (_,th)) = Thm.pp pp th;
+fun ppEquation (_,th) = Thm.pp th;
 
-fun equationToString x = Parser.toString ppEquation x;
+val equationToString = Print.toString ppEquation;
 
 fun equationLiteral (t_u,th) =
     let
@@ -603,8 +603,8 @@ local
       FactorEdge of Atom.atom * Atom.atom
     | ReflEdge of Term.term * Term.term;
 
-  fun ppEdge p (FactorEdge atm_atm') = Parser.ppPair Atom.pp Atom.pp p atm_atm'
-    | ppEdge p (ReflEdge tm_tm') = Parser.ppPair Term.pp Term.pp p tm_tm';
+  fun ppEdge (FactorEdge atm_atm') = Print.ppPair Atom.pp Atom.pp atm_atm'
+    | ppEdge (ReflEdge tm_tm') = Print.ppPair Term.pp Term.pp tm_tm';
 
   datatype joinStatus =
       Joined

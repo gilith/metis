@@ -94,7 +94,7 @@ val replace : term -> path * term -> term
 
 val find : (term -> bool) -> term -> path option
 
-val ppPath : path Parser.pp
+val ppPath : path Print.pp
 
 val pathToString : path -> string
 
@@ -148,7 +148,7 @@ val stripComb : term -> term * term list
 
 (* Infix symbols *)
 
-val infixes : Parser.infixities ref
+val infixes : Print.infixes ref
 
 (* The negation symbol *)
 
@@ -164,7 +164,7 @@ val brackets : (Name.name * Name.name) list ref
 
 (* Pretty printing *)
 
-val pp : term Parser.pp
+val pp : term Print.pp
 
 val toString : term -> string
 
@@ -172,6 +172,6 @@ val toString : term -> string
 
 val fromString : string -> term
 
-val parse : term Parser.quotation -> term
+val parse : term Parse.quotation -> term
 
 end

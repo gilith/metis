@@ -48,12 +48,12 @@ fun foldl f b (Subst m) = NameMap.foldl f b m;
 
 fun foldr f b (Subst m) = NameMap.foldr f b m;
 
-fun pp ppstrm sub =
-    Parser.ppBracket "<[" "]>"
-      (Parser.ppSequence "," (Parser.ppBinop " |->" Parser.ppString Term.pp))
-      ppstrm (toList sub);
+fun pp sub =
+    Print.ppBracket "<[" "]>"
+      (Print.ppOpList "," (Print.ppOp2 " |->" Print.ppString Term.pp))
+      (toList sub);
 
-val toString = Parser.toString pp;
+val toString = Print.toString pp;
 
 (* ------------------------------------------------------------------------- *)
 (* Normalizing removes identity substitutions.                               *)

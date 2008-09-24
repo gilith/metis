@@ -30,7 +30,7 @@ val filter : ('a -> bool) -> 'a atomNet -> 'a atomNet
 
 val toString : 'a atomNet -> string
 
-val pp : 'a Parser.pp -> 'a atomNet Parser.pp
+val pp : 'a Print.pp -> 'a atomNet Print.pp
 
 (* ------------------------------------------------------------------------- *)
 (* Matching and unification queries.                                         *)

@@ -32,7 +32,7 @@ val filter : ('a -> bool) -> 'a termNet -> 'a termNet
 
 val toString : 'a termNet -> string
 
-val pp : 'a Parser.pp -> 'a termNet Parser.pp
+val pp : 'a Print.pp -> 'a termNet Print.pp
 
 (* ------------------------------------------------------------------------- *)
 (* Matching and unification queries.                                         *)

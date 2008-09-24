@@ -211,9 +211,9 @@ fun find pred =
       fn tm => search [([],tm)]
     end;
 
-val ppPath = Parser.ppList Parser.ppInt;
+val ppPath = Print.ppList Print.ppInt;
 
-val pathToString = Parser.toString ppPath;
+val pathToString = Print.toString ppPath;
 
 (* ------------------------------------------------------------------------- *)
 (* Free variables.                                                           *)
@@ -261,7 +261,7 @@ fun variantNum avoid v =
     else
       let
         val v = stripSuffix Char.isDigit v
-                                                                    
+
         fun f n =
             let
               val v_n = v ^ Int.toString n
@@ -333,40 +333,41 @@ end;
 
 (* Operators parsed and printed infix *)
 
-val infixes : Parser.infixities ref = ref
-  [(* ML symbols *)
-   {token = " / ", precedence = 7, leftAssoc = true},
-   {token = " div ", precedence = 7, leftAssoc = true},
-   {token = " mod ", precedence = 7, leftAssoc = true},
-   {token = " * ", precedence = 7, leftAssoc = true},
-   {token = " + ", precedence = 6, leftAssoc = true},
-   {token = " - ", precedence = 6, leftAssoc = true},
-   {token = " ^ ", precedence = 6, leftAssoc = true},
-   {token = " @ ", precedence = 5, leftAssoc = false},
-   {token = " :: ", precedence = 5, leftAssoc = false},
-   {token = " = ", precedence = 4, leftAssoc = true},
-   {token = " <> ", precedence = 4, leftAssoc = true},
-   {token = " <= ", precedence = 4, leftAssoc = true},
-   {token = " < ", precedence = 4, leftAssoc = true},
-   {token = " >= ", precedence = 4, leftAssoc = true},
-   {token = " > ", precedence = 4, leftAssoc = true},
-   {token = " o ", precedence = 3, leftAssoc = true},
-   {token = " -> ", precedence = 2, leftAssoc = false},  (* inferred prec *)
-   {token = " : ", precedence = 1, leftAssoc = false},  (* inferred prec *)
-   {token = ", ", precedence = 0, leftAssoc = false},  (* inferred prec *)
+val infixes =
+    (ref o Print.Infixes)
+      [(* ML symbols *)
+       {token = " / ", precedence = 7, leftAssoc = true},
+       {token = " div ", precedence = 7, leftAssoc = true},
+       {token = " mod ", precedence = 7, leftAssoc = true},
+       {token = " * ", precedence = 7, leftAssoc = true},
+       {token = " + ", precedence = 6, leftAssoc = true},
+       {token = " - ", precedence = 6, leftAssoc = true},
+       {token = " ^ ", precedence = 6, leftAssoc = true},
+       {token = " @ ", precedence = 5, leftAssoc = false},
+       {token = " :: ", precedence = 5, leftAssoc = false},
+       {token = " = ", precedence = 4, leftAssoc = true},
+       {token = " <> ", precedence = 4, leftAssoc = true},
+       {token = " <= ", precedence = 4, leftAssoc = true},
+       {token = " < ", precedence = 4, leftAssoc = true},
+       {token = " >= ", precedence = 4, leftAssoc = true},
+       {token = " > ", precedence = 4, leftAssoc = true},
+       {token = " o ", precedence = 3, leftAssoc = true},
+       {token = " -> ", precedence = 2, leftAssoc = false},  (* inferred prec *)
+       {token = " : ", precedence = 1, leftAssoc = false},  (* inferred prec *)
+       {token = ", ", precedence = 0, leftAssoc = false},  (* inferred prec *)
 
-   (* Logical connectives *)
-   {token = " /\\ ", precedence = ~1, leftAssoc = false},
-   {token = " \\/ ", precedence = ~2, leftAssoc = false},
-   {token = " ==> ", precedence = ~3, leftAssoc = false},
-   {token = " <=> ", precedence = ~4, leftAssoc = false},
+       (* Logical connectives *)
+       {token = " /\\ ", precedence = ~1, leftAssoc = false},
+       {token = " \\/ ", precedence = ~2, leftAssoc = false},
+       {token = " ==> ", precedence = ~3, leftAssoc = false},
+       {token = " <=> ", precedence = ~4, leftAssoc = false},
 
-   (* Other symbols *)
-   {token = " . ", precedence = 9, leftAssoc = true},  (* function app *)
-   {token = " ** ", precedence = 8, leftAssoc = true},
-   {token = " ++ ", precedence = 6, leftAssoc = true},
-   {token = " -- ", precedence = 6, leftAssoc = true},
-   {token = " == ", precedence = 4, leftAssoc = true}];
+       (* Other symbols *)
+       {token = " . ", precedence = 9, leftAssoc = true},  (* function app *)
+       {token = " ** ", precedence = 8, leftAssoc = true},
+       {token = " ++ ", precedence = 6, leftAssoc = true},
+       {token = " -- ", precedence = 6, leftAssoc = true},
+       {token = " == ", precedence = 4, leftAssoc = true}];
 
 (* The negation symbol *)
 
@@ -382,136 +383,135 @@ val brackets : (Name.name * Name.name) list ref = ref [("[","]"),("{","}")];
 
 (* Pretty printing *)
 
-local
-  open Parser;
-in
-  fun pp inputPpstrm inputTerm =
-      let
-        val quants = !binders
-        and iOps = !infixes
-        and neg = !negation
-        and bracks = !brackets
+fun pp inputTerm =
+    let
+      val quants = !binders
+      and iOps = !infixes
+      and neg = !negation
+      and bracks = !brackets
 
-        val bracks = map (fn (b1,b2) => (b1 ^ b2, b1, b2)) bracks
+      val bracks = map (fn (b1,b2) => (b1 ^ b2, b1, b2)) bracks
 
-        val bTokens = map #2 bracks @ map #3 bracks
+      val bTokens = map #2 bracks @ map #3 bracks
 
-        val iTokens = infixTokens iOps
+      val iTokens = Print.tokensInfixes iOps
 
-        fun destI (Fn (f,[a,b])) =
-            if mem f iTokens then SOME (f,a,b) else NONE
-          | destI _ = NONE
+      fun destI (Fn (f,[a,b])) =
+          if StringSet.member f iTokens then SOME (f,a,b) else NONE
+        | destI _ = NONE
 
-        val iPrinter = ppInfixes iOps destI
+      val iPrinter = Print.ppInfixes iOps destI
 
-        val specialTokens = neg :: quants @ ["$","(",")"] @ bTokens @ iTokens
+      val specialTokens =
+          StringSet.addList iTokens (neg :: quants @ ["$","(",")"] @ bTokens)
 
-        fun vName bv s = NameSet.member s bv
+      fun vName bv s = NameSet.member s bv
 
-        fun checkVarName bv s = if vName bv s then s else "$" ^ s
+      fun checkVarName bv s = if vName bv s then s else "$" ^ s
 
-        fun varName bv = ppMap (checkVarName bv) ppString
+      fun varName bv = Print.ppMap (checkVarName bv) Print.ppString
 
-        fun checkFunctionName bv s =
-            if mem s specialTokens orelse vName bv s then "(" ^ s ^ ")" else s
+      fun checkFunctionName bv s =
+          if StringSet.member s specialTokens orelse vName bv s then
+            "(" ^ s ^ ")"
+          else
+            s
 
-        fun functionName bv = ppMap (checkFunctionName bv) ppString
+      fun functionName bv = Print.ppMap (checkFunctionName bv) Print.ppString
 
-        fun isI tm = Option.isSome (destI tm)
+      fun isI tm = Option.isSome (destI tm)
 
-        fun stripNeg (tm as Fn (f,[a])) =
+      fun stripNeg tm =
+          case tm of
+            Fn (f,[a]) =>
             if f <> neg then (0,tm)
             else let val (n,tm) = stripNeg a in (n + 1, tm) end
-          | stripNeg tm = (0,tm)
+          | _ => (0,tm)
 
-        val destQuant =
+      val destQuant =
+          let
+            fun dest q (Fn (q', [Var v, body])) =
+                if q <> q' then NONE
+                else
+                  (case dest q body of
+                     NONE => SOME (q,v,[],body)
+                   | SOME (_,v',vs,body) => SOME (q, v, v' :: vs, body))
+              | dest _ _ = NONE
+          in
+            fn tm => Useful.first (fn q => dest q tm) quants
+          end
+
+      fun isQuant tm = Option.isSome (destQuant tm)
+
+      fun destBrack (Fn (b,[tm])) =
+          (case List.find (fn (n,_,_) => n = b) bracks of
+             NONE => NONE
+           | SOME (_,b1,b2) => SOME (b1,tm,b2))
+        | destBrack _ = NONE
+
+      fun isBrack tm = Option.isSome (destBrack tm)
+
+      fun functionArgument bv tm =
+          Print.sequence
+            (Print.addBreak 1)
+            (if isBrack tm then customBracket bv tm
+             else if isVar tm orelse isConst tm then basic bv tm
+             else bracket bv tm)
+
+      and basic bv (Var v) = varName bv v
+        | basic bv (Fn (f,args)) =
+          Print.blockProgram Print.Inconsistent 2
+            (functionName bv f :: map (functionArgument bv) args)
+
+      and customBracket bv tm =
+          case destBrack tm of
+            SOME (b1,tm,b2) => Print.ppBracket b1 b2 (term bv) tm
+          | NONE => basic bv tm
+
+      and innerQuant bv tm =
+          case destQuant tm of
+            NONE => term bv tm
+          | SOME (q,v,vs,tm) =>
             let
-              fun dest q (Fn (q', [Var v, body])) =
-                  if q <> q' then NONE
-                  else
-                    (case dest q body of
-                       NONE => SOME (q,v,[],body)
-                     | SOME (_,v',vs,body) => SOME (q, v, v' :: vs, body))
-                | dest _ _ = NONE
+              val bv = NameSet.addList (NameSet.add bv v) vs
             in
-              fn tm => Useful.first (fn q => dest q tm) quants
+              Print.program
+                [Print.addString q,
+                 varName bv v,
+                 Print.program
+                   (map (Print.sequence (Print.addBreak 1) o varName bv) vs),
+                 Print.addString ".",
+                 Print.addBreak 1,
+                 innerQuant bv tm]
             end
 
-        fun isQuant tm = Option.isSome (destQuant tm)
+      and quantifier bv tm =
+          if not (isQuant tm) then customBracket bv tm
+          else Print.block Print.Inconsistent 2 (innerQuant bv tm)
 
-        fun destBrack (Fn (b,[tm])) =
-            (case List.find (fn (n,_,_) => n = b) bracks of
-               NONE => NONE
-             | SOME (_,b1,b2) => SOME (b1,tm,b2))
-          | destBrack _ = NONE
+      and molecule bv (tm,r) =
+          let
+            val (n,tm) = stripNeg tm
+          in
+            Print.blockProgram Print.Inconsistent n
+              [Print.duplicate n (Print.addString neg),
+               if isI tm orelse (r andalso isQuant tm) then bracket bv tm
+               else quantifier bv tm]
+          end
 
-        fun isBrack tm = Option.isSome (destBrack tm)
-            
-        fun functionArgument bv ppstrm tm =
-            (addBreak ppstrm (1,0);
-             if isBrack tm then customBracket bv ppstrm tm
-             else if isVar tm orelse isConst tm then basic bv ppstrm tm
-             else bracket bv ppstrm tm)
+      and term bv tm = iPrinter (molecule bv) (tm,false)
 
-        and basic bv ppstrm (Var v) = varName bv ppstrm v
-          | basic bv ppstrm (Fn (f,args)) =
-            (beginBlock ppstrm Inconsistent 2;
-             functionName bv ppstrm f;
-             app (functionArgument bv ppstrm) args;
-             endBlock ppstrm)
+      and bracket bv tm = Print.ppBracket "(" ")" (term bv) tm
+    in
+      term NameSet.empty
+    end inputTerm;
 
-        and customBracket bv ppstrm tm =
-            case destBrack tm of
-              SOME (b1,tm,b2) => ppBracket b1 b2 (term bv) ppstrm tm
-            | NONE => basic bv ppstrm tm
-
-        and innerQuant bv ppstrm tm =
-            case destQuant tm of
-              NONE => term bv ppstrm tm
-            | SOME (q,v,vs,tm) =>
-              let
-                val bv = NameSet.addList (NameSet.add bv v) vs
-              in
-                addString ppstrm q;
-                varName bv ppstrm v;
-                app (fn v => (addBreak ppstrm (1,0); varName bv ppstrm v)) vs;
-                addString ppstrm ".";
-                addBreak ppstrm (1,0);
-                innerQuant bv ppstrm tm
-              end
-
-        and quantifier bv ppstrm tm =
-            if not (isQuant tm) then customBracket bv ppstrm tm
-            else
-              (beginBlock ppstrm Inconsistent 2;
-               innerQuant bv ppstrm tm;
-               endBlock ppstrm)
-
-        and molecule bv ppstrm (tm,r) =
-            let
-              val (n,tm) = stripNeg tm
-            in
-              beginBlock ppstrm Inconsistent n;
-              funpow n (fn () => addString ppstrm neg) ();
-              if isI tm orelse (r andalso isQuant tm) then bracket bv ppstrm tm
-              else quantifier bv ppstrm tm;
-              endBlock ppstrm
-            end
-
-        and term bv ppstrm tm = iPrinter (molecule bv) ppstrm (tm,false)
-
-        and bracket bv ppstrm tm = ppBracket "(" ")" (term bv) ppstrm tm
-  in
-    term NameSet.empty
-  end inputPpstrm inputTerm;
-end;
-
-fun toString tm = Parser.toString pp tm;
+val toString = Print.toString pp;
 
 (* Parsing *)
 
 local
-  open Parser;
+  open Parse;
 
   infixr 9 >>++
   infixr 8 ++
@@ -531,7 +531,7 @@ local
     val symbolToken =
         let
           fun isNeg c = str c = !negation
-                        
+
           val symbolChars = explode "<>=-*+/\\?@|!$%&#^:;~"
 
           fun isSymbol c = mem c symbolChars
@@ -574,20 +574,22 @@ local
 
         fun vName bv s = NameSet.member s bv
 
-        val iTokens = infixTokens iOps
+        val iTokens = Print.tokensInfixes iOps
 
         val iParser = parseInfixes iOps (fn (f,a,b) => Fn (f,[a,b]))
 
-        val specialTokens = neg :: quants @ ["$"] @ bTokens @ iTokens
+        val specialTokens =
+            StringSet.addList iTokens (neg :: quants @ ["$"] @ bTokens)
 
         fun varName bv =
-            Parser.some (vName bv) ||
+            some (vName bv) ||
             (exact "$" ++ some possibleVarName) >> (fn (_,s) => s)
 
-        fun fName bv s = not (mem s specialTokens) andalso not (vName bv s)
+        fun fName bv s =
+            not (StringSet.member s specialTokens) andalso not (vName bv s)
 
         fun functionName bv =
-            Parser.some (fName bv) ||
+            some (fName bv) ||
             (exact "(" ++ any ++ exact ")") >> (fn (_,(s,_)) => s)
 
         fun basic bv tokens =
@@ -648,10 +650,9 @@ in
 end;
 
 local
-  val antiquotedTermToString =
-      Parser.toString (Parser.ppBracket "(" ")" pp);
+  val antiquotedTermToString = Print.toString (Print.ppBracket "(" ")" pp);
 in
-  val parse = Parser.parseQuotation antiquotedTermToString fromString;
+  val parse = Parse.parseQuotation antiquotedTermToString fromString;
 end;
 
 end

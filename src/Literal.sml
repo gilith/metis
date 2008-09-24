@@ -178,13 +178,13 @@ fun nonVarTypedSubterms ((_,atm) : literal) = Atom.nonVarTypedSubterms atm;
 (* Parsing and pretty-printing.                                              *)
 (* ------------------------------------------------------------------------- *)
 
-val pp = Parser.ppMap toFormula Formula.pp;
+val pp = Print.ppMap toFormula Formula.pp;
 
-val toString = Parser.toString pp;
+val toString = Print.toString pp;
 
 fun fromString s = fromFormula (Formula.fromString s);
 
-val parse = Parser.parseQuotation Term.toString fromString;
+val parse = Parse.parseQuotation Term.toString fromString;
 
 end
 
@@ -255,16 +255,16 @@ struct
             in
               (eq, add lits' lit')
             end
-              
+
         val (eq,lits') = foldl substLit (true,empty) lits
       in
         if eq then lits else lits'
       end;
 
   val pp =
-      Parser.ppMap
+      Print.ppMap
         toList
-        (Parser.ppBracket "{" "}" (Parser.ppSequence "," Literal.pp));
+        (Print.ppBracket "{" "}" (Print.ppOpList "," Literal.pp));
 
 end
 

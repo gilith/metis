@@ -38,7 +38,7 @@ val foldl : (Term.var * Term.term * 'a -> 'a) -> 'a -> subst -> 'a
 
 val foldr : (Term.var * Term.term * 'a -> 'a) -> 'a -> subst -> 'a
 
-val pp : subst Parser.pp
+val pp : subst Print.pp
 
 val toString : subst -> string
 

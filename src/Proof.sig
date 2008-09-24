@@ -50,11 +50,11 @@ val freeVars : proof -> NameSet.set
 (* Printing.                                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-val ppInference : inference Parser.pp
+val ppInference : inference Print.pp
 
 val inferenceToString : inference -> string
 
-val pp : proof Parser.pp
+val pp : proof Print.pp
 
 val toString : proof -> string
 

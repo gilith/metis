@@ -128,12 +128,12 @@ val nonVarTypedSubterms : atom -> (Term.path * Term.term) list
 (* Parsing and pretty printing.                                              *)
 (* ------------------------------------------------------------------------- *)
 
-val pp : atom Parser.pp
+val pp : atom Print.pp
 
 val toString : atom -> string
 
 val fromString : string -> atom
 
-val parse : Term.term Parser.quotation -> atom
+val parse : Term.term Parse.quotation -> atom
 
 end

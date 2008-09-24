@@ -101,26 +101,21 @@ fun inferenceTypeToString Axiom = "Axiom"
   | inferenceTypeToString Refl = "Refl"
   | inferenceTypeToString Equality = "Equality";
 
-fun ppInferenceType ppstrm inf =
-    Parser.ppString ppstrm (inferenceTypeToString inf);
+fun ppInferenceType inf =
+    Print.ppString (inferenceTypeToString inf);
 
 local
   fun toFormula th =
       Formula.listMkDisj
         (map Literal.toFormula (LiteralSet.toList (clause th)));
 in
-  fun pp ppstrm th =
-    let
-      open PP
-    in
-      begin_block ppstrm INCONSISTENT 3;
-      add_string ppstrm "|- ";
-      Formula.pp ppstrm (toFormula th);
-      end_block ppstrm
-    end;
+  fun pp th =
+      Print.blockProgram Print.Inconsistent 3
+        [Print.addString "|- ",
+         Formula.pp (toFormula th)];
 end;
 
-val toString = Parser.toString pp;
+val toString = Print.toString pp;
 
 (* ------------------------------------------------------------------------- *)
 (* Primitive rules of inference.                                             *)

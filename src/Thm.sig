@@ -79,11 +79,11 @@ val freeVars : thm -> NameSet.set
 (* Pretty-printing.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
-val ppInferenceType : inferenceType Parser.pp
+val ppInferenceType : inferenceType Print.pp
 
 val inferenceTypeToString : inferenceType -> string
 
-val pp : thm Parser.pp
+val pp : thm Print.pp
 
 val toString : thm -> string
 

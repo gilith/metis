@@ -152,12 +152,12 @@ val nonVarTypedSubterms : literal -> (Term.path * Term.term) list
 (* Parsing and pretty-printing.                                              *)
 (* ------------------------------------------------------------------------- *)
 
-val pp : literal Parser.pp
+val pp : literal Print.pp
 
 val toString : literal -> string
 
 val fromString : string -> literal
 
-val parse : Term.term Parser.quotation -> literal
+val parse : Term.term Parse.quotation -> literal
 
 end

@@ -402,7 +402,7 @@ local
                     case Subst.peek sub w of
                       NONE => NameSet.add s w
                     | SOME tm => NameSet.union s (Term.freeVars tm)
-                  
+
               val vars = freeVars p
               val vars = NameSet.foldl f NameSet.empty vars
             in
@@ -506,7 +506,7 @@ end;
 (* Parsing and pretty-printing.                                              *)
 (* ------------------------------------------------------------------------- *)
 
-type quotation = formula Parser.quotation
+type quotation = formula Parse.quotation
 
 val truthSymbol = "T"
 and falsitySymbol = "F"
@@ -530,10 +530,10 @@ local
     | demote (Exists (v,b)) =
       Term.Fn (existentialSymbol, [Term.Var v, demote b]);
 in
-  fun pp ppstrm fm = Term.pp ppstrm (demote fm);
+  fun pp fm = Term.pp (demote fm);
 end;
 
-val toString = Parser.toString pp;
+val toString = Print.toString pp;
 
 local
   fun isQuant [Term.Var _, _] = true
@@ -565,6 +565,6 @@ in
   fun fromString s = promote (Term.fromString s);
 end;
 
-val parse = Parser.parseQuotation toString fromString;
+val parse = Parse.parseQuotation toString fromString;
 
 end

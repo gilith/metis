@@ -32,7 +32,7 @@ val filter : ('a -> bool) -> 'a literalNet -> 'a literalNet
 
 val toString : 'a literalNet -> string
 
-val pp : 'a Parser.pp -> 'a literalNet Parser.pp
+val pp : 'a Print.pp -> 'a literalNet Print.pp
 
 (* ------------------------------------------------------------------------- *)
 (* Matching and unification queries.                                         *)

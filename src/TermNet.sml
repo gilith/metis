@@ -81,7 +81,7 @@ local
   fun qtermToTerm VAR = Term.Var ""
     | qtermToTerm (FN ((f,_),l)) = Term.Fn (f, map qtermToTerm l);
 in
-  val ppQterm = Parser.ppMap qtermToTerm Term.pp;
+  val ppQterm = Print.ppMap qtermToTerm Term.pp;
 end;
 
 (* ------------------------------------------------------------------------- *)
@@ -203,7 +203,7 @@ local
   and addFn (f as (_,n)) (ks,fs,qtms) = norm (n :: ks, f :: fs, qtms);
 in
   val stackEmpty = ([],[],[]);
-    
+
   val stackAddQterm = addQterm;
 
   val stackAddFn = addFn;
@@ -406,13 +406,13 @@ local
   fun inc (qtm, RESULT l, acc) =
       foldl (fn ((n,a),acc) => (n,(qtm,a)) :: acc) acc l
     | inc _ = raise Bug "TermNet.pp.inc";
-      
+
   fun toList (NET (_,_,NONE)) = []
     | toList (NET (parm, _, SOME (_,net))) =
       finally parm (foldTerms inc [] net);
 in
   fun pp ppA =
-      Parser.ppMap toList (Parser.ppList (Parser.ppBinop " |->" ppQterm ppA));
+      Print.ppMap toList (Print.ppList (Print.ppOp2 " |->" ppQterm ppA));
 end;
 
 end

@@ -13,7 +13,7 @@ sig
 
 type equation = (Term.term * Term.term) * Thm.thm
 
-val ppEquation : equation Parser.pp
+val ppEquation : equation Print.pp
 
 val equationToString : equation -> string
 

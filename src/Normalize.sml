@@ -601,9 +601,9 @@ in
     | toClause l = LiteralSet.singleton (toLiteral l);
 end;
 
-val pp = Parser.ppMap toFormula Formula.pp;
+val pp = Print.ppMap toFormula Formula.pp;
 
-val toString = Parser.toString pp;
+val toString = Print.toString pp;
 
 (* ------------------------------------------------------------------------- *)
 (* Negation normal form.                                                     *)
