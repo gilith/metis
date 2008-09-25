@@ -91,18 +91,18 @@ fun mapLitSet fr =
 
 fun mapFof fr =
     let
-      open Formula
-
-      fun form True = True
-        | form False = False
-        | form (Atom a) = Atom (mapAtom fr a)
-        | form (Not p) = Not (form p)
-        | form (And (p,q)) = And (form p, form q)
-        | form (Or (p,q)) = Or (form p, form q)
-        | form (Imp (p,q)) = Imp (form p, form q)
-        | form (Iff (p,q)) = Iff (form p, form q)
-        | form (Forall (v,p)) = Forall (v, form p)
-        | form (Exists (v,p)) = Exists (v, form p)
+      fun form fm =
+          case fm of
+            Formula.True => Formula.True
+          | Formula.False => Formula.False
+          | Formula.Atom a => Formula.Atom (mapAtom fr a)
+          | Formula.Not p => Formula.Not (form p)
+          | Formula.And (p,q) => Formula.And (form p, form q)
+          | Formula.Or (p,q) => Formula.Or (form p, form q)
+          | Formula.Imp (p,q) => Formula.Imp (form p, form q)
+          | Formula.Iff (p,q) => Formula.Iff (form p, form q)
+          | Formula.Forall (v,p) => Formula.Forall (v, form p)
+          | Formula.Exists (v,p) => Formula.Exists (v, form p)
     in
       form
     end;
@@ -216,16 +216,14 @@ end;
 fun ppAtom atm = ppTerm (Term.Fn atm);
 
 local
-  open Formula;
-
   val neg = Print.sequence (Print.addString "~") (Print.addBreak 1);
 
   fun fof fm =
       case fm of
-        And _ => assoc_binary ("&", stripConj fm)
-      | Or _ => assoc_binary ("|", stripDisj fm)
-      | Imp a_b => nonassoc_binary ("=>",a_b)
-      | Iff a_b => nonassoc_binary ("<=>",a_b)
+        Formula.And _ => assoc_binary ("&", Formula.stripConj fm)
+      | Formula.Or _ => assoc_binary ("|", Formula.stripDisj fm)
+      | Formula.Imp a_b => nonassoc_binary ("=>",a_b)
+      | Formula.Iff a_b => nonassoc_binary ("<=>",a_b)
       | _ => unitary fm
 
   and nonassoc_binary (s,a_b) = Print.ppOp2 (" " ^ s) unitary unitary a_b
@@ -234,12 +232,12 @@ local
 
   and unitary fm =
       case fm of
-        True => Print.addString "$true"
-      | False => Print.addString "$false"
-      | Forall _ => quantified ("!", stripForall fm)
-      | Exists _ => quantified ("?", stripExists fm)
-      | Not _ =>
-        (case total destNeq fm of
+        Formula.True => Print.addString "$true"
+      | Formula.False => Print.addString "$false"
+      | Formula.Forall _ => quantified ("!", Formula.stripForall fm)
+      | Formula.Exists _ => quantified ("?", Formula.stripExists fm)
+      | Formula.Not _ =>
+        (case total Formula.destNeq fm of
            SOME a_b => Print.ppOp2 " !=" ppTerm ppTerm a_b
          | NONE =>
            let
@@ -249,8 +247,8 @@ local
                [Print.duplicate n neg,
                 unitary fm]
            end)
-      | Atom atm =>
-        (case total destEq fm of
+      | Formula.Atom atm =>
+        (case total Formula.destEq fm of
            SOME a_b => Print.ppOp2 " =" ppTerm ppTerm a_b
          | NONE => ppAtom atm)
       | _ =>
@@ -833,18 +831,18 @@ local
 
   fun alphaFormula fm =
       let
-        open Formula
-
-        fun alpha _ _ True = True
-          | alpha _ _ False = False
-          | alpha _ s (Atom atm) = Atom (Atom.subst s atm)
-          | alpha a s (Not p) = Not (alpha a s p)
-          | alpha a s (And (p,q)) = And (alpha a s p, alpha a s q)
-          | alpha a s (Or (p,q)) = Or (alpha a s p, alpha a s q)
-          | alpha a s (Imp (p,q)) = Imp (alpha a s p, alpha a s q)
-          | alpha a s (Iff (p,q)) = Iff (alpha a s p, alpha a s q)
-          | alpha a s (Forall (v,p)) = alphaQuant Forall a s v p
-          | alpha a s (Exists (v,p)) = alphaQuant Exists a s v p
+        fun alpha a s fm =
+            case fm of
+              Formula.True => Formula.True
+            | Formula.False => Formula.False
+            | Formula.Atom atm => Formula.Atom (Atom.subst s atm)
+            | Formula.Not p => Formula.Not (alpha a s p)
+            | Formula.And (p,q) => Formula.And (alpha a s p, alpha a s q)
+            | Formula.Or (p,q) => Formula.Or (alpha a s p, alpha a s q)
+            | Formula.Imp (p,q) => Formula.Imp (alpha a s p, alpha a s q)
+            | Formula.Iff (p,q) => Formula.Iff (alpha a s p, alpha a s q)
+            | Formula.Forall (v,p) => alphaQuant Formula.Forall a s v p
+            | Formula.Exists (v,p) => alphaQuant Formula.Exists a s v p
 
         and alphaQuant quant a s v p =
             let
