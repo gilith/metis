@@ -1461,8 +1461,10 @@ in
                 (false, LiteralSetMap.insert prevNames (cl,name), i))
             end
       in
-        Print.blockProgram Print.Consistent 0
-          (fst (maps ppStep prf (true,noClauseNames,0)))
+        Print.block Print.Consistent 0
+          (Print.stream
+             (Stream.maps ppStep (K Stream.Nil) (true,noClauseNames,0)
+                (Stream.fromList prf)))
       end
 (*MetisDebug
       handle Error err => raise Bug ("Tptp.ppProof: shouldn't fail:\n" ^ err);

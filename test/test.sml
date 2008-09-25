@@ -140,7 +140,7 @@ val () = SAY "The parser and pretty-printer";
 
 fun prep l = (chop_newline o String.concat o map unquote) l;
 
-fun mini_print n = withRef (Print.lineLength,n) Formula.toString;
+fun mini_print n fm = withRef (Print.lineLength,n) Formula.toString fm;
 
 fun testlen_pp n q =
     (fn s => test_fun I s ((mini_print n o Formula.fromString) s))
@@ -275,6 +275,16 @@ val () = test_pp `
                     (f (f x y) (f x y)))
                  (f (f (f x y) (f x y))
                     (f (f x y) (f x y)))`;
+
+val () = (print o Print.toString Print.ppPpstream o Formula.pp o Formula.fromString o prep) `
+(!x.
+   extremely__long__predicate__name) /\
+F`;
+
+val () = test_pp `
+(!x.
+   extremely__long__predicate__name) /\
+F`;
 
 val () = test_pp `
 (!x. x = x) /\

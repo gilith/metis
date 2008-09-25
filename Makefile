@@ -178,7 +178,6 @@ POLYML = poly
 POLYML_OPTS =
 
 POLYML_SRC = \
-  src/PP.sig src/PP.sml \
   src/Random.sig src/Random.sml \
   src/Portable.sig src/PortablePolyml.sml \
   $(SRC)
