@@ -78,7 +78,7 @@ local
       let
         val infString = Thm.inferenceTypeToString (inferenceType inf)
       in
-        Print.block Print.Inconsistent (size infString + 1)
+        Print.block Print.Inconsistent 2
           (Print.sequence
              (Print.addString infString)
              (case inf of
@@ -134,8 +134,7 @@ in
           [Print.addString "START OF PROOF",
            Print.addNewline,
            Print.program (map ppStep prf),
-           Print.addString "END OF PROOF",
-           Print.addNewline]
+           Print.addString "END OF PROOF"]
       end
 (*MetisDebug
       handle Error err => raise Bug ("Proof.pp: shouldn't fail:\n" ^ err);

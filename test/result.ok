@@ -125,6 +125,10 @@ p ==> ~(a /\ b)
                  (f (f (f x y) (f x y))
                     (f (f x y) (f x y)))
 
+(!x.
+   extremely__long__predicate__name) /\
+F
+
 (!x. x = x) /\
 (!x y. ~(x = y) \/ y = x) /\
 (!x y z.
@@ -185,7 +189,6 @@ START OF PROOF
 (2) |- q \/ r  [Resolve {res = p, pos = (0), neg = (1)}]
 END OF PROOF
 
-
 START OF PROOF
 (0) |- $x = $x  [Refl $x]
 (1) |- ~($x0 = $x1) \/ $x0 = $x1  [Assume $x0 = $x1]
@@ -196,23 +199,24 @@ START OF PROOF
 (4) |- ~($x0 = $y0) \/ ~($x1 = $y1) \/ ~($y0 = $y1) \/ $x0 = $x1
     [Resolve {res = $y0 = $x1, pos = (3), neg = (2)}]
 (5) |- ~($x = $x) \/ ~($x = $y) \/ ~($z = $y) \/ $x = $z
-    [Subst {sub = <[x0 |-> $x, x1 |-> $z, y0 |-> $x, y1 |-> $y]>, thm = (4)}]
+    [Subst
+       {sub = <[x0 |-> $x, x1 |-> $z, y0 |-> $x, y1 |-> $y]>, thm = (4)}]
 (6) |- ~($x = $y) \/ ~($z = $y) \/ $x = $z
     [Resolve {res = $x = $x, pos = (0), neg = (5)}]
 (7) |- ~($x = $x) \/ ~($x = $y) \/ $y = $x
     [Equality {lit = $x = $x, path = [0], res = $y}]
-(8) |- ~($x = $y) \/ $y = $x  [Resolve {res = $x = $x, pos = (0), neg = (7)}]
-(9) |- ~($y = $z) \/ $z = $y  [Subst {sub = <[x |-> $y, y |-> $z]>, thm = (8)}]
+(8) |- ~($x = $y) \/ $y = $x
+    [Resolve {res = $x = $x, pos = (0), neg = (7)}]
+(9) |- ~($y = $z) \/ $z = $y
+    [Subst {sub = <[x |-> $y, y |-> $z]>, thm = (8)}]
 (10) |- ~($x = $y) \/ ~($y = $z) \/ $x = $z
      [Resolve {res = $z = $y, pos = (9), neg = (6)}]
 END OF PROOF
-
 
 START OF PROOF
 (0) |- $x = $x  [Refl $x]
 (1) |- f c = f c  [Subst {sub = <[x |-> f c]>, thm = (0)}]
 END OF PROOF
-
 
 --------------------------------------------------------------------------
 Derived rules of inference
@@ -327,8 +331,8 @@ Rewriting
 
 |- ~(f $x = $x) \/ P $x \/ P (f $y) \/ P (f a)
 
-|- ~(f (f (f (f (f $x)))) = $x) \/ ~(f (f (f (f (f (f (f (f $x))))))) = $x) \/
-   P (f $x)
+|- ~(f (f (f (f (f $x)))) = $x) \/
+   ~(f (f (f (f (f (f (f (f $x))))))) = $x) \/ P (f $x)
 
 |- ~($x = $x) \/ ~(f $x = $x) \/ P $x
 
@@ -386,8 +390,8 @@ skolemFOFtoCNF_x + skolemFOFtoCNF_y_3 = 2
 (~Q skolemFOFtoCNF_x_1 \/ R skolemFOFtoCNF_x_2) /\
 (~R skolemFOFtoCNF_x_1 \/ Q skolemFOFtoCNF_x_2) /\
 (~R skolemFOFtoCNF_x_1 \/ R skolemFOFtoCNF_x_2) /\ (~P $x \/ Q $x') /\
-(~L $x' \/ ~R $x \/ M $x') /\ ~M skolemFOFtoCNF_x_3 /\ L skolemFOFtoCNF_x_3 /\
-P skolemFOFtoCNF_x_3
+(~L $x' \/ ~R $x \/ M $x') /\ ~M skolemFOFtoCNF_x_3 /\
+L skolemFOFtoCNF_x_3 /\ P skolemFOFtoCNF_x_3
 
 --------------------------------------------------------------------------
 Syntax checking the problem sets
@@ -403,7 +407,8 @@ lives agatha /\ lives butler /\ lives charles /\
 (!X. ~hates agatha X \/ ~hates charles X) /\
 (!X. ~hates X agatha \/ ~hates X butler \/ ~hates X charles) /\
 hates agatha agatha /\ hates agatha charles /\
-(!X Y. ~killed X Y \/ hates X Y) /\ (!X. ~hates agatha X \/ hates butler X) /\
+(!X Y. ~killed X Y \/ hates X Y) /\
+(!X. ~hates agatha X \/ hates butler X) /\
 (!X. ~lives X \/ hates butler X \/ richer X agatha) ==>
 killed butler agatha \/ killed charles agatha ==> F
 

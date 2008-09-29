@@ -276,11 +276,6 @@ val () = test_pp `
                  (f (f (f x y) (f x y))
                     (f (f x y) (f x y)))`;
 
-val () = (print o Print.toString Print.ppPpstream o Formula.pp o Formula.fromString o prep) `
-(!x.
-   extremely__long__predicate__name) /\
-F`;
-
 val () = test_pp `
 (!x.
    extremely__long__predicate__name) /\
@@ -659,7 +654,7 @@ local
       val g = prep goal
       val p =
           Formula.fromString g
-          handle Print.NoParse =>
+          handle Parse.NoParse =>
                  raise Error ("failed to parse problem " ^ name)
 
       val () =
