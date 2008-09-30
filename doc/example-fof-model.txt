@@ -95,11 +95,11 @@ SZS output start Saturation for data/problems/all/MGT019+2.tptp
    subpopulations first_movers efficient_producers skolemFOFtoCNF_E_1
      (skolemFOFtoCNF_T_1 $To)
 |- in_environment skolemFOFtoCNF_E_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)
+|- subpopulations first_movers efficient_producers skolemFOFtoCNF_E_1
+     (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1))
 |- greater_or_equal
      (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1))
      (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)
-|- subpopulations first_movers efficient_producers skolemFOFtoCNF_E_1
-     (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1))
 |- skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1) =
    skolemFOFtoCNF_To skolemFOFtoCNF_E_1 \/
    greater (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1))

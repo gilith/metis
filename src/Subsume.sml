@@ -159,7 +159,7 @@ fun filter pred (Subsume {empty,unit,nonunit}) =
 
 fun toString subsume = "Subsume{" ^ Int.toString (size subsume) ^ "}";
 
-val pp = Print.ppMap toString Print.ppString;
+fun pp subsume = Print.ppMap toString Print.ppString subsume;
 
 (* ------------------------------------------------------------------------- *)
 (* Subsumption checking.                                                     *)
