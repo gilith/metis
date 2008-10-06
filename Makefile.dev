@@ -328,7 +328,7 @@ tarball: doc/DONT-RELEASE Makefile.dev
 	cd .. ; tar cvzhf metis/release/metis.tar.gz --exclude-from metis/doc/DONT-RELEASE metis
 
 .PHONY: release
-release: release-stamp tarball mosml mlton status-test documentation
+release: release-stamp tarball mosml mlton polyml status-test documentation
 	rm -f $(RELEASE_DIR)/*.html $(RELEASE_DIR)/*.jpg $(RELEASE_DIR)/*.txt
 	cp -v $(METIS) $(RELEASE_DIR)/
 	cp -v doc/*.html doc/*.jpg doc/*.txt $(RELEASE_DIR)/
