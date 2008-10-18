@@ -59,6 +59,7 @@ SRC = \
   src/Print.sig src/Print.sml \
   src/Parse.sig src/Parse.sml \
   src/Name.sig src/Name.sml \
+  src/NameArity.sig src/NameArity.sml \
   src/Term.sig src/Term.sml \
   src/Subst.sig src/Subst.sml \
   src/Atom.sig src/Atom.sml \
