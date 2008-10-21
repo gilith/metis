@@ -223,20 +223,25 @@ local
 *)
 
         fun sync s t path (f,a) (f',a') =
-            if f <> f' orelse length a <> length a' then NONE
+            if not (Name.equal f f' andalso length a = length a') then NONE
             else
-              case List.filter (op<> o snd) (enumerate (zip a a')) of
-                [(i,(tm,tm'))] =>
-                let
-                  val path = i :: path
-                in
-                  if tm = s andalso tm' = t then SOME (rev path)
-                  else
-                    case (tm,tm') of
-                      (Term.Fn f_a, Term.Fn f_a') => sync s t path f_a f_a'
-                    | _ => NONE
-                end
-              | _ => NONE
+              let
+                val itms = enumerate (zip a a')
+              in
+                case List.filter (not o uncurry Term.equal o snd) itms of
+                  [(i,(tm,tm'))] =>
+                  let
+                    val path = i :: path
+                  in
+                    if Term.equal tm s andalso Term.equal tm' t then
+                      SOME (rev path)
+                    else
+                      case (tm,tm') of
+                        (Term.Fn f_a, Term.Fn f_a') => sync s t path f_a f_a'
+                      | _ => NONE
+                  end
+                | _ => NONE
+              end
 
         fun recon (neq,(pol,atm),(pol',atm')) =
             if pol = pol' then NONE
@@ -245,9 +250,9 @@ local
                 val (s,t) = Literal.destNeq neq
 
                 val path =
-                    if s <> t then sync s t [] atm atm'
-                    else if atm <> atm' then NONE
-                    else Atom.find (equal s) atm
+                    if not (Term.equal s t) then sync s t [] atm atm'
+                    else if not (Atom.equal atm atm') then NONE
+                    else Atom.find (Term.equal s) atm
               in
                 case path of
                   SOME path => SOME ((pol',atm),path,t)

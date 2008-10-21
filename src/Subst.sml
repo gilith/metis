@@ -32,7 +32,8 @@ fun singleton v_tm = insert empty v_tm;
 
 local
   fun compatible (tm1,tm2) =
-      if tm1 = tm2 then SOME tm1 else raise Error "Subst.union: incompatible";
+      if Term.equal tm1 tm2 then SOME tm1
+      else raise Error "Subst.union: incompatible";
 in
   fun union (s1 as Subst m1) (s2 as Subst m2) =
       if NameMap.null m1 then s2
@@ -50,7 +51,7 @@ fun foldr f b (Subst m) = NameMap.foldr f b m;
 
 fun pp sub =
     Print.ppBracket "<[" "]>"
-      (Print.ppOpList "," (Print.ppOp2 " |->" Print.ppString Term.pp))
+      (Print.ppOpList "," (Print.ppOp2 " |->" Name.pp Term.pp))
       (toList sub);
 
 val toString = Print.toString pp;
@@ -164,13 +165,13 @@ local
             case peek sub v of
               NONE => insert sub (v,tm)
             | SOME tm' =>
-              if tm = tm' then sub
+              if Term.equal tm tm' then sub
               else raise Error "Subst.match: incompatible matches"
       in
         matchList sub rest
       end
     | matchList sub ((Term.Fn (f1,args1), Term.Fn (f2,args2)) :: rest) =
-      if f1 = f2 andalso length args1 = length args2 then
+      if Name.equal f1 f2 andalso length args1 = length args2 then
         matchList sub (zip args1 args2 @ rest)
       else raise Error "Subst.match: different structure"
     | matchList _ _ = raise Error "Subst.match: functions can't match vars";
@@ -197,7 +198,7 @@ local
          | SOME tm' => solve' sub tm' tm rest)
     | solve' sub tm1 (tm2 as Term.Var _) rest = solve' sub tm2 tm1 rest
     | solve' sub (Term.Fn (f1,args1)) (Term.Fn (f2,args2)) rest =
-      if f1 = f2 andalso length args1 = length args2 then
+      if Name.equal f1 f2 andalso length args1 = length args2 then
         solve sub (zip args1 args2 @ rest)
       else
         raise Error "Subst.unify: different structure";

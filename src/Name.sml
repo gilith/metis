@@ -6,9 +6,72 @@
 structure Name :> Name =
 struct
 
+(* ------------------------------------------------------------------------- *)
+(* Helper functions.                                                         *)
+(* ------------------------------------------------------------------------- *)
+
+fun stripSuffix pred s =
+    let
+      fun f 0 = ""
+        | f n =
+          let
+            val n' = n - 1
+          in
+            if pred (String.sub (s,n')) then f n'
+            else String.substring (s,0,n)
+          end
+    in
+      f (size s)
+    end;
+
+(* ------------------------------------------------------------------------- *)
+(* A type of names.                                                          *)
+(* ------------------------------------------------------------------------- *)
+
 type name = string;
 
+fun toString s : string = s;
+
+fun fromString s : name = s;
+
+(* ------------------------------------------------------------------------- *)
+(* A total ordering.                                                         *)
+(* ------------------------------------------------------------------------- *)
+
 val compare = String.compare;
+
+fun equal n1 n2 = n1 = n2;
+
+(* ------------------------------------------------------------------------- *)
+(* Fresh variables.                                                          *)
+(* ------------------------------------------------------------------------- *)
+
+fun variantPrime acceptable =
+    let
+      fun variant n = if acceptable n then n else variant (n ^ "'")
+    in
+      variant
+    end;
+
+fun variantNum acceptable n =
+    if acceptable n then n
+    else
+      let
+        val n = stripSuffix Char.isDigit n
+
+        fun variant i =
+            let
+              val n_i = n ^ Int.toString i
+            in
+              if acceptable n_i then n_i else variant (i + 1)
+            end
+      in
+        variant 0
+      end;
+
+(* ------------------------------------------------------------------------- *)
+(* Parsing and pretty printing.                                              *)
+(* ------------------------------------------------------------------------- *)
 
 val pp = Print.ppString;
 
@@ -34,52 +97,3 @@ struct
 end
 
 structure NameMap = KeyMap (NameOrdered);
-
-structure NameArity =
-struct
-
-type nameArity = Name.name * int;
-
-fun name ((n,_) : nameArity) = n;
-
-fun arity ((_,i) : nameArity) = i;
-
-fun nary i n_i = arity n_i = i;
-
-val nullary = nary 0
-and unary = nary 1
-and binary = nary 2
-and ternary = nary 3;
-
-fun compare ((n1,i1),(n2,i2)) =
-    case Name.compare (n1,n2) of
-      LESS => LESS
-    | EQUAL => Int.compare (i1,i2)
-    | GREATER => GREATER;
-
-val pp = Print.ppMap (fn (n,i) => n ^ "/" ^ Int.toString i) Print.ppString;
-
-end
-
-structure NameArityOrdered =
-struct type t = NameArity.nameArity val compare = NameArity.compare end
-
-structure NameAritySet =
-struct
-
-  local
-    structure S = ElementSet (NameArityOrdered);
-  in
-    open S;
-  end;
-
-  val allNullary = all NameArity.nullary;
-
-  val pp =
-      Print.ppMap
-        toList
-        (Print.ppBracket "{" "}" (Print.ppOpList "," NameArity.pp));
-
-end
-
-structure NameArityMap = KeyMap (NameArityOrdered);

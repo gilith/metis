@@ -72,6 +72,8 @@ fun symbols ((_,atm) : literal) = Atom.symbols atm;
 
 val compare = prodCompare boolCompare Atom.compare;
 
+fun equal (p1,atm1) (p2,atm2) = p1 = p2 andalso Atom.equal atm1 atm2;
+
 (* ------------------------------------------------------------------------- *)
 (* Subterms.                                                                 *)
 (* ------------------------------------------------------------------------- *)

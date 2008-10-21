@@ -255,17 +255,18 @@ fun mkNeqConv order lit =
         NONE => raise Error "incomparable"
       | SOME LESS =>
         let
-          val sub = Subst.fromList [("x",l),("y",r)]
-          val th = Thm.subst sub Rule.symmetry
+          val th = Rule.symmetryRule l r
         in
-          fn tm => if tm = r then (l,th) else raise Error "mkNeqConv: RL"
+          fn tm =>
+             if Term.equal tm r then (l,th) else raise Error "mkNeqConv: RL"
         end
       | SOME EQUAL => raise Error "irreflexive"
       | SOME GREATER =>
         let
           val th = Thm.assume lit
         in
-          fn tm => if tm = l then (r,th) else raise Error "mkNeqConv: LR"
+          fn tm =>
+             if Term.equal tm l then (r,th) else raise Error "mkNeqConv: LR"
         end
     end;
 
@@ -320,7 +321,7 @@ fun rewriteIdEqn' order known redexes id (eqn as (l_r,th)) =
           | SOME lit => (false,lit)
       val (lit',litTh) = literule lit
     in
-      if lit = lit' then eqn
+      if Literal.equal lit lit' then eqn
       else
         (Literal.destEq lit',
          if strongEqn then th
@@ -340,7 +341,7 @@ fun rewriteIdLiteralsRule' order known redexes id lits th =
             val neq = neqConvsDelete neq lit
             val (lit',litTh) = mk_literule neq lit
           in
-            if lit = lit' then acc
+            if Literal.equal lit lit' then acc
             else
               let
                 val th = Thm.resolve lit th litTh
@@ -430,8 +431,8 @@ fun addSubterms id (((l,r),_) : equation) subterms =
     end;
 
 fun sameRedexes NONE _ _ = false
-  | sameRedexes (SOME LeftToRight) (l0,_) (l,_) = l0 = l
-  | sameRedexes (SOME RightToLeft) (_,r0) (_,r) = r0 = r;
+  | sameRedexes (SOME LeftToRight) (l0,_) (l,_) = Term.equal l0 l
+  | sameRedexes (SOME RightToLeft) (_,r0) (_,r) = Term.equal r0 r;
 
 fun redexResidues NONE (l,r) = [(l,r,false),(r,l,false)]
   | redexResidues (SOME LeftToRight) (l,r) = [(l,r,true)]
@@ -472,7 +473,13 @@ fun reduce1 new id (eqn0,ort0) (rpl,spl,todo,rw,changed) =
       val (eq0,_) = eqn0
       val Rewrite {order,known,redexes,subterms,waiting} = rw
       val eqn as (eq,_) = rewriteIdEqn' order known redexes id eqn0
-      val identical = eq = eq0
+      val identical =
+          let
+            val (l0,r0) = eq0
+            and (l,r) = eq
+          in
+            Term.equal l l0 andalso Term.equal r r0
+          end
       val same_redexes = identical orelse sameRedexes ort0 eq0 eq
       val rpl = if same_redexes then rpl else IntSet.add rpl id
       val spl = if new orelse identical then spl else IntSet.add spl id

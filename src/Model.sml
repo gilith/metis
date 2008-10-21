@@ -9,6 +9,71 @@ struct
 open Useful;
 
 (* ------------------------------------------------------------------------- *)
+(* Interpreted names.                                                        *)
+(* ------------------------------------------------------------------------- *)
+
+(* Projections *)
+
+fun ithFnName i = Name.fromString ("#" ^ Int.toString i);
+
+val firstFnName = ithFnName 1
+and secondFnName = ithFnName 2
+and thirdFnName = ithFnName 3;
+
+(* Pure *)
+
+val eqRelName = Atom.eqRelationName;
+
+(* Basic *)
+
+val hasTypeFnName = Term.hasTypeName
+and idFnName = Name.fromString "id"
+and fstFnName = Name.fromString "fst"
+and sndFnName = Name.fromString "snd";
+
+val notEqualRelName = Name.fromString "<>";
+
+(* Number *)
+
+val addFnName = Name.fromString "+"
+and divFnName = Name.fromString "div"
+and expFnName = Name.fromString "exp"
+and modFnName = Name.fromString "mod"
+and multFnName = Name.fromString "*"
+and negFnName = Name.fromString "~"
+and preFnName = Name.fromString "pre"
+and subFnName = Name.fromString "-"
+and sucFnName = Name.fromString "suc"
+and zeroFnName = Name.fromString "0";
+
+val dividesRelName = Name.fromString "divides"
+and evenRelName = Name.fromString "even"
+and geRelName = Name.fromString ">="
+and gtRelName = Name.fromString ">"
+and isZeroRelName = Name.fromString "is_0"
+and leRelName = Name.fromString "<="
+and ltRelName = Name.fromString "<"
+and oddRelName = Name.fromString "odd";
+
+(* Sets *)
+
+val emptyFnName = Name.fromString "empty"
+and univFnName = Name.fromString "univ"
+and unionFnName = Name.fromString "union"
+and intersectFnName = Name.fromString "intersect"
+and complFnName = Name.fromString "compl"
+and cardFnName = Name.fromString "card";
+
+val inRelName = Name.fromString "in"
+and subsetRelName = Name.fromString "subset";
+
+(* Lists *)
+
+val appendFnName = Name.fromString "@"
+and consFnName = Name.fromString "::"
+and nilFnName = Name.fromString "nil";
+
+(* ------------------------------------------------------------------------- *)
 (* Helper functions.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
@@ -76,32 +141,41 @@ fun natFromString "" = NONE
           parse (size s - 1) 1 d
         end;
 
-fun projection (_,[]) = NONE
-  | projection ("#1", x :: _) = SOME x
-  | projection ("#2", _ :: x :: _) = SOME x
-  | projection ("#3", _ :: _ :: x :: _) = SOME x
-  | projection (func,args) =
-    let
-      val f = size func
-      and n = length args
+fun projection func =
+    case func of
+      (_,[]) => NONE
+    | (f,[x]) => if Name.equal f firstFnName then SOME x else NONE
+    | (f,[x,y]) =>
+      if Name.equal f firstFnName then SOME x
+      else if Name.equal f secondFnName then SOME y
+      else NONE
+    | (f,[x,y,z]) =>
+      if Name.equal f firstFnName then SOME x
+      else if Name.equal f secondFnName then SOME y
+      else if Name.equal f thirdFnName then SOME z
+      else NONE
+    | (f,args) =>
+      let
+        val f = Name.toString f
+        val fSz = size f
+        and n = length args
 
-      val p =
-          if f < 2 orelse n <= 3 orelse String.sub (func,0) <> #"#" then NONE
-          else if f = 2 then
-            (case charToInt (String.sub (func,1)) of
-               NONE => NONE
-             | p as SOME d => if d <= 3 then NONE else p)
-          else
-            case intExp 10 (f - 1) of
-              NONE => NONE
-            | SOME n' =>
-              if 10 * n < n' then NONE
-              else natFromString (String.extract (func,1,NONE))
-    in
-      case p of
-        NONE => NONE
-      | SOME k => if k > n then NONE else SOME (List.nth (args, k - 1))
-    end;
+        val p =
+            if fSz < 2 orelse String.sub (f,0) <> #"#" then NONE
+            else if fSz = 2 then charToInt (String.sub (f,1))
+            else
+              case intExp 10 (fSz - 1) of
+                NONE => NONE
+              | SOME n' =>
+                if 10 * n < n' then NONE
+                else natFromString (String.extract (f,1,NONE))
+      in
+        case p of
+          NONE => NONE
+        | SOME k =>
+          if k <= 0 orelse k > n then NONE
+          else SOME (List.nth (args, k - 1))
+      end;
 
 (* ------------------------------------------------------------------------- *)
 (* The parts of the model that are fixed.                                    *)
@@ -134,7 +208,7 @@ fun fixedPure {size = _} =
       fun functions _ = NONE
 
       fun relations (rel,[x,y]) =
-          if rel = Atom.eqRelationName then SOME (x = y) else NONE
+          if Name.equal rel eqRelName then SOME (x = y) else NONE
         | relations _ = NONE
     in
       {functions = functions, relations = relations}
@@ -142,14 +216,30 @@ fun fixedPure {size = _} =
 
 fun fixedBasic {size = _} =
     let
-      fun functions (":",[x,_]) = SOME x
-        | functions ("id",[x]) = SOME x
-        | functions ("fst",[x,_]) = SOME x
-        | functions ("snd",[_,x]) = SOME x
-        | functions func_args = projection func_args
+      fun functions func =
+          let
+            val result =
+                case func of
+                  (f,[x]) =>
+                  if Name.equal f idFnName then SOME x else NONE
+                | (f,[x,y]) =>
+                  if Name.equal f hasTypeFnName then SOME x
+                  else if Name.equal f fstFnName then SOME x
+                  else if Name.equal f sndFnName then SOME y
+                  else NONE
+                | _ => NONE
+          in
+            case result of
+              SOME _ => result
+            | NONE => projection func
+          end
 
-      fun relations ("<>",[x,y]) = SOME (x <> y)
-        | relations _ = NONE
+      fun relations rel =
+          case rel of
+            (r,[x,y]) =>
+            if Name.equal r notEqualRelName then SOME (x <> y)
+            else NONE
+          | _ => NONE
     in
       {functions = functions, relations = relations}
     end;
@@ -159,7 +249,7 @@ fun fixedModulo {size = N} =
       fun mod_N k = k mod N
 
       val one = mod_N 1
-                
+
       fun mult (x,y) = mod_N (x * y)
 
       fun divides_N 0 = false
@@ -167,26 +257,53 @@ fun fixedModulo {size = N} =
 
       val even_N = divides_N 2
 
-      fun functions (numeral,[]) =
-          Option.map mod_N (natFromString numeral)
-        | functions ("suc",[x]) = SOME (if x = N - 1 then 0 else x + 1)
-        | functions ("pre",[x]) = SOME (if x = 0 then N - 1 else x - 1)
-        | functions ("~",[x]) = SOME (if x = 0 then 0 else N - x)
-        | functions ("+",[x,y]) = SOME (mod_N (x + y))
-        | functions ("-",[x,y]) = SOME (if x < y then N + x - y else x - y)
-        | functions ("*",[x,y]) = SOME (mult (x,y))
-        | functions ("exp",[x,y]) = SOME (exp mult x y one)
-        | functions ("div",[x,y]) = if divides_N y then SOME (x div y) else NONE
-        | functions ("mod",[x,y]) = if divides_N y then SOME (x mod y) else NONE
-        | functions _ = NONE
+      fun functions func =
+          case func of
+            (f,[]) => Option.map mod_N (natFromString (Name.toString f))
+          | (f,[x]) =>
+            if Name.equal f sucFnName then
+              SOME (if x = N - 1 then 0 else x + 1)
+            else if Name.equal f preFnName then
+              SOME (if x = 0 then N - 1 else x - 1)
+            else if Name.equal f negFnName then
+              SOME (if x = 0 then 0 else N - x)
+            else
+              NONE
+          | (f,[x,y]) =>
+            if Name.equal f addFnName then
+              SOME (mod_N (x + y))
+            else if Name.equal f subFnName then
+              SOME (if x < y then N + x - y else x - y)
+            else if Name.equal f multFnName then
+              SOME (mult (x,y))
+            else if Name.equal f divFnName then
+              if divides_N y then SOME (x div y) else NONE
+            else if Name.equal f modFnName then
+              if divides_N y then SOME (x mod y) else NONE
+            else if Name.equal f expFnName then
+              SOME (exp mult x y one)
+            else
+              NONE
+          | _ => NONE
 
-      fun relations ("is_0",[x]) = SOME (x = 0)
-        | relations ("divides",[x,y]) =
-          if x = 0 then SOME (y = 0)
-          else if divides_N x then SOME (y mod x = 0) else NONE
-        | relations ("even",[x]) = if even_N then SOME (x mod 2 = 0) else NONE
-        | relations ("odd",[x]) = if even_N then SOME (x mod 2 = 1) else NONE
-        | relations _ = NONE
+      fun relations rel =
+          case rel of
+            (r,[x]) =>
+            if Name.equal r isZeroRelName then
+              SOME (x = 0)
+            else if Name.equal r evenRelName then
+              if even_N then SOME (x mod 2 = 0) else NONE
+            else if Name.equal r oddRelName then
+              if even_N then SOME (x mod 2 = 1) else NONE
+            else
+              NONE
+          | (r,[x,y]) =>
+            if Name.equal r dividesRelName then
+              if x = 0 then SOME (y = 0)
+              else if divides_N x then SOME (y mod x = 0) else NONE
+            else
+              NONE
+          | _ => NONE
     in
       {functions = functions, relations = relations}
     end;
@@ -283,11 +400,11 @@ local
     | le OInf OInf = NONE;
 
   fun lt x y = Option.map not (le y x);
-  
+
   fun ge x y = le y x;
-  
+
   fun gt x y = lt y x;
-  
+
   fun divides ONeg ONeg = NONE
     | divides ONeg (ONum y) = if y = 0 then SOME true else NONE
     | divides ONeg OInf = NONE
@@ -299,9 +416,9 @@ local
     | divides OInf ONeg = NONE
     | divides OInf (ONum y) = SOME (y = 0)
     | divides OInf OInf = NONE;
-  
+
   fun even n = divides two n;
-  
+
   fun odd n = Option.map not (even n);
 
   fun fixedOverflow mk_onum dest_onum =
@@ -309,36 +426,63 @@ local
         fun partial_dest_onum NONE = NONE
           | partial_dest_onum (SOME n) = dest_onum n
 
-        fun functions (numeral,[]) =
-            (case natFromString numeral of
-               NONE => NONE
-             | SOME n => dest_onum (ONum n))
-          | functions ("suc",[x]) = dest_onum (suc (mk_onum x))
-          | functions ("pre",[x]) = dest_onum (pre (mk_onum x))
-          | functions ("~",[x]) = partial_dest_onum (neg (mk_onum x))
-          | functions ("+",[x,y]) =
-            partial_dest_onum (add (mk_onum x) (mk_onum y))
-          | functions ("-",[x,y]) =
-            partial_dest_onum (sub (mk_onum x) (mk_onum y))
-          | functions ("*",[x,y]) =
-            partial_dest_onum (mult (mk_onum x) (mk_onum y))
-          | functions ("exp",[x,y]) =
-            partial_dest_onum (exp (mk_onum x) (mk_onum y))
-          | functions ("div",[x,y]) =
-            partial_dest_onum (odiv (mk_onum x) (mk_onum y))
-          | functions ("mod",[x,y]) =
-            partial_dest_onum (omod (mk_onum x) (mk_onum y))
-          | functions _ = NONE
-  
-        fun relations ("is_0",[x]) = SOME (mk_onum x = zero)
-          | relations ("<=",[x,y]) = le (mk_onum x) (mk_onum y)
-          | relations ("<",[x,y]) = lt (mk_onum x) (mk_onum y)
-          | relations (">=",[x,y]) = ge (mk_onum x) (mk_onum y)
-          | relations (">",[x,y]) = gt (mk_onum x) (mk_onum y)
-          | relations ("divides",[x,y]) = divides (mk_onum x) (mk_onum y)
-          | relations ("even",[x]) = even (mk_onum x)
-          | relations ("odd",[x]) = odd (mk_onum x)
-          | relations _ = NONE
+        fun functions func =
+            case func of
+              (f,[]) =>
+              (case natFromString (Name.toString f) of
+                 SOME n => dest_onum (ONum n)
+               | NONE => NONE)
+            | (f,[x]) =>
+              if Name.equal f sucFnName then
+                dest_onum (suc (mk_onum x))
+              else if Name.equal f preFnName then
+                dest_onum (pre (mk_onum x))
+              else if Name.equal f negFnName then
+                partial_dest_onum (neg (mk_onum x))
+              else
+                NONE
+            | (f,[x,y]) =>
+              if Name.equal f addFnName then
+                partial_dest_onum (add (mk_onum x) (mk_onum y))
+              else if Name.equal f subFnName then
+                partial_dest_onum (sub (mk_onum x) (mk_onum y))
+              else if Name.equal f multFnName then
+                partial_dest_onum (mult (mk_onum x) (mk_onum y))
+              else if Name.equal f expFnName then
+                partial_dest_onum (exp (mk_onum x) (mk_onum y))
+              else if Name.equal f divFnName then
+                partial_dest_onum (odiv (mk_onum x) (mk_onum y))
+              else if Name.equal f modFnName then
+                partial_dest_onum (omod (mk_onum x) (mk_onum y))
+              else
+                NONE
+            | _ => NONE
+
+        fun relations rel =
+            case rel of
+              (r,[x]) =>
+              if Name.equal r isZeroRelName then
+                SOME (mk_onum x = zero)
+              else if Name.equal r evenRelName then
+                even (mk_onum x)
+              else if Name.equal r oddRelName then
+                odd (mk_onum x)
+              else
+                NONE
+            | (r,[x,y]) =>
+              if Name.equal r leRelName then
+                le (mk_onum x) (mk_onum y)
+              else if Name.equal r ltRelName then
+                lt (mk_onum x) (mk_onum y)
+              else if Name.equal r geRelName then
+                ge (mk_onum x) (mk_onum y)
+              else if Name.equal r gtRelName then
+                gt (mk_onum x) (mk_onum y)
+              else if Name.equal r dividesRelName then
+                divides (mk_onum x) (mk_onum y)
+              else
+                NONE
+            | _ => NONE
       in
         {functions = functions, relations = relations}
       end;
@@ -346,9 +490,9 @@ in
   fun fixedOverflowNum {size = N} =
       let
         val oinf = N - 1
-  
+
         fun mk_onum x = if x = oinf then OInf else ONum x
-  
+
         fun dest_onum ONeg = NONE
           | dest_onum (ONum x) = SOME (if x < oinf then x else oinf)
           | dest_onum OInf = SOME oinf
@@ -360,10 +504,10 @@ in
       let
         val oinf = N - 2
         val oneg = N - 1
-  
+
         fun mk_onum x =
             if x = oneg then ONeg else if x = oinf then OInf else ONum x
-  
+
         fun dest_onum ONeg = SOME oneg
           | dest_onum (ONum x) = SOME (if x < oinf then x else oinf)
           | dest_onum OInf = SOME oinf
@@ -412,21 +556,41 @@ fun fixedSet {size = N} =
             if x < N then SOME x else NONE
           end
 
-      fun functions ("empty",[]) = dest_set IntSet.empty
-        | functions ("univ",[]) = dest_set univ
-        | functions ("union",[x,y]) =
-          dest_set (IntSet.union (mk_set x) (mk_set y))
-        | functions ("intersect",[x,y]) =
-          dest_set (IntSet.intersect (mk_set x) (mk_set y))
-        | functions ("compl",[x]) =
-          dest_set (IntSet.difference univ (mk_set x))
-        | functions ("card",[x]) = SOME (IntSet.size (mk_set x))
-        | functions _ = NONE
-  
-      fun relations ("in",[x,y]) = SOME (IntSet.member (x mod M) (mk_set y))
-        | relations ("subset",[x,y]) =
-          SOME (IntSet.subset (mk_set x) (mk_set y))
-        | relations _ = NONE
+      fun functions func =
+          case func of
+            (f,[]) =>
+            if Name.equal f emptyFnName then
+              dest_set IntSet.empty
+            else if Name.equal f univFnName then
+              dest_set univ
+            else
+              NONE
+          | (f,[x]) =>
+            if Name.equal f complFnName then
+              dest_set (IntSet.difference univ (mk_set x))
+            else if Name.equal f cardFnName then
+              SOME (IntSet.size (mk_set x))
+            else
+              NONE
+          | (f,[x,y]) =>
+            if Name.equal f unionFnName then
+              dest_set (IntSet.union (mk_set x) (mk_set y))
+            else if Name.equal f intersectFnName then
+              dest_set (IntSet.intersect (mk_set x) (mk_set y))
+            else
+              NONE
+          | _ => NONE
+
+      fun relations rel =
+          case rel of
+            (r,[x,y]) =>
+            if Name.equal r inRelName then
+              SOME (IntSet.member (x mod M) (mk_set y))
+            else if Name.equal r subsetRelName then
+              SOME (IntSet.subset (mk_set x) (mk_set y))
+            else
+              NONE
+          | _ => NONE
     in
       {functions = functions, relations = relations}
     end;
@@ -435,10 +599,21 @@ fun fixedList {size = N} =
     let
       val {functions = funcs, relations = rels} = fixedOverflowNum {size = N}
 
-      fun functions ("nil",[]) = funcs ("0",[])
-        | functions ("::",[_,y]) = funcs ("suc",[y])
-        | functions ("@",[x,y]) = funcs ("+",[x,y])
-        | functions _ = NONE
+      fun functions func =
+          case func of
+            (f,[]) =>
+            if Name.equal f nilFnName then
+              funcs (zeroFnName,[])
+            else
+              NONE
+          | (f,[x,y]) =>
+            if Name.equal f consFnName then
+              funcs (sucFnName,[y])
+            else if Name.equal f appendFnName then
+              funcs (addFnName,[x,y])
+            else
+              NONE
+          | _ => NONE
 
       fun relations _ = NONE
     in
@@ -512,7 +687,7 @@ fun lookupTable N R fixed table elts =
                 in
                   ArrayTable a
                 end
- 
+
           val () = table := t
         in
           r
@@ -707,7 +882,7 @@ fun destTerm tm =
     | Term.Fn f_tms =>
       case Term.stripComb tm of
         (_,[]) => tm
-      | (v as Term.Var _, tms) => Term.Fn (".", v :: tms)
+      | (v as Term.Var _, tms) => Term.Fn (Term.combName, v :: tms)
       | (Term.Fn (f,tms), tms') => Term.Fn (f, tms @ tms');
 
 fun modelTerm M V =
@@ -789,7 +964,7 @@ fun interpretClause M V cl = LiteralSet.exists (interpretLiteral M V) cl;
 fun check interpret {maxChecks} M fv x =
     let
       val N = size M
-            
+
       fun score (V,{T,F}) =
           if interpret M V x then {T = T + 1, F = F} else {T = T, F = F + 1}
 
@@ -812,7 +987,7 @@ fun checkFormula maxChecks M fm =
 
 fun checkLiteral maxChecks M lit =
     check interpretLiteral maxChecks M (Literal.freeVars lit) lit;
-    
+
 fun checkClause maxChecks M cl =
     check interpretClause maxChecks M (LiteralSet.freeVars cl) cl;
 

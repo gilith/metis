@@ -80,6 +80,8 @@ val symbols : term -> int
 
 val compare : term * term -> order
 
+val equal : term -> term -> bool
+
 (* ------------------------------------------------------------------------- *)
 (* Subterms.                                                                 *)
 (* ------------------------------------------------------------------------- *)
@@ -122,6 +124,8 @@ val variantNum : NameSet.set -> var -> var
 (* Special support for terms with type annotations.                          *)
 (* ------------------------------------------------------------------------- *)
 
+val hasTypeName : Name.name
+
 val isTypedVar : term -> bool
 
 val typedSymbols : term -> int
@@ -131,6 +135,8 @@ val nonVarTypedSubterms : term -> (path * term) list
 (* ------------------------------------------------------------------------- *)
 (* Special support for terms with an explicit function application operator. *)
 (* ------------------------------------------------------------------------- *)
+
+val combName : Name.name
 
 val mkComb : term * term -> term
 
@@ -152,15 +158,15 @@ val infixes : Print.infixes ref
 
 (* The negation symbol *)
 
-val negation : Name.name ref
+val negation : string ref
 
 (* Binder symbols *)
 
-val binders : Name.name list ref
+val binders : string list ref
 
 (* Bracket symbols *)
 
-val brackets : (Name.name * Name.name) list ref
+val brackets : (string * string) list ref
 
 (* Pretty printing *)
 

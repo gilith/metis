@@ -27,28 +27,44 @@ fun isHdTlString hp tp s =
 (* ------------------------------------------------------------------------- *)
 
 val functionMapping = ref
-    [(* Mapping TPTP functions to infix symbols *)
-     {name = "~", arity = 1, tptp = "negate"},
-     {name = "*", arity = 2, tptp = "multiply"},
-     {name = "/", arity = 2, tptp = "divide"},
-     {name = "+", arity = 2, tptp = "add"},
-     {name = "-", arity = 2, tptp = "subtract"},
-     {name = "::", arity = 2, tptp = "cons"},
-     {name = "@", arity = 2, tptp = "append"},
-     {name = ",", arity = 2, tptp = "pair"},
-     (* Expanding HOL symbols to TPTP alphanumerics *)
-     {name = ":", arity = 2, tptp = "has_type"},
-     {name = ".", arity = 2, tptp = "apply"},
-     {name = "<=", arity = 0, tptp = "less_equal"}];
+    let
+      fun fromString {name,arity,tptp} =
+          {name = Name.fromString name,
+           arity = arity,
+           tptp = Name.fromString tptp}
+    in
+      map fromString
+        [(* Mapping TPTP functions to infix symbols *)
+         {name = "~", arity = 1, tptp = "negate"},
+         {name = "*", arity = 2, tptp = "multiply"},
+         {name = "/", arity = 2, tptp = "divide"},
+         {name = "+", arity = 2, tptp = "add"},
+         {name = "-", arity = 2, tptp = "subtract"},
+         {name = "::", arity = 2, tptp = "cons"},
+         {name = "@", arity = 2, tptp = "append"},
+         {name = ",", arity = 2, tptp = "pair"},
+         (* Expanding HOL symbols to TPTP alphanumerics *)
+         {name = ":", arity = 2, tptp = "has_type"},
+         {name = ".", arity = 2, tptp = "apply"},
+         {name = "<=", arity = 0, tptp = "less_equal"}]
+    end;
 
 val relationMapping = ref
-    [(* Mapping TPTP relations to infix symbols *)
-     {name = "=", arity = 2, tptp = "="},  (* this preserves the = symbol *)
-     {name = "==", arity = 2, tptp = "equalish"},
-     {name = "<=", arity = 2, tptp = "less_equal"},
-     {name = "<", arity = 2, tptp = "less_than"},
-     (* Expanding HOL symbols to TPTP alphanumerics *)
-     {name = "{}", arity = 1, tptp = "bool"}];
+    let
+      fun fromString {name,arity,tptp} =
+          {name = Name.fromString name,
+           arity = arity,
+           tptp = Name.fromString tptp}
+    in
+      map fromString
+        [(* Mapping TPTP relations to infix symbols *)
+         {name = "=", arity = 2, tptp = "="},  (* this preserves the = symbol *)
+         {name = "==", arity = 2, tptp = "equalish"},
+         {name = "<=", arity = 2, tptp = "less_equal"},
+         {name = "<", arity = 2, tptp = "less_than"},
+         (* Expanding HOL symbols to TPTP alphanumerics *)
+         {name = "{}", arity = 1, tptp = "bool"}]
+    end;
 
 fun mappingToTptp x =
     let
@@ -199,14 +215,17 @@ fun destLiteral (Literal l) = l
 (* Printing formulas using TPTP syntax.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-val ppVar = Print.ppString;
+val ppVar = Name.pp;
+
+val ppConst = Name.pp;
 
 local
   fun term (Term.Var v) = ppVar v
-    | term (Term.Fn (c,[])) = Print.addString c
+    | term (Term.Fn (c,[])) = ppConst c
     | term (Term.Fn (f,tms)) =
       Print.blockProgram Print.Inconsistent 2
-        [Print.addString (f ^ "("),
+        [Name.pp f,
+         Print.addString "(",
          Print.ppOpList "," term tms,
          Print.addString ")"];
 in
@@ -391,6 +410,7 @@ val formulaToString = Print.toString ppFormula;
 local
   open Parse;
 
+  infixr 9 >>++
   infixr 8 ++
   infixr 7 >>
   infixr 6 ||
@@ -489,7 +509,9 @@ local
   in
     val propositionParser =
         someAlphaNum isProposition ||
-        definedParser || systemParser || quoteParser;
+        definedParser ||
+        systemParser ||
+        quoteParser;
   end;
 
   local
@@ -497,7 +519,9 @@ local
   in
     val functionParser =
         someAlphaNum isFunction ||
-        definedParser || systemParser || quoteParser;
+        definedParser ||
+        systemParser ||
+        quoteParser;
   end;
 
   local
@@ -507,7 +531,9 @@ local
   in
     val constantParser =
         someAlphaNum isConstant ||
-        definedParser || systemParser || quoteParser;
+        definedParser ||
+        systemParser ||
+        quoteParser;
   end;
 
   val varParser = upperParser;
@@ -519,7 +545,8 @@ local
       (fn ((),(h,(t,()))) => h :: t);
 
   fun termParser input =
-      ((functionArgumentsParser >> Term.Fn) ||
+      ((functionArgumentsParser >>
+       (fn (f,tms) => Term.Fn (Name.fromString f, tms))) ||
        nonFunctionArgumentsTermParser) input
 
   and functionArgumentsParser input =
@@ -529,34 +556,37 @@ local
        (fn (f,((),(t,(ts,())))) => (f, t :: ts))) input
 
   and nonFunctionArgumentsTermParser input =
-      ((varParser >> Term.Var) ||
-       (constantParser >> (fn n => Term.Fn (n,[])))) input
+      ((varParser >> (Term.Var o Name.fromString)) ||
+       (constantParser >> (fn n => Term.Fn (Name.fromString n, [])))) input
 
-  val binaryAtomParser =
+  fun binaryAtomParser tm =
       ((punctParser #"=" ++ termParser) >>
-       (fn ((),r) => fn l => Literal.mkEq (l,r))) ||
+       (fn ((),r) => (true,("$equal",[tm,r])))) ||
       ((symbolParser "!=" ++ termParser) >>
-       (fn ((),r) => fn l => Literal.mkNeq (l,r)));
+       (fn ((),r) => (false,("$equal",[tm,r]))));
 
-  val maybeBinaryAtomParser =
-      optional binaryAtomParser >>
-      (fn SOME f => (fn a => f (Term.Fn a))
-        | NONE => (fn a => (true,a)));
+  fun maybeBinaryAtomParser (s,tms) =
+      let
+        val tm = Term.Fn (Name.fromString s, tms)
+      in
+        optional (binaryAtomParser tm) >>
+        (fn SOME lit => lit
+          | NONE => (true,(s,tms)))
+      end;
 
   val literalAtomParser =
-      ((functionArgumentsParser ++ maybeBinaryAtomParser) >>
-       (fn (a,f) => f a)) ||
-      ((nonFunctionArgumentsTermParser ++ binaryAtomParser) >>
-       (fn (a,f) => f a)) ||
-      (propositionParser >>
-       (fn n => (true,(n,[]))));
+      (functionArgumentsParser >>++ maybeBinaryAtomParser) ||
+      (nonFunctionArgumentsTermParser >>++ binaryAtomParser) ||
+      (propositionParser >> (fn s => (true,(s,[]))));
 
   val atomParser =
       literalAtomParser >>
-      (fn (pol,("$true",[])) => Boolean pol
-        | (pol,("$false",[])) => Boolean (not pol)
-        | (pol,("$equal",[a,b])) => Literal (pol, Atom.mkEq (a,b))
-        | lit => Literal lit);
+      (fn (pol,rel) =>
+          case rel of
+            ("$true",[]) => Boolean pol
+          | ("$false",[]) => Boolean (not pol)
+          | ("$equal",[l,r]) => Literal (pol, Atom.mkEq (l,r))
+          | (r,tms) => Literal (pol, (Name.fromString r, tms)));
 
   val literalParser =
       ((punctParser #"~" ++ atomParser) >> (negate o snd)) ||
@@ -681,7 +711,7 @@ local
   and quantifiedFormulaParser input =
       ((quantifierParser ++ varListParser ++ punctParser #":" ++
         unitaryFormulaParser) >>
-       (fn (q,(v,((),f))) => q (v,f))) input
+       (fn (q,(v,((),f))) => q (map Name.fromString v, f))) input
 
   and quantifierParser input =
       ((punctParser #"!" >> K Formula.listMkForall) ||
@@ -721,9 +751,9 @@ local
         Parse.everything (parser >> singleton) tokens
       end;
 
-  fun canParseString parser s =
+  fun canParseName parser n =
       let
-        val chars = Stream.fromString s
+        val chars = Stream.fromString (Name.toString n)
       in
         case Stream.toList (parseChars parser chars) of
           [_] => true
@@ -733,10 +763,10 @@ local
 in
   val parseFormula = parseChars formulaParser;
 
-  val isTptpRelation = canParseString functionParser
-  and isTptpProposition = canParseString propositionParser
-  and isTptpFunction = canParseString functionParser
-  and isTptpConstant = canParseString constantParser;
+  val isTptpRelation = canParseName functionParser
+  and isTptpProposition = canParseName propositionParser
+  and isTptpFunction = canParseName functionParser
+  and isTptpConstant = canParseName constantParser;
 end;
 
 (* ------------------------------------------------------------------------- *)
@@ -749,33 +779,38 @@ local
 
   val isTptpInitialChar = Char.isAlpha;
 
-  fun explodeTptp s =
+  fun explodeTptp n =
       let
-        val l = explode s
+        val l = explode (Name.toString n)
         val l = List.filter isTptpChar l
         val l = dropWhile (not o isTptpInitialChar) l
       in
         l
       end;
-in
+
   fun mkTptpName s n =
       case explodeTptp n of
         [] => s
       | c :: cs => implode (Char.toLower c :: cs);
-
+in
   fun mkTptpVar n =
-      case explodeTptp n of
-        [] => "X"
-      | c :: cs => implode (Char.toUpper c :: cs);
+      Name.fromString
+      (case explodeTptp n of
+         [] => "X"
+       | c :: cs => implode (Char.toUpper c :: cs));
 
-  fun isTptpVar v = mkTptpVar v = v;
+  fun isTptpVar v = Name.equal (mkTptpVar v) v;
+
+  fun mkTptpFnName s n = Name.fromString (mkTptpName s n);
+
+  fun mkTptpRelName s n = Name.fromString (mkTptpName s n);
 end;
 
 fun mkAddTptpVar v (a,s) =
     let
       val v' = Term.variantNum a (mkTptpVar v)
       val a = NameSet.add a v'
-      and s = if v = v' then s else Subst.insert s (v, Term.Var v')
+      and s = if Name.equal v' v then s else Subst.insert s (v, Term.Var v')
     in
       (v',(a,s))
     end
@@ -792,11 +827,11 @@ in
 end;
 
 local
-  fun mkTptpFunc (n,0) = if isTptpConstant n then n else mkTptpName "c" n
-    | mkTptpFunc (n,_) = if isTptpFunction n then n else mkTptpName "f" n;
+  fun mkTptpFunc (n,0) = if isTptpConstant n then n else mkTptpFnName "c" n
+    | mkTptpFunc (n,_) = if isTptpFunction n then n else mkTptpFnName "f" n;
 
-  fun mkTptpRel (n,0) = if isTptpProposition n then n else mkTptpName "p" n
-    | mkTptpRel (n,_) = if isTptpRelation n then n else mkTptpName "r" n;
+  fun mkTptpRel (n,0) = if isTptpProposition n then n else mkTptpRelName "p" n
+    | mkTptpRel (n,_) = if isTptpRelation n then n else mkTptpRelName "r" n;
 
   fun mkMap set norm mapping =
       let
@@ -809,7 +844,7 @@ local
               let
                 val t = norm n_r
                 val (n,_) = n_r
-                val t = if t = n then n else Term.variantNum a t
+                val t = if Name.equal t n then n else Term.variantNum a t
               in
                 (NameSet.add a t, NameArityMap.insert m (n_r,t))
               end
@@ -984,7 +1019,7 @@ end;
 
 local
   fun addCnfFormula (CnfFormula {name,role,clause}, acc) =
-      if mem (Boolean true) clause then acc
+      if List.exists (fn Boolean true => true | _ => false) clause then acc
       else
         let
           val litl = List.mapPartial (total destLiteral) clause

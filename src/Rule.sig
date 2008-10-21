@@ -143,6 +143,8 @@ val convRule : conv -> rule  (* All arguments of all literals *)
 (*   x = x                                                                   *)
 (* ------------------------------------------------------------------------- *)
 
+val reflexivityRule : Term.term -> Thm.thm
+
 val reflexivity : Thm.thm
 
 (* ------------------------------------------------------------------------- *)
@@ -150,6 +152,8 @@ val reflexivity : Thm.thm
 (* --------------------- symmetry                                            *)
 (*   ~(x = y) \/ y = x                                                       *)
 (* ------------------------------------------------------------------------- *)
+
+val symmetryRule : Term.term -> Term.term -> Thm.thm
 
 val symmetry : Thm.thm
 

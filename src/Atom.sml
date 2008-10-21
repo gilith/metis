@@ -49,7 +49,7 @@ val functionNames =
 fun mkBinop p (a,b) : atom = (p,[a,b]);
 
 fun destBinop p (x,[a,b]) =
-    if x = p then (a,b) else raise Error "Atom.destBinop: wrong binop"
+    if Name.equal x p then (a,b) else raise Error "Atom.destBinop: wrong binop"
   | destBinop _ _ = raise Error "Atom.destBinop: not a binop";
 
 fun isBinop p = can (destBinop p);
@@ -69,6 +69,8 @@ fun compare ((p1,tms1),(p2,tms2)) =
       LESS => LESS
     | EQUAL => lexCompare Term.compare (tms1,tms2)
     | GREATER => GREATER;
+
+fun equal atm1 atm2 = compare (atm1,atm2) = EQUAL;
 
 (* ------------------------------------------------------------------------- *)
 (* Subterms.                                                                 *)
@@ -141,7 +143,7 @@ local
 in
   fun match sub (p1,tms1) (p2,tms2) =
       let
-        val _ = (p1 = p2 andalso length tms1 = length tms2) orelse
+        val _ = (Name.equal p1 p2 andalso length tms1 = length tms2) orelse
                 raise Error "Atom.match"
       in
         foldl matchArg sub (zip tms1 tms2)
@@ -157,7 +159,7 @@ local
 in
   fun unify sub (p1,tms1) (p2,tms2) =
       let
-        val _ = (p1 = p2 andalso length tms1 = length tms2) orelse
+        val _ = (Name.equal p1 p2 andalso length tms1 = length tms2) orelse
                 raise Error "Atom.unify"
       in
         foldl unifyArg sub (zip tms1 tms2)
@@ -168,7 +170,7 @@ end;
 (* The equality relation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
-val eqRelationName = "=";
+val eqRelationName = Name.fromString "=";
 
 val eqRelationArity = 2;
 
@@ -185,7 +187,7 @@ fun mkRefl tm = mkEq (tm,tm);
 fun destRefl atm =
     let
       val (l,r) = destEq atm
-      val _ = l = r orelse raise Error "Atom.destRefl"
+      val _ = Term.equal l r orelse raise Error "Atom.destRefl"
     in
       l
     end;
@@ -195,7 +197,7 @@ fun isRefl x = can destRefl x;
 fun sym atm =
     let
       val (l,r) = destEq atm
-      val _ = l <> r orelse raise Error "Atom.sym: refl"
+      val _ = not (Term.equal l r) orelse raise Error "Atom.sym: refl"
     in
       mkEq (r,l)
     end;

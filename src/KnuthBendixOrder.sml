@@ -12,10 +12,12 @@ open Useful;
 (* Helper functions.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
-fun firstNotEqual f l =
-    case List.find op<> l of
+fun notEqualTerm (x,y) = not (Term.equal x y);
+
+fun firstNotEqualTerm f l =
+    case List.find notEqualTerm l of
       SOME (x,y) => f x y
-    | NONE => raise Bug "firstNotEqual";
+    | NONE => raise Bug "firstNotEqualTerm";
 
 (* ------------------------------------------------------------------------- *)
 (* The weight of all constants must be at least 1, and there must be at most *)
@@ -36,7 +38,7 @@ val arityPrecedence : Term.function * Term.function -> order =
     fn ((f1,n1),(f2,n2)) =>
        case Int.compare (n1,n2) of
          LESS => LESS
-       | EQUAL => String.compare (f1,f2)
+       | EQUAL => Name.compare (f1,f2)
        | GREATER => GREATER;
 
 (* The default order *)
@@ -150,7 +152,7 @@ fun compare {weight,precedence} =
       and precedenceLess (Term.Fn (f1,a1)) (Term.Fn (f2,a2)) =
           (case precedence ((f1, length a1), (f2, length a2)) of
              LESS => true
-           | EQUAL => firstNotEqual weightLess (zip a1 a2)
+           | EQUAL => firstNotEqualTerm weightLess (zip a1 a2)
            | GREATER => false)
         | precedenceLess _ _ = false
 
@@ -169,11 +171,12 @@ fun compare {weight,precedence} =
       and precedenceCmp (Term.Fn (f1,a1)) (Term.Fn (f2,a2)) =
           (case precedence ((f1, length a1), (f2, length a2)) of
              LESS => SOME LESS
-           | EQUAL => firstNotEqual weightCmp (zip a1 a2)
+           | EQUAL => firstNotEqualTerm weightCmp (zip a1 a2)
            | GREATER => SOME GREATER)
         | precedenceCmp _ _ = raise Bug "kboOrder.precendenceCmp"
     in
-      fn (tm1,tm2) => if tm1 = tm2 then SOME EQUAL else weightCmp tm1 tm2
+      fn (tm1,tm2) =>
+         if Term.equal tm1 tm2 then SOME EQUAL else weightCmp tm1 tm2
     end;
 
 (*MetisTrace7

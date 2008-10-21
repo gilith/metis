@@ -66,6 +66,8 @@ val symbols : literal -> int
 
 val compare : literal * literal -> order  (* negative < positive *)
 
+val equal : literal -> literal -> bool
+
 (* ------------------------------------------------------------------------- *)
 (* Subterms.                                                                 *)
 (* ------------------------------------------------------------------------- *)

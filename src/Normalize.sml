@@ -617,16 +617,19 @@ fun nnf fm = toFormula (fromFormula fm);
 
 val newSkolemFunction =
     let
-      val counter : int NameMap.map ref = ref (NameMap.new ())
+      val counter : int StringMap.map ref = ref (StringMap.new ())
     in
       fn n =>
-      let
-        val ref m = counter
-        val i = Option.getOpt (NameMap.peek m n, 0)
-        val () = counter := NameMap.insert m (n, i + 1)
-      in
-        skolemPrefix ^ "_" ^ n ^ (if i = 0 then "" else "_" ^ Int.toString i)
-      end
+         let
+           val ref m = counter
+           val s = Name.toString n
+           val i = Option.getOpt (StringMap.peek m s, 0)
+           val () = counter := StringMap.insert m (s, i + 1)
+           val i = if i = 0 then "" else "_" ^ Int.toString i
+           val s = skolemPrefix ^ "_" ^ s ^ i
+         in
+           Name.fromString s
+         end
     end;
 
 fun skolemize fv bv fm =
@@ -1051,19 +1054,19 @@ val newDefinitionRelation =
       val counter : int ref = ref 0
     in
       fn () =>
-      let
-        val ref i = counter
-        val () = counter := i + 1
-      in
-        definitionPrefix ^ "_" ^ Int.toString i
-      end
+         let
+           val ref i = counter
+           val () = counter := i + 1
+         in
+           definitionPrefix ^ "_" ^ Int.toString i
+         end
     end;
 
 fun newDefinition def =
     let
       val fv = freeVars def
       val rel = newDefinitionRelation ()
-      val atm = (rel, NameSet.transform Term.Var fv)
+      val atm = (Name.fromString rel, NameSet.transform Term.Var fv)
       val fm = Formula.Iff (Formula.Atom atm, toFormula def)
       val lit = Literal (fv,(false,atm))
       val prf = singletonProof rel

@@ -324,8 +324,10 @@ fun freeIn v =
         | f (Or (p,q) :: fms) = f (p :: q :: fms)
         | f (Imp (p,q) :: fms) = f (p :: q :: fms)
         | f (Iff (p,q) :: fms) = f (p :: q :: fms)
-        | f (Forall (w,p) :: fms) = if v = w then f fms else f (p :: fms)
-        | f (Exists (w,p) :: fms) = if v = w then f fms else f (p :: fms)
+        | f (Forall (w,p) :: fms) =
+          if Name.equal v w then f fms else f (p :: fms)
+        | f (Exists (w,p) :: fms) =
+          if Name.equal v w then f fms else f (p :: fms)
     in
       fn fm => f [fm]
     end;
@@ -397,7 +399,7 @@ local
         val v' =
             let
               fun f (w,s) =
-                  if w = v then s
+                  if Name.equal w v then s
                   else
                     case Subst.peek sub w of
                       NONE => NameSet.add s w
@@ -410,12 +412,12 @@ local
             end
 
         val sub =
-            if v = v' then Subst.remove sub (NameSet.singleton v)
+            if Name.equal v v' then Subst.remove sub (NameSet.singleton v)
             else Subst.insert sub (v, Term.Var v')
 
         val p' = substCheck sub p
       in
-        if v = v' andalso Portable.pointerEqual (p,p') then fm
+        if Name.equal v v' andalso Portable.pointerEqual (p,p') then fm
         else quant (v',p')
       end;
 in
@@ -508,27 +510,32 @@ end;
 
 type quotation = formula Parse.quotation
 
-val truthSymbol = "T"
-and falsitySymbol = "F"
-and conjunctionSymbol = "/\\"
-and disjunctionSymbol = "\\/"
-and implicationSymbol = "==>"
-and equivalenceSymbol = "<=>"
-and universalSymbol = "!"
-and existentialSymbol = "?";
+val truthName = Name.fromString "T"
+and falsityName = Name.fromString "F"
+and conjunctionName = Name.fromString "/\\"
+and disjunctionName = Name.fromString "\\/"
+and implicationName = Name.fromString "==>"
+and equivalenceName = Name.fromString "<=>"
+and universalName = Name.fromString "!"
+and existentialName = Name.fromString "?";
 
 local
-  fun demote True = Term.Fn (truthSymbol,[])
-    | demote False = Term.Fn (falsitySymbol,[])
+  fun demote True = Term.Fn (truthName,[])
+    | demote False = Term.Fn (falsityName,[])
     | demote (Atom (p,tms)) = Term.Fn (p,tms)
-    | demote (Not p) = Term.Fn (!Term.negation, [demote p])
-    | demote (And (p,q)) = Term.Fn (conjunctionSymbol, [demote p, demote q])
-    | demote (Or (p,q)) = Term.Fn (disjunctionSymbol, [demote p, demote q])
-    | demote (Imp (p,q)) = Term.Fn (implicationSymbol, [demote p, demote q])
-    | demote (Iff (p,q)) = Term.Fn (equivalenceSymbol, [demote p, demote q])
-    | demote (Forall (v,b)) = Term.Fn (universalSymbol, [Term.Var v, demote b])
+    | demote (Not p) =
+      let
+        val ref s = Term.negation
+      in
+        Term.Fn (Name.fromString s, [demote p])
+      end
+    | demote (And (p,q)) = Term.Fn (conjunctionName, [demote p, demote q])
+    | demote (Or (p,q)) = Term.Fn (disjunctionName, [demote p, demote q])
+    | demote (Imp (p,q)) = Term.Fn (implicationName, [demote p, demote q])
+    | demote (Iff (p,q)) = Term.Fn (equivalenceName, [demote p, demote q])
+    | demote (Forall (v,b)) = Term.Fn (universalName, [Term.Var v, demote b])
     | demote (Exists (v,b)) =
-      Term.Fn (existentialSymbol, [Term.Var v, demote b]);
+      Term.Fn (existentialName, [Term.Var v, demote b]);
 in
   fun pp fm = Term.pp (demote fm);
 end;
@@ -541,23 +548,23 @@ local
 
   fun promote (Term.Var v) = Atom (v,[])
     | promote (Term.Fn (f,tms)) =
-      if f = truthSymbol andalso null tms then
+      if Name.equal f truthName andalso null tms then
         True
-      else if f = falsitySymbol andalso null tms then
+      else if Name.equal f falsityName andalso null tms then
         False
-      else if f = !Term.negation andalso length tms = 1 then
+      else if Name.toString f = !Term.negation andalso length tms = 1 then
         Not (promote (hd tms))
-      else if f = conjunctionSymbol andalso length tms = 2 then
+      else if Name.equal f conjunctionName andalso length tms = 2 then
         And (promote (hd tms), promote (List.nth (tms,1)))
-      else if f = disjunctionSymbol andalso length tms = 2 then
+      else if Name.equal f disjunctionName andalso length tms = 2 then
         Or (promote (hd tms), promote (List.nth (tms,1)))
-      else if f = implicationSymbol andalso length tms = 2 then
+      else if Name.equal f implicationName andalso length tms = 2 then
         Imp (promote (hd tms), promote (List.nth (tms,1)))
-      else if f = equivalenceSymbol andalso length tms = 2 then
+      else if Name.equal f equivalenceName andalso length tms = 2 then
         Iff (promote (hd tms), promote (List.nth (tms,1)))
-      else if f = universalSymbol andalso isQuant tms then
+      else if Name.equal f universalName andalso isQuant tms then
         Forall (Term.destVar (hd tms), promote (List.nth (tms,1)))
-      else if f = existentialSymbol andalso isQuant tms then
+      else if Name.equal f existentialName andalso isQuant tms then
         Exists (Term.destVar (hd tms), promote (List.nth (tms,1)))
       else
         Atom (f,tms);
