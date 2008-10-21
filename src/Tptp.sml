@@ -232,7 +232,20 @@ in
   fun ppTerm tm = Print.block Print.Inconsistent 0 (term tm);
 end;
 
-fun ppAtom atm = ppTerm (Term.Fn atm);
+fun ppAtom' (s,tms) =
+    let
+      val f = Name.fromString s
+      val tm = Term.Fn (f,tms)
+    in
+      ppTerm tm
+    end;
+
+fun ppAtom (r,tms) =
+    let
+      val s = Name.toString r
+    in
+      ppAtom' (s,tms)
+    end;
 
 local
   val neg = Print.sequence (Print.addString "~") (Print.addBreak 1);
@@ -1333,7 +1346,7 @@ local
 
   fun ppAtomTstp atm =
       case total Atom.destEq atm of
-        SOME (a,b) => ppAtom ("$equal",[a,b])
+        SOME (a,b) => ppAtom' ("$equal",[a,b])
       | NONE => ppAtom atm;
 
   fun ppLiteralTstp (pol,atm) =

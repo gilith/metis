@@ -73,7 +73,12 @@ and pvLits = printval LiteralSet.pp
 and pvCl = printval Clause.pp
 and pvCls = printval (Print.ppList Clause.pp);
 
-val T = Term.parse
+val NV = Name.fromString
+and NF = Name.fromString
+and NR = Name.fromString;
+val V = Term.Var o NV
+and C = (fn c => Term.Fn (NF c, []))
+and T = Term.parse
 and A = Atom.parse
 and L = Literal.parse
 and F = Formula.parse
@@ -83,18 +88,18 @@ val CL = mkCl Clause.default o AX;
 val Q = (fn th => (Thm.destUnitEq th, th)) o AX o singleton
 and U = (fn th => (Thm.destUnit th, th)) o AX o singleton;
 
-fun test_fun p r a =
-  if r = a then p a ^ "\n" else
+fun test_fun eq p r a =
+  if eq r a then p a ^ "\n" else
     (print ("\n\n" ^
             "test: should have\n-->" ^ p r ^ "<--\n\n" ^
             "test: actually have\n-->" ^ p a ^ "<--\n\n");
      raise Fail "test: failed a test");
 
-fun test p r a = print (test_fun p r a ^ "\n");
+fun test eq p r a = print (test_fun eq p r a ^ "\n");
 
-val test_tm = test Term.toString o Term.parse;
+val test_tm = test Term.equal Term.toString o Term.parse;
 
-val test_fm = test Formula.toString o Formula.parse;
+val test_fm = test Formula.equal Formula.toString o Formula.parse;
 
 fun test_id p f a = test p a (f a);
 
@@ -143,7 +148,7 @@ fun prep l = (chop_newline o String.concat o map unquote) l;
 fun mini_print n fm = withRef (Print.lineLength,n) Formula.toString fm;
 
 fun testlen_pp n q =
-    (fn s => test_fun I s ((mini_print n o Formula.fromString) s))
+    (fn s => test_fun equal I s ((mini_print n o Formula.fromString) s))
       (prep q);
 
 fun test_pp q = print (testlen_pp 40 q ^ "\n");
@@ -297,32 +302,45 @@ val () = test_pp `
 val () = SAY "Substitution";
 (* ------------------------------------------------------------------------- *)
 
-val () = test I "x" (Term.variantPrime (NameSet.fromList ["y","z" ]) "x");
+val () =
+    test Name.equal Name.toString (NV"x")
+      (Term.variantPrime (NameSet.fromList [NV"y",NV"z" ]) (NV"x"));
 
-val () = test I "x'" (Term.variantPrime (NameSet.fromList ["x","y" ]) "x");
+val () =
+    test Name.equal Name.toString (NV"x'")
+      (Term.variantPrime (NameSet.fromList [NV"x",NV"y" ]) (NV"x"));
 
-val () = test I "x''" (Term.variantPrime (NameSet.fromList ["x","x'"]) "x");
+val () =
+    test Name.equal Name.toString (NV"x''")
+      (Term.variantPrime (NameSet.fromList [NV"x",NV"x'"]) (NV"x"));
 
-val () = test I "x" (Term.variantNum (NameSet.fromList ["y","z"]) "x");
+val () =
+    test Name.equal Name.toString (NV"x")
+      (Term.variantNum (NameSet.fromList [NV"y",NV"z"]) (NV"x"));
 
-val () = test I "x0" (Term.variantNum (NameSet.fromList ["x","y"]) "x");
+val () =
+    test Name.equal Name.toString (NV"x0")
+      (Term.variantNum (NameSet.fromList [NV"x",NV"y"]) (NV"x"));
 
-val () = test I "x1" (Term.variantNum (NameSet.fromList ["x","x0"]) "x");
+val () =
+    test Name.equal Name.toString (NV"x1")
+      (Term.variantNum (NameSet.fromList [NV"x",NV"x0"]) (NV"x"));
 
 val () =
     test_fm
       `!x. x = $z`
-      (Formula.subst (S [("y", Term.Var "z")]) (F`!x. x = $y`));
+      (Formula.subst (S [(NV"y", V"z")]) (F`!x. x = $y`));
 
 val () =
     test_fm
       `!x'. x' = $x`
-      (Formula.subst (S [("y", Term.Var "x")]) (F`!x. x = $y`));
+      (Formula.subst (S [(NV"y", V"x")]) (F`!x. x = $y`));
 
 val () =
     test_fm
       `!x' x''. x' = $x ==> x' = x''`
-      (Formula.subst (S [("y", Term.Var "x")]) (F`!x x'. x = $y ==> x = x'`));
+      (Formula.subst (S [(NV"y", V"x")])
+         (F`!x x'. x = $y ==> x = x'`));
 
 (* ------------------------------------------------------------------------- *)
 val () = SAY "Unification";
@@ -331,24 +349,24 @@ val () = SAY "Unification";
 fun unify_and_apply tm1 tm2 =
     Subst.subst (Subst.unify Subst.empty tm1 tm2) tm1;
 
-val () = test_tm `c` (unify_and_apply (Term.Var "x") (Term.Fn ("c", [])));
+val () = test_tm `c` (unify_and_apply (V"x") (C"c"));
 
-val () = test_tm `c` (unify_and_apply (Term.Fn ("c", [])) (Term.Var "x"));
+val () = test_tm `c` (unify_and_apply (C"c") (V"x"));
 
 val () =
     test_tm
       `f c`
       (unify_and_apply
-         (Term.Fn ("f", [Term.Var "x"]))
-         (Term.Fn ("f", [Term.Fn ("c", [])])));
+         (Term.Fn (NF"f", [V"x"]))
+         (Term.Fn (NF"f", [C"c"])));
 
 val () = test_tm `f 0 0 0` (unify_and_apply (T`f 0 $x $x`) (T`f $y $y $z`));
 
 fun f x y = (printval Subst.pp (Atom.unify Subst.empty x y); ());
 
-val () = f ("P", [Term.Var "x"]) ("P", [Term.Var "x"]);
+val () = f (NR"P", [V"x"]) (NR"P", [V"x"]);
 
-val () = f ("P", [Term.Var "x"]) ("P", [Term.Fn ("c",[])]);
+val () = f (NR"P", [V"x"]) (NR"P", [C"c"]);
 
 val () = f (A`P c_x`) (A`P $x`);
 
@@ -365,7 +383,7 @@ val _ = printval Proof.pp (Proof.proof th2);
 
 val th0 = Rule.relationCongruence Atom.eqRelation;
 val th1 =
-    Thm.subst (S [("y0",T`$x`),("y1",T`$y`),("x1",T`$z`),("x0",T`$x`)]) th0;
+    Thm.subst (S [(NV"y0",T`$x`),(NV"y1",T`$y`),(NV"x1",T`$z`),(NV"x0",T`$x`)]) th0;
 val th2 = Thm.resolve (L`$x = $x`) Rule.reflexivity th1;
 val th3 = Rule.symNeq (L`~($z = $y)`) th2;
 val _ = printval Proof.pp (Proof.proof th3);
@@ -373,8 +391,8 @@ val _ = printval Proof.pp (Proof.proof th3);
 (* Testing the elimination of redundancies in proofs *)
 
 val th0 = Rule.reflexivity;
-val th1 = Thm.subst (S [("x", Term.Fn ("f", [Term.Var "y"]))]) th0;
-val th2 = Thm.subst (S [("y", Term.mkConst "c")]) th1;
+val th1 = Thm.subst (S [(NV"x", Term.Fn (NF"f", [V"y"]))]) th0;
+val th2 = Thm.subst (S [(NV"y", C"c")]) th1;
 val _ = printval Proof.pp (Proof.proof th2);
 
 (* ------------------------------------------------------------------------- *)
@@ -390,7 +408,7 @@ val th5 = pvThm (Rule.symNeq (L`~(a = b)`) th0);
 
 (* Testing the rewrConv conversion *)
 val (x_y as (x,y), eqTh) = pvEqn (Q`e * (i $z * $z) = e`);
-val tm = Term.Fn ("f",[x]);
+val tm = Term.Fn (NF"f",[x]);
 val path : int list = [0];
 val reflTh = Thm.refl tm;
 val reflLit = Thm.destUnit reflTh;
@@ -634,7 +652,7 @@ local
 
   fun quot fm =
       let
-        fun f (v,s) = Subst.insert s (v, Term.Var "_")
+        fun f (v,s) = Subst.insert s (v,V"_")
 
         val sub = NameSet.foldl f Subst.empty (Formula.freeVars fm)
       in
@@ -662,11 +680,11 @@ local
         | SOME _ => same name
 
       val () =
-        case List.find (fn (_,x) => x = p) acc of NONE => ()
+        case List.find (fn (_,x) => Formula.equal x p) acc of NONE => ()
         | SOME (n,_) => dup n name
 
       val _ =
-        test_fun I g (mini_print (!Print.lineLength) p)
+        test_fun equal I g (mini_print (!Print.lineLength) p)
         handle e => (print ("Error in problem " ^ name ^ "\n\n"); raise e)
     in
       (name,p) :: acc
@@ -724,11 +742,23 @@ val _ = pvLits (Clause.largestLiterals cl);
 (* Test cases contributed by Larry Paulson *)
 
 local
-  fun weight ("ln",1)  = 500
-    | weight ("exp",1) = 500
-    | weight ("/",2) = 50
-    | weight ("<",2) = 20
-    | weight _ = 1;
+  val lnFnName = Name.fromString "ln"
+  and expFnName = Name.fromString "exp"
+  and divFnName = Name.fromString "/"
+
+  val leRelName = Name.fromString "<";
+
+  fun weight na =
+      case na of
+        (n,1) =>
+        if Name.equal n lnFnName then 500
+        else if Name.equal n expFnName then 500
+        else 1
+      | (n,2) =>
+        if Name.equal n divFnName then 50
+        else if Name.equal n leRelName then 20
+        else 1
+      | _ => 1;
 
   val ordering =
       {weight = weight, precedence = #precedence KnuthBendixOrder.default};

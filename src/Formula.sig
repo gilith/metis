@@ -120,6 +120,8 @@ val symbols : formula -> int
 
 val compare : formula * formula -> order
 
+val equal : formula -> formula -> bool
+
 (* ------------------------------------------------------------------------- *)
 (* Free variables.                                                           *)
 (* ------------------------------------------------------------------------- *)

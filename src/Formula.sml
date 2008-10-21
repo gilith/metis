@@ -265,49 +265,55 @@ end;
 
 local
   fun cmp [] = EQUAL
-    | cmp ((True,True) :: l) = cmp l
-    | cmp ((True,_) :: _) = LESS
-    | cmp ((_,True) :: _) = GREATER
-    | cmp ((False,False) :: l) = cmp l
-    | cmp ((False,_) :: _) = LESS
-    | cmp ((_,False) :: _) = GREATER
-    | cmp ((Atom atm1, Atom atm2) :: l) =
-      (case Atom.compare (atm1,atm2) of
-         LESS => LESS
-       | EQUAL => cmp l
-       | GREATER => GREATER)
-    | cmp ((Atom _, _) :: _) = LESS
-    | cmp ((_, Atom _) :: _) = GREATER
-    | cmp ((Not p1, Not p2) :: l) = cmp ((p1,p2) :: l)
-    | cmp ((Not _, _) :: _) = LESS
-    | cmp ((_, Not _) :: _) = GREATER
-    | cmp ((And (p1,q1), And (p2,q2)) :: l) = cmp ((p1,p2) :: (q1,q2) :: l)
-    | cmp ((And _, _) :: _) = LESS
-    | cmp ((_, And _) :: _) = GREATER
-    | cmp ((Or (p1,q1), Or (p2,q2)) :: l) = cmp ((p1,p2) :: (q1,q2) :: l)
-    | cmp ((Or _, _) :: _) = LESS
-    | cmp ((_, Or _) :: _) = GREATER
-    | cmp ((Imp (p1,q1), Imp (p2,q2)) :: l) = cmp ((p1,p2) :: (q1,q2) :: l)
-    | cmp ((Imp _, _) :: _) = LESS
-    | cmp ((_, Imp _) :: _) = GREATER
-    | cmp ((Iff (p1,q1), Iff (p2,q2)) :: l) = cmp ((p1,p2) :: (q1,q2) :: l)
-    | cmp ((Iff _, _) :: _) = LESS
-    | cmp ((_, Iff _) :: _) = GREATER
-    | cmp ((Forall (v1,p1), Forall (v2,p2)) :: l) =
-      (case Name.compare (v1,v2) of
-         LESS => LESS
-       | EQUAL => cmp ((p1,p2) :: l)
-       | GREATER => GREATER)
-    | cmp ((Forall _, Exists _) :: _) = LESS
-    | cmp ((Exists _, Forall _) :: _) = GREATER
-    | cmp ((Exists (v1,p1), Exists (v2,p2)) :: l) =
-      (case Name.compare (v1,v2) of
-         LESS => LESS
-       | EQUAL => cmp ((p1,p2) :: l)
-       | GREATER => GREATER);
+    | cmp (f1_f2 :: fs) =
+      if Portable.pointerEqual f1_f2 then cmp fs
+      else
+        case f1_f2 of
+          (True,True) => cmp fs
+        | (True,_) => LESS
+        | (_,True) => GREATER
+        | (False,False) => cmp fs
+        | (False,_) => LESS
+        | (_,False) => GREATER
+        | (Atom atm1, Atom atm2) =>
+          (case Atom.compare (atm1,atm2) of
+             LESS => LESS
+           | EQUAL => cmp fs
+           | GREATER => GREATER)
+        | (Atom _, _) => LESS
+        | (_, Atom _) => GREATER
+        | (Not p1, Not p2) => cmp ((p1,p2) :: fs)
+        | (Not _, _) => LESS
+        | (_, Not _) => GREATER
+        | (And (p1,q1), And (p2,q2)) => cmp ((p1,p2) :: (q1,q2) :: fs)
+        | (And _, _) => LESS
+        | (_, And _) => GREATER
+        | (Or (p1,q1), Or (p2,q2)) => cmp ((p1,p2) :: (q1,q2) :: fs)
+        | (Or _, _) => LESS
+        | (_, Or _) => GREATER
+        | (Imp (p1,q1), Imp (p2,q2)) => cmp ((p1,p2) :: (q1,q2) :: fs)
+        | (Imp _, _) => LESS
+        | (_, Imp _) => GREATER
+        | (Iff (p1,q1), Iff (p2,q2)) => cmp ((p1,p2) :: (q1,q2) :: fs)
+        | (Iff _, _) => LESS
+        | (_, Iff _) => GREATER
+        | (Forall (v1,p1), Forall (v2,p2)) =>
+          (case Name.compare (v1,v2) of
+             LESS => LESS
+           | EQUAL => cmp ((p1,p2) :: fs)
+           | GREATER => GREATER)
+        | (Forall _, Exists _) => LESS
+        | (Exists _, Forall _) => GREATER
+        | (Exists (v1,p1), Exists (v2,p2)) =>
+          (case Name.compare (v1,v2) of
+             LESS => LESS
+           | EQUAL => cmp ((p1,p2) :: fs)
+           | GREATER => GREATER);
 in
   fun compare fm1_fm2 = cmp [fm1_fm2];
 end;
+
+fun equal fm1 fm2 = compare (fm1,fm2) = EQUAL;
 
 (* ------------------------------------------------------------------------- *)
 (* Free variables.                                                           *)

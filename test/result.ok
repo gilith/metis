@@ -240,25 +240,25 @@ Discrimination nets for literals
 
 [] + NEGATIVE []
 
-[P (f c $ a) |-> 1] + NEGATIVE []
+[P (f c $_ a) |-> 1] + NEGATIVE []
 
-[P (f c $ a) |-> 1, P (f c $ a) |-> 2] + NEGATIVE []
+[P (f c $_ a) |-> 1, P (f c $_ a) |-> 2] + NEGATIVE []
 
-[P (f c $ a) |-> 1, P (f c $ a) |-> 2, P (f c a a) |-> 3] + NEGATIVE []
+[P (f c $_ a) |-> 1, P (f c $_ a) |-> 2, P (f c a a) |-> 3] + NEGATIVE []
 
-[P (f c $ a) |-> 1, P (f c $ a) |-> 2, P (f c a a) |-> 3,
+[P (f c $_ a) |-> 1, P (f c $_ a) |-> 2, P (f c a a) |-> 3,
  P (f c b a) |-> 4] + NEGATIVE []
 
-[P (f c $ a) |-> 1, P (f c $ a) |-> 2, P (f c a a) |-> 3,
+[P (f c $_ a) |-> 1, P (f c $_ a) |-> 2, P (f c a a) |-> 3,
  P (f c b a) |-> 4] + NEGATIVE [Q |-> 5]
 
-[P (f c $ a) |-> 1, P (f c $ a) |-> 2, P (f c a a) |-> 3,
+[P (f c $_ a) |-> 1, P (f c $_ a) |-> 2, P (f c a a) |-> 3,
  P (f c b a) |-> 4] + NEGATIVE [Q |-> 5, Q |-> 6]
 
-[P (f c $ a) |-> 1, P (f c $ a) |-> 2, P (f c a a) |-> 3,
+[P (f c $_ a) |-> 1, P (f c $_ a) |-> 2, P (f c a a) |-> 3,
  P (f c b a) |-> 4] + NEGATIVE [Q |-> 5, Q |-> 6, Q |-> 7]
 
-[P (f c $ a) |-> 1, P (f c $ a) |-> 2, P (f c a a) |-> 3,
+[P (f c $_ a) |-> 1, P (f c $_ a) |-> 2, P (f c a a) |-> 3,
  P (f c b a) |-> 4] + NEGATIVE [Q |-> 5, Q |-> 6, Q |-> 7, Q |-> 8]
 
 --------------------------------------------------------------------------
