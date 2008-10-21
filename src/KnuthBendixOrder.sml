@@ -98,13 +98,13 @@ fun weightLowerBound (w as Weight (m,c)) =
 (*MetisDebug
 val ppWeightList =
     let
-      fun coeffToString n =
-          if n < 0 then "~" ^ coeffToString (~n)
-          else if n = 1 then ""
-          else Int.toString n
+      fun ppCoeff n =
+          if n < 0 then Print.sequence (Print.addString "~") (ppCoeff (~n))
+          else if n = 1 then Print.skip
+          else Print.ppInt n
 
-      fun pp_tm ("",n) = Print.ppInt n
-        | pp_tm (v,n) = Print.ppString (coeffToString n ^ v)
+      fun pp_tm (NONE,n) = Print.ppInt n
+        | pp_tm (SOME v, n) = Print.sequence (ppCoeff n) (Name.pp v)
     in
       fn [] => Print.ppInt 0
        | tms => Print.ppOpList " +" pp_tm tms
@@ -113,7 +113,8 @@ val ppWeightList =
 fun ppWeight (Weight (m,c)) =
     let
       val l = NameMap.toList m
-      val l = if c = 0 then l else l @ [("",c)]
+      val l = map (fn (v,n) => (SOME v, n)) l
+      val l = if c = 0 then l else l @ [(NONE,c)]
     in
       ppWeightList l
     end;

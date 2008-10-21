@@ -93,41 +93,43 @@ datatype formula =
   | Forall of NameSet.set * count * NameSet.set * formula;
 
 fun compare f1_f2 =
-    case f1_f2 of
-      (True,True) => EQUAL
-    | (True,_) => LESS
-    | (_,True) => GREATER
-    | (False,False) => EQUAL
-    | (False,_) => LESS
-    | (_,False) => GREATER
-    | (Literal (_,l1), Literal (_,l2)) => Literal.compare (l1,l2)
-    | (Literal _, _) => LESS
-    | (_, Literal _) => GREATER
-    | (And (_,_,s1), And (_,_,s2)) => Set.compare (s1,s2)
-    | (And _, _) => LESS
-    | (_, And _) => GREATER
-    | (Or (_,_,s1), Or (_,_,s2)) => Set.compare (s1,s2)
-    | (Or _, _) => LESS
-    | (_, Or _) => GREATER
-    | (Xor (_,_,p1,s1), Xor (_,_,p2,s2)) =>
-      (case boolCompare (p1,p2) of
-         LESS => LESS
-       | EQUAL => Set.compare (s1,s2)
-       | GREATER => GREATER)
-    | (Xor _, _) => LESS
-    | (_, Xor _) => GREATER
-    | (Exists (_,_,n1,f1), Exists (_,_,n2,f2)) =>
-      (case NameSet.compare (n1,n2) of
-         LESS => LESS
-       | EQUAL => compare (f1,f2)
-       | GREATER => GREATER)
-    | (Exists _, _) => LESS
-    | (_, Exists _) => GREATER
-    | (Forall (_,_,n1,f1), Forall (_,_,n2,f2)) =>
-      (case NameSet.compare (n1,n2) of
-         LESS => LESS
-       | EQUAL => compare (f1,f2)
-       | GREATER => GREATER);
+    if Portable.pointerEqual f1_f2 then EQUAL
+    else
+      case f1_f2 of
+        (True,True) => EQUAL
+      | (True,_) => LESS
+      | (_,True) => GREATER
+      | (False,False) => EQUAL
+      | (False,_) => LESS
+      | (_,False) => GREATER
+      | (Literal (_,l1), Literal (_,l2)) => Literal.compare (l1,l2)
+      | (Literal _, _) => LESS
+      | (_, Literal _) => GREATER
+      | (And (_,_,s1), And (_,_,s2)) => Set.compare (s1,s2)
+      | (And _, _) => LESS
+      | (_, And _) => GREATER
+      | (Or (_,_,s1), Or (_,_,s2)) => Set.compare (s1,s2)
+      | (Or _, _) => LESS
+      | (_, Or _) => GREATER
+      | (Xor (_,_,p1,s1), Xor (_,_,p2,s2)) =>
+        (case boolCompare (p1,p2) of
+           LESS => LESS
+         | EQUAL => Set.compare (s1,s2)
+         | GREATER => GREATER)
+      | (Xor _, _) => LESS
+      | (_, Xor _) => GREATER
+      | (Exists (_,_,n1,f1), Exists (_,_,n2,f2)) =>
+        (case NameSet.compare (n1,n2) of
+           LESS => LESS
+         | EQUAL => compare (f1,f2)
+         | GREATER => GREATER)
+      | (Exists _, _) => LESS
+      | (_, Exists _) => GREATER
+      | (Forall (_,_,n1,f1), Forall (_,_,n2,f2)) =>
+        (case NameSet.compare (n1,n2) of
+           LESS => LESS
+         | EQUAL => compare (f1,f2)
+         | GREATER => GREATER);
 
 val empty = Set.empty compare;
 

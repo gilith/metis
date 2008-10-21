@@ -61,7 +61,7 @@ fun equations (Rewrite {known,...}) =
 
 val pp = Print.ppMap equations (Print.ppList Rule.ppEquation);
 
-(*MetisDebug
+(*MetisTrace1
 local
   fun orientOptionToString ort =
       case ort of
