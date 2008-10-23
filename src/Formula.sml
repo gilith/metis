@@ -514,16 +514,16 @@ end;
 (* Parsing and pretty-printing.                                              *)
 (* ------------------------------------------------------------------------- *)
 
-type quotation = formula Parse.quotation
+type quotation = formula Parse.quotation;
 
-val truthName = Name.fromString "T"
-and falsityName = Name.fromString "F"
-and conjunctionName = Name.fromString "/\\"
-and disjunctionName = Name.fromString "\\/"
-and implicationName = Name.fromString "==>"
-and equivalenceName = Name.fromString "<=>"
-and universalName = Name.fromString "!"
-and existentialName = Name.fromString "?";
+val truthName = Name.mkFnName "T"
+and falsityName = Name.mkFnName "F"
+and conjunctionName = Name.mkFnName "/\\"
+and disjunctionName = Name.mkFnName "\\/"
+and implicationName = Name.mkFnName "==>"
+and equivalenceName = Name.mkFnName "<=>"
+and universalName = Name.mkFnName "!"
+and existentialName = Name.mkFnName "?";
 
 local
   fun demote True = Term.Fn (truthName,[])
@@ -533,7 +533,7 @@ local
       let
         val ref s = Term.negation
       in
-        Term.Fn (Name.fromString s, [demote p])
+        Term.Fn (Name.mkFnName s, [demote p])
       end
     | demote (And (p,q)) = Term.Fn (conjunctionName, [demote p, demote q])
     | demote (Or (p,q)) = Term.Fn (disjunctionName, [demote p, demote q])
@@ -558,7 +558,7 @@ local
         True
       else if Name.equal f falsityName andalso null tms then
         False
-      else if Name.toString f = !Term.negation andalso length tms = 1 then
+      else if Name.destFnName f = !Term.negation andalso length tms = 1 then
         Not (promote (hd tms))
       else if Name.equal f conjunctionName andalso length tms = 2 then
         And (promote (hd tms), promote (List.nth (tms,1)))

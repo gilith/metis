@@ -14,7 +14,7 @@ open Useful;
 
 (* Projections *)
 
-fun ithFnName i = Name.fromString ("#" ^ Int.toString i);
+fun ithFnName i = Name.mkFnName ("#" ^ Int.toString i);
 
 val firstFnName = ithFnName 1
 and secondFnName = ithFnName 2
@@ -27,51 +27,51 @@ val eqRelName = Atom.eqRelationName;
 (* Basic *)
 
 val hasTypeFnName = Term.hasTypeName
-and idFnName = Name.fromString "id"
-and fstFnName = Name.fromString "fst"
-and sndFnName = Name.fromString "snd";
+and idFnName = Name.mkFnName "id"
+and fstFnName = Name.mkFnName "fst"
+and sndFnName = Name.mkFnName "snd";
 
-val notEqualRelName = Name.fromString "<>";
+val notEqualRelName = Name.mkFnName "<>";
 
 (* Number *)
 
-val addFnName = Name.fromString "+"
-and divFnName = Name.fromString "div"
-and expFnName = Name.fromString "exp"
-and modFnName = Name.fromString "mod"
-and multFnName = Name.fromString "*"
-and negFnName = Name.fromString "~"
-and preFnName = Name.fromString "pre"
-and subFnName = Name.fromString "-"
-and sucFnName = Name.fromString "suc"
-and zeroFnName = Name.fromString "0";
+val addFnName = Name.mkFnName "+"
+and divFnName = Name.mkFnName "div"
+and expFnName = Name.mkFnName "exp"
+and modFnName = Name.mkFnName "mod"
+and multFnName = Name.mkFnName "*"
+and negFnName = Name.mkFnName "~"
+and preFnName = Name.mkFnName "pre"
+and subFnName = Name.mkFnName "-"
+and sucFnName = Name.mkFnName "suc"
+and zeroFnName = Name.mkFnName "0";
 
-val dividesRelName = Name.fromString "divides"
-and evenRelName = Name.fromString "even"
-and geRelName = Name.fromString ">="
-and gtRelName = Name.fromString ">"
-and isZeroRelName = Name.fromString "is_0"
-and leRelName = Name.fromString "<="
-and ltRelName = Name.fromString "<"
-and oddRelName = Name.fromString "odd";
+val dividesRelName = Name.mkFnName "divides"
+and evenRelName = Name.mkFnName "even"
+and geRelName = Name.mkFnName ">="
+and gtRelName = Name.mkFnName ">"
+and isZeroRelName = Name.mkFnName "is_0"
+and leRelName = Name.mkFnName "<="
+and ltRelName = Name.mkFnName "<"
+and oddRelName = Name.mkFnName "odd";
 
 (* Sets *)
 
-val emptyFnName = Name.fromString "empty"
-and univFnName = Name.fromString "univ"
-and unionFnName = Name.fromString "union"
-and intersectFnName = Name.fromString "intersect"
-and complFnName = Name.fromString "compl"
-and cardFnName = Name.fromString "card";
+val emptyFnName = Name.mkFnName "empty"
+and univFnName = Name.mkFnName "univ"
+and unionFnName = Name.mkFnName "union"
+and intersectFnName = Name.mkFnName "intersect"
+and complFnName = Name.mkFnName "compl"
+and cardFnName = Name.mkFnName "card";
 
-val inRelName = Name.fromString "in"
-and subsetRelName = Name.fromString "subset";
+val inRelName = Name.mkFnName "in"
+and subsetRelName = Name.mkFnName "subset";
 
 (* Lists *)
 
-val appendFnName = Name.fromString "@"
-and consFnName = Name.fromString "::"
-and nilFnName = Name.fromString "nil";
+val appendFnName = Name.mkFnName "@"
+and consFnName = Name.mkFnName "::"
+and nilFnName = Name.mkFnName "nil";
 
 (* ------------------------------------------------------------------------- *)
 (* Helper functions.                                                         *)
@@ -156,7 +156,7 @@ fun projection func =
       else NONE
     | (f,args) =>
       let
-        val f = Name.toString f
+        val f = Name.destFnName f
         val fSz = size f
         and n = length args
 
@@ -259,7 +259,7 @@ fun fixedModulo {size = N} =
 
       fun functions func =
           case func of
-            (f,[]) => Option.map mod_N (natFromString (Name.toString f))
+            (f,[]) => Option.map mod_N (natFromString (Name.destFnName f))
           | (f,[x]) =>
             if Name.equal f sucFnName then
               SOME (if x = N - 1 then 0 else x + 1)
@@ -429,7 +429,7 @@ local
         fun functions func =
             case func of
               (f,[]) =>
-              (case natFromString (Name.toString f) of
+              (case natFromString (Name.destFnName f) of
                  SOME n => dest_onum (ONum n)
                | NONE => NONE)
             | (f,[x]) =>

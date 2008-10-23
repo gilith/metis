@@ -29,9 +29,9 @@ fun isHdTlString hp tp s =
 val functionMapping = ref
     let
       fun fromString {name,arity,tptp} =
-          {name = Name.fromString name,
+          {name = Name.mkFnName name,
            arity = arity,
-           tptp = Name.fromString tptp}
+           tptp = Name.mkFnName tptp}
     in
       map fromString
         [(* Mapping TPTP functions to infix symbols *)
@@ -52,9 +52,9 @@ val functionMapping = ref
 val relationMapping = ref
     let
       fun fromString {name,arity,tptp} =
-          {name = Name.fromString name,
+          {name = Name.mkRelName name,
            arity = arity,
-           tptp = Name.fromString tptp}
+           tptp = Name.mkRelName tptp}
     in
       map fromString
         [(* Mapping TPTP relations to infix symbols *)
@@ -232,20 +232,7 @@ in
   fun ppTerm tm = Print.block Print.Inconsistent 0 (term tm);
 end;
 
-fun ppAtom' (s,tms) =
-    let
-      val f = Name.fromString s
-      val tm = Term.Fn (f,tms)
-    in
-      ppTerm tm
-    end;
-
-fun ppAtom (r,tms) =
-    let
-      val s = Name.toString r
-    in
-      ppAtom' (s,tms)
-    end;
+fun ppAtom atm = ppTerm (Term.Fn atm);
 
 local
   val neg = Print.sequence (Print.addString "~") (Print.addBreak 1);
@@ -559,7 +546,7 @@ local
 
   fun termParser input =
       ((functionArgumentsParser >>
-       (fn (f,tms) => Term.Fn (Name.fromString f, tms))) ||
+       (fn (f,tms) => Term.Fn (Name.mkFnName f, tms))) ||
        nonFunctionArgumentsTermParser) input
 
   and functionArgumentsParser input =
@@ -569,8 +556,8 @@ local
        (fn (f,((),(t,(ts,())))) => (f, t :: ts))) input
 
   and nonFunctionArgumentsTermParser input =
-      ((varParser >> (Term.Var o Name.fromString)) ||
-       (constantParser >> (fn n => Term.Fn (Name.fromString n, [])))) input
+      ((varParser >> (Term.Var o Name.mkVarName)) ||
+       (constantParser >> (fn n => Term.Fn (Name.mkFnName n, [])))) input
 
   fun binaryAtomParser tm =
       ((punctParser #"=" ++ termParser) >>
@@ -580,7 +567,7 @@ local
 
   fun maybeBinaryAtomParser (s,tms) =
       let
-        val tm = Term.Fn (Name.fromString s, tms)
+        val tm = Term.Fn (Name.mkFnName s, tms)
       in
         optional (binaryAtomParser tm) >>
         (fn SOME lit => lit
@@ -599,7 +586,7 @@ local
             ("$true",[]) => Boolean pol
           | ("$false",[]) => Boolean (not pol)
           | ("$equal",[l,r]) => Literal (pol, Atom.mkEq (l,r))
-          | (r,tms) => Literal (pol, (Name.fromString r, tms)));
+          | (r,tms) => Literal (pol, (Name.mkRelName r, tms)));
 
   val literalParser =
       ((punctParser #"~" ++ atomParser) >> (negate o snd)) ||
@@ -724,7 +711,7 @@ local
   and quantifiedFormulaParser input =
       ((quantifierParser ++ varListParser ++ punctParser #":" ++
         unitaryFormulaParser) >>
-       (fn (q,(v,((),f))) => q (map Name.fromString v, f))) input
+       (fn (q,(vs,((),f))) => q (map Name.mkVarName vs, f))) input
 
   and quantifierParser input =
       ((punctParser #"!" >> K Formula.listMkForall) ||
@@ -764,9 +751,9 @@ local
         Parse.everything (parser >> singleton) tokens
       end;
 
-  fun canParseName parser n =
+  fun canParseName dest parser n =
       let
-        val chars = Stream.fromString (Name.toString n)
+        val chars = Stream.fromString (dest n)
       in
         case Stream.toList (parseChars parser chars) of
           [_] => true
@@ -776,10 +763,10 @@ local
 in
   val parseFormula = parseChars formulaParser;
 
-  val isTptpRelation = canParseName functionParser
-  and isTptpProposition = canParseName propositionParser
-  and isTptpFunction = canParseName functionParser
-  and isTptpConstant = canParseName constantParser;
+  val isTptpRelation = canParseName Name.destRelName functionParser
+  and isTptpProposition = canParseName Name.destRelName propositionParser
+  and isTptpFunction = canParseName Name.destFnName functionParser
+  and isTptpConstant = canParseName Name.destFnName constantParser;
 end;
 
 (* ------------------------------------------------------------------------- *)
@@ -792,31 +779,43 @@ local
 
   val isTptpInitialChar = Char.isAlpha;
 
-  fun explodeTptp n =
+  fun explodeTptp s =
       let
-        val l = explode (Name.toString n)
+        val l = explode s
         val l = List.filter isTptpChar l
         val l = dropWhile (not o isTptpInitialChar) l
       in
         l
       end;
 
-  fun mkTptpName s n =
-      case explodeTptp n of
-        [] => s
-      | c :: cs => implode (Char.toLower c :: cs);
+  fun mkTptpName mk dest isLower emp n =
+      let
+        val s =
+            case explodeTptp (dest n) of
+              [] => emp
+            | c :: cs =>
+              let
+                val first = if isLower then Char.toLower else Char.toUpper
+
+                val c = first c
+              in
+                implode (c :: cs)
+              end
+      in
+        mk s
+      end;
 in
-  fun mkTptpVar n =
+  val mkTptpVar = mkTptpName Name.mkVarName Name.destVarName false "X";
+
+  fun isTptpVar v = Name.equal (mkTptpVar v) v;
+
+  val mkTptpFnName = mkTptpName Name.mkFnName Name.destFnName true;
+
+  val mkTptpRelName = mkTptpName Name.mkRelName Name.destRelName true;
       Name.fromString
       (case explodeTptp n of
          [] => "X"
        | c :: cs => implode (Char.toUpper c :: cs));
-
-  fun isTptpVar v = Name.equal (mkTptpVar v) v;
-
-  fun mkTptpFnName s n = Name.fromString (mkTptpName s n);
-
-  fun mkTptpRelName s n = Name.fromString (mkTptpName s n);
 end;
 
 fun mkAddTptpVar v (a,s) =
@@ -1346,7 +1345,7 @@ local
 
   fun ppAtomTstp atm =
       case total Atom.destEq atm of
-        SOME (a,b) => ppAtom' ("$equal",[a,b])
+        SOME (a,b) => ppAtom (Name.mkRelName "$equal", [a,b])
       | NONE => ppAtom atm;
 
   fun ppLiteralTstp (pol,atm) =

@@ -170,7 +170,7 @@ end;
 (* The equality relation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
-val eqRelationName = Name.fromString "=";
+val eqRelationName = Name.mkRelName "=";
 
 val eqRelationArity = 2;
 
