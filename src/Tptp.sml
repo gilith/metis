@@ -22,6 +22,20 @@ fun isHdTlString hp tp s =
       n > 0 andalso hp (String.sub (s,0)) andalso ct (n - 1)
     end;
 
+fun stripSuffix pred s =
+    let
+      fun f 0 = ""
+        | f n =
+          let
+            val n' = n - 1
+          in
+            if pred (String.sub (s,n')) then f n'
+            else String.substring (s,0,n)
+          end
+    in
+      f (size s)
+    end;
+
 (* ------------------------------------------------------------------------- *)
 (* Mapping TPTP functions and relations to different names.                  *)
 (* ------------------------------------------------------------------------- *)
@@ -29,9 +43,7 @@ fun isHdTlString hp tp s =
 val functionMapping = ref
     let
       fun fromString {name,arity,tptp} =
-          {name = Name.mkFnName name,
-           arity = arity,
-           tptp = Name.mkFnName tptp}
+          {name = Name.fromString name, arity = arity, tptp = tptp}
     in
       map fromString
         [(* Mapping TPTP functions to infix symbols *)
@@ -52,9 +64,7 @@ val functionMapping = ref
 val relationMapping = ref
     let
       fun fromString {name,arity,tptp} =
-          {name = Name.mkRelName name,
-           arity = arity,
-           tptp = Name.mkRelName tptp}
+          {name = Name.fromString name, arity = arity, tptp = tptp}
     in
       map fromString
         [(* Mapping TPTP relations to infix symbols *)
@@ -66,19 +76,282 @@ val relationMapping = ref
          {name = "{}", arity = 1, tptp = "bool"}]
     end;
 
-fun mappingToTptp x =
+(* ------------------------------------------------------------------------- *)
+(* Mapping functions, relations and variables to TPTP names.                 *)
+(* ------------------------------------------------------------------------- *)
+
+datatype varNameMap =
+    VarNameMap of StringSet.set * string NameMap.map;
+
+datatype symbolMap =
+    SymbolMap of
+      {funcs : StringSet.set * string NameArityMap.map,
+       rels : StringSet.set * string NameArityMap.map};
+
+fun variant avoid s =
+    if not (StringSet.member s avoid) then s
+    else
+      let
+        val s = stripSuffix Char.isDigit s
+
+        fun var i =
+            let
+              val s_i = s ^ Int.toString i
+            in
+              if not (StringSet.member s_i avoid) then s_i else var (i + 1)
+            end
+      in
+        var 0
+      end;
+
+local
+  fun isTptpChar #"_" = true
+    | isTptpChar c = Char.isAlphaNum c;
+
+  val isTptpInitialChar = Char.isAlpha;
+
+  fun explodeTptp s =
+      let
+        val l = explode s
+        val l = List.filter isTptpChar l
+        val l = dropWhile (not o isTptpInitialChar) l
+      in
+        l
+      end;
+
+  fun mkTptpName isLower emp s =
+      let
+        val s =
+            case explodeTptp s of
+              [] => emp
+            | c :: cs =>
+              let
+                val first = if isLower then Char.toLower else Char.toUpper
+
+                val c = first c
+              in
+                implode (c :: cs)
+              end
+      in
+        s
+      end;
+in
+  val mkTptpVarName = mkTptpName false "X"
+  and mkTptpConstName = mkTptpName true "c"
+  and mkTptpFnName = mkTptpName true "f"
+  and mkTptpPropName = mkTptpName true "p"
+  and mkTptpRelName = mkTptpName true "r";
+end;
+
+val emptyVarMap = VarNameMap (StringSet.empty, NameMap.new ());
+
+fun varToTptp v vm =
+    let
+      val VarNameMap (avoid,mapping) = vm
+    in
+      case NameMap.peek mapping v of
+        SOME s => (s,vm)
+      | NONE =>
+        let
+          val s = variant avoid (mkTptpVarName (Name.toString v))
+          val avoid = StringSet.add avoid s
+          and mapping = NameMap.insert mapping (v,s)
+          val vm = VarNameMap (avoid,mapping)
+        in
+          (s,vm)
+        end
+    end;
+
+local
+  val emptySym : StringSet.set * string NameArityMap.map =
+      (StringSet.empty, NameArityMap.new ());
+
+  fun addSym ({name,arity,tptp},(avoid,mapping)) =
+      let
+        val avoid = StringSet.add avoid tptp
+        val mapping = NameArityMap.insert mapping ((name,arity),tptp)
+      in
+        (avoid,mapping)
+      end;
+
+  val fromListSym = List.foldl addSym emptySym;
+in
+  fun newSymbolMap () =
+      let
+        val funcs = fromListSym (!functionMapping)
+        and rels = fromListSym (!relationMapping)
+      in
+        SymbolMap {funcs = funcs, rels = rels}
+      end;
+end;
+
+fun fnToTptp fa sym =
+    let
+      val SymbolMap {funcs,rels} = sym
+      val (avoid,mapping) = funcs
+    in
+      case NameArityMap.peek mapping fa of
+        SOME s => (s,sym)
+      | NONE =>
+        let
+          val (n,a) = fa
+          val s = Name.toString n
+          val s = (if a = 0 then mkTptpConstName else mkTptpFnName) s
+          val s = variant avoid s
+          val avoid = StringSet.add avoid s
+          and mapping = NameArityMap.insert mapping (fa,s)
+          val funcs = (avoid,mapping)
+          val sym = SymbolMap {funcs = funcs, rels = rels}
+        in
+          (s,sym)
+        end
+    end;
+
+fun relToTptp ra sym =
+    let
+      val SymbolMap {funcs,rels} = sym
+      val (avoid,mapping) = rels
+    in
+      case NameArityMap.peek mapping ra of
+        SOME s => (s,sym)
+      | NONE =>
+        let
+          val (n,a) = ra
+          val s = Name.toString n
+          val s = (if a = 0 then mkTptpPropName else mkTptpRelName) s
+          val s = variant avoid s
+          val avoid = StringSet.add avoid s
+          and mapping = NameArityMap.insert mapping (ra,s)
+          val rels = (avoid,mapping)
+          val sym = SymbolMap {funcs = funcs, rels = rels}
+        in
+          (s,sym)
+        end
+    end;
+
+(***
+local
+  fun mkTptpFunc (n,0) = if isTptpConstant n then n else mkTptpFnName "c" n
+    | mkTptpFunc (n,_) = if isTptpFunction n then n else mkTptpFnName "f" n;
+
+  fun mkTptpRel (n,0) = if isTptpProposition n then n else mkTptpRelName "p" n
+    | mkTptpRel (n,_) = if isTptpRelation n then n else mkTptpRelName "r" n;
+
+  fun mkMap set norm mapping =
+      let
+        val mapping = mappingToTptp mapping
+
+        fun mk (n_r,(a,m)) =
+            case NameArityMap.peek mapping n_r of
+              SOME t => (a, NameArityMap.insert m (n_r,t))
+            | NONE =>
+              let
+                val t = norm n_r
+                val (n,_) = n_r
+                val t = if Name.equal t n then n else Term.variantNum a t
+              in
+                (NameSet.add a t, NameArityMap.insert m (n_r,t))
+              end
+
+        val avoid =
+            let
+              fun mk ((n,r),s) =
+                  let
+                    val n = Option.getOpt (NameArityMap.peek mapping (n,r), n)
+                  in
+                    NameSet.add s n
+                  end
+            in
+              NameAritySet.foldl mk NameSet.empty set
+            end
+      in
+        snd (NameAritySet.foldl mk (avoid, NameArityMap.new ()) set)
+      end;
+
+  fun alphaFormula fm =
+      let
+        fun alpha a s fm =
+            case fm of
+              Formula.True => Formula.True
+            | Formula.False => Formula.False
+            | Formula.Atom atm => Formula.Atom (Atom.subst s atm)
+            | Formula.Not p => Formula.Not (alpha a s p)
+            | Formula.And (p,q) => Formula.And (alpha a s p, alpha a s q)
+            | Formula.Or (p,q) => Formula.Or (alpha a s p, alpha a s q)
+            | Formula.Imp (p,q) => Formula.Imp (alpha a s p, alpha a s q)
+            | Formula.Iff (p,q) => Formula.Iff (alpha a s p, alpha a s q)
+            | Formula.Forall (v,p) => alphaQuant Formula.Forall a s v p
+            | Formula.Exists (v,p) => alphaQuant Formula.Exists a s v p
+
+        and alphaQuant quant a s v p =
+            let
+              val (v,(a,s)) = mkAddTptpVar v (a,s)
+            in
+              quant (v, alpha a s p)
+            end
+
+        val (avoid,sub) = mkTptpVars (formulaFreeVars fm)
+(*MetisTrace5
+        val () = Print.trace Subst.pp "Tptp.alpha: sub" sub
+*)
+      in
+        case fm of
+          CnfFormula {name,role,clause} =>
+          CnfFormula
+            {name = name, role = role, clause = clauseSubst sub clause}
+        | FofFormula {name,role,formula} =>
+          FofFormula
+            {name = name, role = role, formula = alpha avoid sub formula}
+      end;
+
+  fun formulaToTptp fr fm = alphaFormula (mapFormula fr fm);
+in
+  fun formulasToTptp formulas =
+      let
+        val funcs = formulasFunctions formulas
+        and rels = formulasRelations formulas
+
+        val functionMap = mkMap funcs mkTptpFunc (!functionMapping)
+        and relationMap = mkMap rels mkTptpRel (!relationMapping)
+
+        val fr = {functionMap = functionMap, relationMap = relationMap}
+      in
+        map (formulaToTptp fr) formulas
+      end;
+end;
+
+(*** Wrong way of doing things: build a map instead
+fun formulasFromTptp formulas =
+    let
+      val functionMap = mappingFromTptp (!functionMapping)
+      and relationMap = mappingFromTptp (!relationMapping)
+
+      val fr = {functionMap = functionMap, relationMap = relationMap}
+    in
+      map (mapFormula fr) formulas
+    end;
+***)
+
+
+fun mappingToTptp x : string NameArityMap.map =
     let
       fun mk ({name,arity,tptp},m) = NameArityMap.insert m ((name,arity),tptp)
     in
       foldl mk (NameArityMap.new ()) x
     end;
 
-fun mappingFromTptp x =
-    let
-      fun mk ({name,arity,tptp},m) = NameArityMap.insert m ((tptp,arity),name)
-    in
-      foldl mk (NameArityMap.new ()) x
-    end;
+local
+  val stringArityCompare = Useful.prodCompare String.compare Int.compare;
+
+  val emptyStringArityMap = Map.new stringArityCompare;
+in
+  fun mappingFromTptp x : (string * int, Name.name) Map.map =
+      let
+        fun mk ({name,arity,tptp},m) = Map.insert m ((tptp,arity),name)
+      in
+        foldl mk emptyStringArityMap x
+      end;
+end;
 
 fun findMapping mapping (name_arity as (n,_)) =
     Option.getOpt (NameArityMap.peek mapping name_arity, n);
@@ -122,6 +395,7 @@ fun mapFof fr =
     in
       form
     end;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Comments.                                                                 *)
@@ -203,10 +477,12 @@ fun literalSubst sub lit =
       Boolean _ => lit
     | Literal l => Literal (Literal.subst sub l);
 
+(***
 fun mapLiteral fr lit =
     case lit of
       Boolean _ => lit
     | Literal l => Literal (mapLit fr l)
+***)
 
 fun destLiteral (Literal l) = l
   | destLiteral _ = raise Error "destLiteral";
@@ -321,7 +597,9 @@ val clauseFreeVars =
 
 fun clauseSubst sub lits = map (literalSubst sub) lits;
 
+(***
 fun mapClause fr lits = map (mapLiteral fr) lits;
+***)
 
 fun clauseToFormula lits = Formula.listMkDisj (map literalToFormula lits);
 
@@ -362,10 +640,12 @@ fun formulaRelations (CnfFormula {clause,...}) = clauseRelations clause
 fun formulaFreeVars (CnfFormula {clause,...}) = clauseFreeVars clause
   | formulaFreeVars (FofFormula {formula,...}) = Formula.freeVars formula;
 
+(***
 fun mapFormula fr (CnfFormula {name,role,clause}) =
     CnfFormula {name = name, role = role, clause = mapClause fr clause}
   | mapFormula fr (FofFormula {name,role,formula}) =
     FofFormula {name = name, role = role, formula = mapFof fr formula};
+***)
 
 val formulasFunctions =
     let
@@ -546,7 +826,7 @@ local
 
   fun termParser input =
       ((functionArgumentsParser >>
-       (fn (f,tms) => Term.Fn (Name.mkFnName f, tms))) ||
+       (fn (f,tms) => Term.Fn (Name.fromString f, tms))) ||
        nonFunctionArgumentsTermParser) input
 
   and functionArgumentsParser input =
@@ -556,8 +836,8 @@ local
        (fn (f,((),(t,(ts,())))) => (f, t :: ts))) input
 
   and nonFunctionArgumentsTermParser input =
-      ((varParser >> (Term.Var o Name.mkVarName)) ||
-       (constantParser >> (fn n => Term.Fn (Name.mkFnName n, [])))) input
+      ((varParser >> (Term.Var o Name.fromString)) ||
+       (constantParser >> (fn n => Term.Fn (Name.fromString n, [])))) input
 
   fun binaryAtomParser tm =
       ((punctParser #"=" ++ termParser) >>
@@ -567,7 +847,7 @@ local
 
   fun maybeBinaryAtomParser (s,tms) =
       let
-        val tm = Term.Fn (Name.mkFnName s, tms)
+        val tm = Term.Fn (Name.fromString s, tms)
       in
         optional (binaryAtomParser tm) >>
         (fn SOME lit => lit
@@ -586,7 +866,7 @@ local
             ("$true",[]) => Boolean pol
           | ("$false",[]) => Boolean (not pol)
           | ("$equal",[l,r]) => Literal (pol, Atom.mkEq (l,r))
-          | (r,tms) => Literal (pol, (Name.mkRelName r, tms)));
+          | (r,tms) => Literal (pol, (Name.fromString r, tms)));
 
   val literalParser =
       ((punctParser #"~" ++ atomParser) >> (negate o snd)) ||
@@ -711,7 +991,7 @@ local
   and quantifiedFormulaParser input =
       ((quantifierParser ++ varListParser ++ punctParser #":" ++
         unitaryFormulaParser) >>
-       (fn (q,(vs,((),f))) => q (map Name.mkVarName vs, f))) input
+       (fn (q,(vs,((),f))) => q (map Name.fromString vs, f))) input
 
   and quantifierParser input =
       ((punctParser #"!" >> K Formula.listMkForall) ||
@@ -750,193 +1030,26 @@ local
       in
         Parse.everything (parser >> singleton) tokens
       end;
-
-  fun canParseName dest parser n =
+(***
+  fun canParseName parser n =
       let
-        val chars = Stream.fromString (dest n)
+        val chars = Stream.fromString n
       in
         case Stream.toList (parseChars parser chars) of
           [_] => true
         | _ => false
       end
       handle Parse.NoParse => false;
+***)
 in
   val parseFormula = parseChars formulaParser;
-
-  val isTptpRelation = canParseName Name.destRelName functionParser
-  and isTptpProposition = canParseName Name.destRelName propositionParser
-  and isTptpFunction = canParseName Name.destFnName functionParser
-  and isTptpConstant = canParseName Name.destFnName constantParser;
+(***
+  val isTptpRelation = canParseName functionParser
+  and isTptpProposition = canParseName propositionParser
+  and isTptpFunction = canParseName functionParser
+  and isTptpConstant = canParseName constantParser;
+***)
 end;
-
-(* ------------------------------------------------------------------------- *)
-(* Converting to and from TPTP names.                                        *)
-(* ------------------------------------------------------------------------- *)
-
-local
-  fun isTptpChar #"_" = true
-    | isTptpChar c = Char.isAlphaNum c;
-
-  val isTptpInitialChar = Char.isAlpha;
-
-  fun explodeTptp s =
-      let
-        val l = explode s
-        val l = List.filter isTptpChar l
-        val l = dropWhile (not o isTptpInitialChar) l
-      in
-        l
-      end;
-
-  fun mkTptpName mk dest isLower emp n =
-      let
-        val s =
-            case explodeTptp (dest n) of
-              [] => emp
-            | c :: cs =>
-              let
-                val first = if isLower then Char.toLower else Char.toUpper
-
-                val c = first c
-              in
-                implode (c :: cs)
-              end
-      in
-        mk s
-      end;
-in
-  val mkTptpVar = mkTptpName Name.mkVarName Name.destVarName false "X";
-
-  fun isTptpVar v = Name.equal (mkTptpVar v) v;
-
-  val mkTptpFnName = mkTptpName Name.mkFnName Name.destFnName true;
-
-  val mkTptpRelName = mkTptpName Name.mkRelName Name.destRelName true;
-      Name.fromString
-      (case explodeTptp n of
-         [] => "X"
-       | c :: cs => implode (Char.toUpper c :: cs));
-end;
-
-fun mkAddTptpVar v (a,s) =
-    let
-      val v' = Term.variantNum a (mkTptpVar v)
-      val a = NameSet.add a v'
-      and s = if Name.equal v' v then s else Subst.insert s (v, Term.Var v')
-    in
-      (v',(a,s))
-    end
-
-local
-  fun addTptpVar (v,a_s) = snd (mkAddTptpVar v a_s)
-in
-  fun mkTptpVars vs =
-      let
-        val (avoid,vs) = NameSet.partition isTptpVar vs
-      in
-        NameSet.foldl addTptpVar (avoid,Subst.empty) vs
-      end;
-end;
-
-local
-  fun mkTptpFunc (n,0) = if isTptpConstant n then n else mkTptpFnName "c" n
-    | mkTptpFunc (n,_) = if isTptpFunction n then n else mkTptpFnName "f" n;
-
-  fun mkTptpRel (n,0) = if isTptpProposition n then n else mkTptpRelName "p" n
-    | mkTptpRel (n,_) = if isTptpRelation n then n else mkTptpRelName "r" n;
-
-  fun mkMap set norm mapping =
-      let
-        val mapping = mappingToTptp mapping
-
-        fun mk (n_r,(a,m)) =
-            case NameArityMap.peek mapping n_r of
-              SOME t => (a, NameArityMap.insert m (n_r,t))
-            | NONE =>
-              let
-                val t = norm n_r
-                val (n,_) = n_r
-                val t = if Name.equal t n then n else Term.variantNum a t
-              in
-                (NameSet.add a t, NameArityMap.insert m (n_r,t))
-              end
-
-        val avoid =
-            let
-              fun mk ((n,r),s) =
-                  let
-                    val n = Option.getOpt (NameArityMap.peek mapping (n,r), n)
-                  in
-                    NameSet.add s n
-                  end
-            in
-              NameAritySet.foldl mk NameSet.empty set
-            end
-      in
-        snd (NameAritySet.foldl mk (avoid, NameArityMap.new ()) set)
-      end;
-
-  fun alphaFormula fm =
-      let
-        fun alpha a s fm =
-            case fm of
-              Formula.True => Formula.True
-            | Formula.False => Formula.False
-            | Formula.Atom atm => Formula.Atom (Atom.subst s atm)
-            | Formula.Not p => Formula.Not (alpha a s p)
-            | Formula.And (p,q) => Formula.And (alpha a s p, alpha a s q)
-            | Formula.Or (p,q) => Formula.Or (alpha a s p, alpha a s q)
-            | Formula.Imp (p,q) => Formula.Imp (alpha a s p, alpha a s q)
-            | Formula.Iff (p,q) => Formula.Iff (alpha a s p, alpha a s q)
-            | Formula.Forall (v,p) => alphaQuant Formula.Forall a s v p
-            | Formula.Exists (v,p) => alphaQuant Formula.Exists a s v p
-
-        and alphaQuant quant a s v p =
-            let
-              val (v,(a,s)) = mkAddTptpVar v (a,s)
-            in
-              quant (v, alpha a s p)
-            end
-
-        val (avoid,sub) = mkTptpVars (formulaFreeVars fm)
-(*MetisTrace5
-        val () = Print.trace Subst.pp "Tptp.alpha: sub" sub
-*)
-      in
-        case fm of
-          CnfFormula {name,role,clause} =>
-          CnfFormula
-            {name = name, role = role, clause = clauseSubst sub clause}
-        | FofFormula {name,role,formula} =>
-          FofFormula
-            {name = name, role = role, formula = alpha avoid sub formula}
-      end;
-
-  fun formulaToTptp fr fm = alphaFormula (mapFormula fr fm);
-in
-  fun formulasToTptp formulas =
-      let
-        val funcs = formulasFunctions formulas
-        and rels = formulasRelations formulas
-
-        val functionMap = mkMap funcs mkTptpFunc (!functionMapping)
-        and relationMap = mkMap rels mkTptpRel (!relationMapping)
-
-        val fr = {functionMap = functionMap, relationMap = relationMap}
-      in
-        map (formulaToTptp fr) formulas
-      end;
-end;
-
-fun formulasFromTptp formulas =
-    let
-      val functionMap = mappingFromTptp (!functionMapping)
-      and relationMap = mappingFromTptp (!relationMapping)
-
-      val fr = {functionMap = functionMap, relationMap = relationMap}
-    in
-      map (mapFormula fr) formulas
-    end;
 
 (* ------------------------------------------------------------------------- *)
 (* Clause information.                                                       *)
@@ -1345,7 +1458,7 @@ local
 
   fun ppAtomTstp atm =
       case total Atom.destEq atm of
-        SOME (a,b) => ppAtom (Name.mkRelName "$equal", [a,b])
+        SOME (a,b) => ppAtom (Name.fromString "$equal", [a,b])
       | NONE => ppAtom atm;
 
   fun ppLiteralTstp (pol,atm) =

@@ -12,19 +12,19 @@ open Useful;
 (* Variable names.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
-val xVarName = Name.mkVarName "x";
+val xVarName = Name.fromString "x";
 val xVar = Term.Var xVarName;
 
-val yVarName = Name.mkVarName "y";
+val yVarName = Name.fromString "y";
 val yVar = Term.Var yVarName;
 
-val zVarName = Name.mkVarName "z";
+val zVarName = Name.fromString "z";
 val zVar = Term.Var zVarName;
 
-fun xIVarName i = Name.mkVarName ("x" ^ Int.toString i);
+fun xIVarName i = Name.fromString ("x" ^ Int.toString i);
 fun xIVar i = Term.Var (xIVarName i);
 
-fun yIVarName i = Name.mkVarName ("y" ^ Int.toString i);
+fun yIVarName i = Name.fromString ("y" ^ Int.toString i);
 fun yIVar i = Term.Var (yIVarName i);
 
 (* ------------------------------------------------------------------------- *)

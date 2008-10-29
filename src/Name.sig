@@ -12,21 +12,6 @@ sig
 
 type name
 
-(***
-val toString : name -> string
-
-val fromString : string -> name
-***)
-
-val mkVarName : string -> name
-val destVarName : name -> string
-
-val mkFnName : string -> name
-val destFnName : name -> string
-
-val mkRelName : string -> name
-val destRelName : name -> string
-
 (* ------------------------------------------------------------------------- *)
 (* A total ordering.                                                         *)
 (* ------------------------------------------------------------------------- *)
@@ -48,5 +33,9 @@ val variantNum : (name -> bool) -> name -> name
 (* ------------------------------------------------------------------------- *)
 
 val pp : name Print.pp
+
+val toString : name -> string
+
+val fromString : string -> name
 
 end

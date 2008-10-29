@@ -624,13 +624,13 @@ val newSkolemFunction =
       fn n =>
          let
            val ref m = counter
-           val s = Name.destVarName n
+           val s = Name.toString n
            val i = Option.getOpt (StringMap.peek m s, 0)
            val () = counter := StringMap.insert m (s, i + 1)
            val i = if i = 0 then "" else "_" ^ Int.toString i
            val s = skolemPrefix ^ "_" ^ s ^ i
          in
-           Name.mkFnName s
+           Name.fromString s
          end
     end;
 
@@ -1068,7 +1068,7 @@ fun newDefinition def =
     let
       val fv = freeVars def
       val rel = newDefinitionRelation ()
-      val atm = (Name.mkRelName rel, NameSet.transform Term.Var fv)
+      val atm = (Name.fromString rel, NameSet.transform Term.Var fv)
       val fm = Formula.Iff (Formula.Atom atm, toFormula def)
       val lit = Literal (fv,(false,atm))
       val prf = singletonProof rel

@@ -30,24 +30,6 @@ fun stripSuffix pred s =
 
 type name = string;
 
-(***
-fun toString s : string = s;
-
-fun fromString s : name = s;
-***)
-
-fun mkVarName s : name = s;
-
-fun destVarName n : string = n;
-
-fun mkFnName s : name = s;
-
-fun destFnName n : string = n;
-
-fun mkRelName s : name = s;
-
-fun destRelName n : string = n;
-
 (* ------------------------------------------------------------------------- *)
 (* A total ordering.                                                         *)
 (* ------------------------------------------------------------------------- *)
@@ -88,6 +70,10 @@ fun variantNum acceptable n =
 (* ------------------------------------------------------------------------- *)
 
 val pp = Print.ppString;
+
+fun toString s : string = s;
+
+fun fromString s : name = s;
 
 end
 

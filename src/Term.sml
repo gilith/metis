@@ -234,7 +234,7 @@ end;
 local
   val prefix  = "_";
 
-  fun numVar i = Var (Name.mkVarName (mkPrefix prefix (Int.toString i)));
+  fun numVar i = Var (Name.fromString (mkPrefix prefix (Int.toString i)));
 in
   fun newVar () = numVar (newInt ());
 
@@ -253,7 +253,7 @@ end;
 (* Special support for terms with type annotations.                          *)
 (* ------------------------------------------------------------------------- *)
 
-val hasTypeName = Name.mkFnName ":";
+val hasTypeName = Name.fromString ":";
 
 fun destFnHasType (f,a) =
     if not (Name.equal f hasTypeName) then raise Error "Term.destFnHasType"
@@ -327,7 +327,7 @@ end;
 (* Special support for terms with an explicit function application operator. *)
 (* ------------------------------------------------------------------------- *)
 
-val combName = Name.mkFnName ".";
+val combName = Name.fromString ".";
 
 fun mkFnComb (fTm,aTm) = (combName, [fTm,aTm]);
 
@@ -433,7 +433,7 @@ fun pp inputTerm =
           case tm of
             Fn (f,[a,b]) =>
             let
-              val f = Name.destFnName f
+              val f = Name.toString f
             in
               if StringSet.member f iTokens then SOME (f,a,b) else NONE
             end
@@ -448,7 +448,7 @@ fun pp inputTerm =
 
       fun checkVarName bv n =
           let
-            val s = Name.destVarName n
+            val s = Name.toString n
           in
             if vName bv s then s else "$" ^ s
           end
@@ -457,7 +457,7 @@ fun pp inputTerm =
 
       fun checkFunctionName bv n =
           let
-            val s = Name.destFnName n
+            val s = Name.toString n
           in
             if StringSet.member s specialTokens orelse vName bv s then
               "(" ^ s ^ ")"
@@ -472,14 +472,14 @@ fun pp inputTerm =
       fun stripNeg tm =
           case tm of
             Fn (f,[a]) =>
-            if Name.destFnName f <> neg then (0,tm)
+            if Name.toString f <> neg then (0,tm)
             else let val (n,tm) = stripNeg a in (n + 1, tm) end
           | _ => (0,tm)
 
       val destQuant =
           let
             fun dest q (Fn (q', [Var v, body])) =
-                if Name.destFnName q' <> q then NONE
+                if Name.toString q' <> q then NONE
                 else
                   (case dest q body of
                      NONE => SOME (q,v,[],body)
@@ -493,7 +493,7 @@ fun pp inputTerm =
 
       fun destBrack (Fn (b,[tm])) =
           let
-            val s = Name.destFnName b
+            val s = Name.toString b
           in
             case List.find (fn (n,_,_) => n = s) bracks of
               NONE => NONE
@@ -525,7 +525,7 @@ fun pp inputTerm =
             NONE => term bv tm
           | SOME (q,v,vs,tm) =>
             let
-              val bv = StringSet.addList bv (map Name.destVarName (v :: vs))
+              val bv = StringSet.addList bv (map Name.toString (v :: vs))
             in
               Print.program
                 [Print.addString q,
@@ -629,7 +629,7 @@ local
         val iTokens = Print.tokensInfixes iOps
 
         val iParser =
-            parseInfixes iOps (fn (f,a,b) => Fn (Name.mkFnName f, [a,b]))
+            parseInfixes iOps (fn (f,a,b) => Fn (Name.fromString f, [a,b]))
 
         val specialTokens =
             StringSet.addList iTokens (neg :: quants @ ["$"] @ bTokens)
@@ -647,20 +647,20 @@ local
 
         fun basic bv tokens =
             let
-              val var = varName bv >> (Var o Name.mkVarName)
+              val var = varName bv >> (Var o Name.fromString)
 
               val const =
-                  functionName bv >> (fn f => Fn (Name.mkFnName f, []))
+                  functionName bv >> (fn f => Fn (Name.fromString f, []))
 
               fun bracket (ab,a,b) =
                   (exact a ++ term bv ++ exact b) >>
                   (fn (_,(tm,_)) =>
-                      if ab = "()" then tm else Fn (Name.mkFnName ab, [tm]))
+                      if ab = "()" then tm else Fn (Name.fromString ab, [tm]))
 
               fun quantifier q =
                   let
                     fun bind (v,t) =
-                        Fn (Name.mkFnName q, [Var (Name.mkVarName v), t])
+                        Fn (Name.fromString q, [Var (Name.fromString v), t])
                   in
                     (exact q ++ atLeastOne (some possibleVarName) ++
                      exact ".") >>++
@@ -681,11 +681,11 @@ local
 
               val function =
                   (functionName bv ++ many (basic bv)) >>
-                  (fn (f,args) => Fn (Name.mkFnName f, args)) ||
+                  (fn (f,args) => Fn (Name.fromString f, args)) ||
                   basic bv
             in
               (negations ++ function) >>
-              (fn (n,tm) => funpow n (fn t => Fn (Name.mkFnName neg, [t])) tm)
+              (fn (n,tm) => funpow n (fn t => Fn (Name.fromString neg, [t])) tm)
             end tokens
 
         and term bv tokens = iParser (molecule bv) tokens

@@ -12,7 +12,7 @@ open Useful;
 (* Anonymous variables.                                                      *)
 (* ------------------------------------------------------------------------- *)
 
-val anonymousName = Name.mkVarName "_";
+val anonymousName = Name.fromString "_";
 val anonymousVar = Term.Var anonymousName;
 
 (* ------------------------------------------------------------------------- *)
