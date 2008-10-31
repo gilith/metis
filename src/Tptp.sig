@@ -10,9 +10,14 @@ sig
 (* Mapping TPTP functions and relations to different names.                  *)
 (* ------------------------------------------------------------------------- *)
 
-val functionMapping : {name : Name.name, arity : int, tptp : string} list ref
+type tptpMapping
 
-val relationMapping : {name : Name.name, arity : int, tptp : string} list ref
+val defaultTptpMapping : tptpMapping
+
+val mkTptpMapping :
+    {functionMapping : {name : Name.name, arity : int, tptp : string} list,
+     relationMapping : {name : Name.name, arity : int, tptp : string} list} ->
+    tptpMapping
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP roles.                                                               *)
