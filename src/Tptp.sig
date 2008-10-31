@@ -133,9 +133,10 @@ val normalizeFofToCnf : problem -> problem list
 
 val goal : problem -> Formula.formula
 
-val read : {filename : string} -> problem
+val read : {mapping : tptpMapping, filename : string} -> problem
 
-val write : {filename : string} -> problem -> unit
+val write :
+    {problem : problem, mapping : tptpMapping, filename : string} -> unit
 
 val prove : {filename : string} -> bool
 

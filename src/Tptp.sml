@@ -132,21 +132,24 @@ datatype varToTptp =
 
 val emptyVarToTptp = VarToTptp (StringSet.empty, NameMap.new ());
 
-fun varToTptp v vm =
+fun addVarToTptp vm v =
     let
       val VarToTptp (avoid,mapping) = vm
+      val s = variant avoid (mkTptpVarName (Name.toString v))
+
+      val avoid = StringSet.add avoid s
+      and mapping = NameMap.insert mapping (v,s)
+    in
+      VarToTptp (avoid,mapping)
+    end;
+
+fun varToTptp vm v =
+    let
+      val VarToTptp (_,mapping) = vm
     in
       case NameMap.peek mapping v of
-        SOME s => (s,vm)
-      | NONE =>
-        let
-          val s = variant avoid (mkTptpVarName (Name.toString v))
-          val avoid = StringSet.add avoid s
-          and mapping = NameMap.insert mapping (v,s)
-          val vm = VarToTptp (avoid,mapping)
-        in
-          (s,vm)
-        end
+        SOME s => s
+      | NONE => raise Bug "Tptp.varToTptp: unknown var"
     end;
 
 (* ------------------------------------------------------------------------- *)
@@ -288,6 +291,34 @@ fun mkTptpMapping mapping =
          fromTptp = fromTptp}
     end;
 
+fun fnToTptp mapping fa =
+    let
+      val TptpMapping {toTptp, fromTptp = _} = mapping
+    in
+      fnNameToTptp toTptp fa
+    end;
+
+fun relToTptp mapping fa =
+    let
+      val TptpMapping {toTptp, fromTptp = _} = mapping
+    in
+      relNameToTptp toTptp fa
+    end;
+
+fun fnFromTptp mapping fa =
+    let
+      val TptpMapping {toTptp = _, fromTptp} = mapping
+    in
+      fnNameFromTptp fromTptp fa
+    end;
+
+fun relFromTptp mapping fa =
+    let
+      val TptpMapping {toTptp = _, fromTptp} = mapping
+    in
+      relNameFromTptp fromTptp fa
+    end;
+
 val defaultTptpMapping =
     let
       fun lift {name,arity,tptp} =
@@ -390,24 +421,48 @@ fun destLiteral (Literal l) = l
 (* Printing formulas using TPTP syntax.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-val ppVar = Name.pp;
+fun ppVar vm v =
+    let
+      val s = varToTptp vm v
+    in
+      Print.addString s
+    end;
 
-val ppConst = Name.pp;
+fun ppFnName fr fa = Print.addString (fnToTptp fr fa);
 
-local
-  fun term (Term.Var v) = ppVar v
-    | term (Term.Fn (c,[])) = ppConst c
-    | term (Term.Fn (f,tms)) =
+fun ppConst fr c = ppFnName fr (c,0);
+
+fun ppTerm fr vm =
+    let
+      fun term tm =
+          case tm of
+            Term.Var v => ppVar vm v
+          | Term.Fn (f,tms) =>
+            case length tms of
+              0 => ppConst fr f
+            | a =>
+              Print.blockProgram Print.Inconsistent 2
+                [ppFnName fr (f,a),
+                 Print.addString "(",
+                 Print.ppOpList "," term tms,
+                 Print.addString ")"]
+    in
+      Print.block Print.Inconsistent 0 o term
+    end;
+
+fun ppRelName fr ra = Print.addString (relToTptp fr ra);
+
+fun ppProp fr p = ppRelName fr (p,0);
+
+fun ppAtom fr vm (r,tms) =
+    case length tms of
+      0 => ppProp fr r
+    | a =>
       Print.blockProgram Print.Inconsistent 2
-        [Name.pp f,
+        [ppRelName fr (r,a),
          Print.addString "(",
-         Print.ppOpList "," term tms,
+         Print.ppOpList "," (ppTerm fr vm) tms,
          Print.addString ")"];
-in
-  fun ppTerm tm = Print.block Print.Inconsistent 0 (term tm);
-end;
-
-fun ppAtom atm = ppTerm (Term.Fn atm);
 
 local
   val neg = Print.sequence (Print.addString "~") (Print.addBreak 1);
@@ -705,220 +760,249 @@ local
           quoteParser;
     end;
 
-  fun formulaParser mapping =
-let
-in
-  fun parseFormula mapping =
-    let
+    val varParser = upperParser;
 
-in
-  val varParser = upperParser;
+    val varListParser =
+        (punctParser #"[" ++ varParser ++
+         many ((punctParser #"," ++ varParser) >> snd) ++
+         punctParser #"]") >>
+        (fn ((),(h,(t,()))) => h :: t);
 
-  val varListParser =
-      (punctParser #"[" ++ varParser ++
-       many ((punctParser #"," ++ varParser) >> snd) ++
-       punctParser #"]") >>
-      (fn ((),(h,(t,()))) => h :: t);
+    fun mkVarName _ v = varFromTptp v;
 
-  fun termParser input =
-      ((functionArgumentsParser >>
-       (fn (f,tms) => Term.Fn (Name.fromString f, tms))) ||
-       nonFunctionArgumentsTermParser) input
+    fun mkVar mapping v =
+        let
+          val v = mkVarName mapping v
+        in
+          Term.Var v
+        end
 
-  and functionArgumentsParser input =
-      ((functionParser ++ punctParser #"(" ++ termParser ++
-        many ((punctParser #"," ++ termParser) >> snd) ++
-        punctParser #")") >>
-       (fn (f,((),(t,(ts,())))) => (f, t :: ts))) input
+    fun mkFn mapping (f,tms) =
+        let
+          val f = fnFromTptp mapping (f, length tms)
+        in
+          Term.Fn (f,tms)
+        end;
 
-  and nonFunctionArgumentsTermParser input =
-      ((varParser >> (Term.Var o Name.fromString)) ||
-       (constantParser >> (fn n => Term.Fn (Name.fromString n, [])))) input
+    fun mkConst mapping c = mkFn mapping (c,[]);
 
-  fun binaryAtomParser tm =
-      ((punctParser #"=" ++ termParser) >>
+    fun mkAtom mapping (r,tms) =
+        let
+          val r = relFromTptp mapping (r, length tms)
+        in
+          (r,tms)
+        end;
+
+    fun termParser mapping =
+        (functionArgumentsParser mapping >> mkFn mapping) ||
+        nonFunctionArgumentsTermParser mapping
+
+    and functionArgumentsParser mapping =
+        (functionParser ++ punctParser #"(" ++ termParser mapping ++
+         many ((punctParser #"," ++ termParser mapping) >> snd) ++
+         punctParser #")") >>
+        (fn (f,((),(t,(ts,())))) => (f, t :: ts))
+
+    and nonFunctionArgumentsTermParser mapping =
+        varParser >> mkVar mapping ||
+        constantParser >> mkConst mapping
+
+    fun binaryAtomParser mapping tm =
+      ((punctParser #"=" ++ termParser mapping) >>
        (fn ((),r) => (true,("$equal",[tm,r])))) ||
-      ((symbolParser "!=" ++ termParser) >>
+      ((symbolParser "!=" ++ termParser mapping) >>
        (fn ((),r) => (false,("$equal",[tm,r]))));
 
-  fun maybeBinaryAtomParser (s,tms) =
-      let
-        val tm = Term.Fn (Name.fromString s, tms)
-      in
-        optional (binaryAtomParser tm) >>
-        (fn SOME lit => lit
-          | NONE => (true,(s,tms)))
-      end;
+    fun maybeBinaryAtomParser mapping (s,tms) =
+        let
+          val tm = mkFn mapping (s,tms)
+        in
+          optional (binaryAtomParser mapping tm) >>
+          (fn SOME lit => lit
+            | NONE => (true,(s,tms)))
+        end;
 
-  val literalAtomParser =
-      (functionArgumentsParser >>++ maybeBinaryAtomParser) ||
-      (nonFunctionArgumentsTermParser >>++ binaryAtomParser) ||
-      (propositionParser >> (fn s => (true,(s,[]))));
+    fun literalAtomParser mapping =
+        (functionArgumentsParser mapping >>++
+         maybeBinaryAtomParser mapping) ||
+        (nonFunctionArgumentsTermParser mapping >>++
+         binaryAtomParser mapping) ||
+        (propositionParser >> (fn s => (true,(s,[]))));
 
-  val atomParser =
-      literalAtomParser >>
-      (fn (pol,rel) =>
-          case rel of
-            ("$true",[]) => Boolean pol
-          | ("$false",[]) => Boolean (not pol)
-          | ("$equal",[l,r]) => Literal (pol, Atom.mkEq (l,r))
-          | (r,tms) => Literal (pol, (Name.fromString r, tms)));
+    fun atomParser mapping =
+        literalAtomParser mapping >>
+        (fn (pol,rel) =>
+            case rel of
+              ("$true",[]) => Boolean pol
+            | ("$false",[]) => Boolean (not pol)
+            | ("$equal",[l,r]) => Literal (pol, Atom.mkEq (l,r))
+            | (r,tms) => Literal (pol, mkAtom mapping (r,tms)));
 
-  val literalParser =
-      ((punctParser #"~" ++ atomParser) >> (negate o snd)) ||
-      atomParser;
+    fun literalParser mapping =
+        ((punctParser #"~" ++ atomParser mapping) >> (negate o snd)) ||
+        atomParser mapping;
 
-  val disjunctionParser =
-      (literalParser ++ many ((punctParser #"|" ++ literalParser) >> snd)) >>
-      (fn (h,t) => h :: t);
+    fun disjunctionParser mapping =
+        (literalParser mapping ++
+         many ((punctParser #"|" ++ literalParser mapping) >> snd)) >>
+        (fn (h,t) => h :: t);
 
-  val clauseParser =
-      ((punctParser #"(" ++ disjunctionParser ++ punctParser #")") >>
-       (fn ((),(c,())) => c)) ||
-      disjunctionParser;
+    fun clauseParser mapping =
+        ((punctParser #"(" ++ disjunctionParser mapping ++ punctParser #")") >>
+         (fn ((),(c,())) => c)) ||
+        disjunctionParser mapping;
 
 (*
-  An exact transcription of the fof_formula syntax from
+    An exact transcription of the fof_formula syntax from
 
-    TPTP-v3.2.0/Documents/SyntaxBNF,
+      TPTP-v3.2.0/Documents/SyntaxBNF,
 
-  fun fofFormulaParser input =
-      (binaryFormulaParser || unitaryFormulaParser) input
+    fun fofFormulaParser input =
+        (binaryFormulaParser || unitaryFormulaParser) input
 
-  and binaryFormulaParser input =
-      (nonAssocBinaryFormulaParser || assocBinaryFormulaParser) input
+    and binaryFormulaParser input =
+        (nonAssocBinaryFormulaParser || assocBinaryFormulaParser) input
 
-  and nonAssocBinaryFormulaParser input =
-      ((unitaryFormulaParser ++ binaryConnectiveParser ++
-        unitaryFormulaParser) >>
-       (fn (f,(c,g)) => c (f,g))) input
+    and nonAssocBinaryFormulaParser input =
+        ((unitaryFormulaParser ++ binaryConnectiveParser ++
+          unitaryFormulaParser) >>
+         (fn (f,(c,g)) => c (f,g))) input
 
-  and binaryConnectiveParser input =
-      ((symbolParser "<=>" >> K Formula.Iff) ||
-       (symbolParser "=>" >> K Formula.Imp) ||
-       (symbolParser "<=" >> K (fn (f,g) => Formula.Imp (g,f))) ||
-       (symbolParser "<~>" >> K (Formula.Not o Formula.Iff)) ||
-       (symbolParser "~|" >> K (Formula.Not o Formula.Or)) ||
-       (symbolParser "~&" >> K (Formula.Not o Formula.And))) input
+    and binaryConnectiveParser input =
+        ((symbolParser "<=>" >> K Formula.Iff) ||
+         (symbolParser "=>" >> K Formula.Imp) ||
+         (symbolParser "<=" >> K (fn (f,g) => Formula.Imp (g,f))) ||
+         (symbolParser "<~>" >> K (Formula.Not o Formula.Iff)) ||
+         (symbolParser "~|" >> K (Formula.Not o Formula.Or)) ||
+         (symbolParser "~&" >> K (Formula.Not o Formula.And))) input
 
-  and assocBinaryFormulaParser input =
-      (orFormulaParser || andFormulaParser) input
+    and assocBinaryFormulaParser input =
+        (orFormulaParser || andFormulaParser) input
 
-  and orFormulaParser input =
-      ((unitaryFormulaParser ++
-        atLeastOne ((punctParser #"|" ++ unitaryFormulaParser) >> snd)) >>
-       (fn (f,fs) => Formula.listMkDisj (f :: fs))) input
+    and orFormulaParser input =
+        ((unitaryFormulaParser ++
+          atLeastOne ((punctParser #"|" ++ unitaryFormulaParser) >> snd)) >>
+         (fn (f,fs) => Formula.listMkDisj (f :: fs))) input
 
-  and andFormulaParser input =
-      ((unitaryFormulaParser ++
-        atLeastOne ((punctParser #"&" ++ unitaryFormulaParser) >> snd)) >>
-       (fn (f,fs) => Formula.listMkConj (f :: fs))) input
+    and andFormulaParser input =
+        ((unitaryFormulaParser ++
+          atLeastOne ((punctParser #"&" ++ unitaryFormulaParser) >> snd)) >>
+         (fn (f,fs) => Formula.listMkConj (f :: fs))) input
 
-  and unitaryFormulaParser input =
-      (quantifiedFormulaParser ||
-       unaryFormulaParser ||
-       ((punctParser #"(" ++ fofFormulaParser ++ punctParser #")") >>
-        (fn ((),(f,())) => f)) ||
-       (atomParser >>
-        (fn Boolean b => Formula.mkBoolean b
-          | Literal l => Literal.toFormula l))) input
+    and unitaryFormulaParser input =
+        (quantifiedFormulaParser ||
+         unaryFormulaParser ||
+         ((punctParser #"(" ++ fofFormulaParser ++ punctParser #")") >>
+          (fn ((),(f,())) => f)) ||
+         (atomParser >>
+          (fn Boolean b => Formula.mkBoolean b
+            | Literal l => Literal.toFormula l))) input
 
-  and quantifiedFormulaParser input =
-      ((quantifierParser ++ varListParser ++ punctParser #":" ++
-        unitaryFormulaParser) >>
-       (fn (q,(v,((),f))) => q (v,f))) input
+    and quantifiedFormulaParser input =
+        ((quantifierParser ++ varListParser ++ punctParser #":" ++
+          unitaryFormulaParser) >>
+         (fn (q,(v,((),f))) => q (v,f))) input
 
-  and quantifierParser input =
-      ((punctParser #"!" >> K Formula.listMkForall) ||
-       (punctParser #"?" >> K Formula.listMkExists)) input
+    and quantifierParser input =
+        ((punctParser #"!" >> K Formula.listMkForall) ||
+         (punctParser #"?" >> K Formula.listMkExists)) input
 
-  and unaryFormulaParser input =
-      ((unaryConnectiveParser ++ unitaryFormulaParser) >>
-       (fn (c,f) => c f)) input
+    and unaryFormulaParser input =
+        ((unaryConnectiveParser ++ unitaryFormulaParser) >>
+         (fn (c,f) => c f)) input
 
-  and unaryConnectiveParser input =
-      (punctParser #"~" >> K Formula.Not) input;
+    and unaryConnectiveParser input =
+        (punctParser #"~" >> K Formula.Not) input;
 *)
 
 (*
-  This version is supposed to be equivalent to the spec version above,
-  but uses closures to avoid reparsing prefixes.
+    This version is supposed to be equivalent to the spec version above,
+    but passes around a name mapping and uses closures to avoid reparsing
+    prefixes.
 *)
 
-  fun fofFormulaParser input =
-      ((unitaryFormulaParser ++ optional binaryFormulaParser) >>
-       (fn (f,NONE) => f | (f, SOME t) => t f)) input
+    val binaryConnectiveParser =
+        (symbolParser "<=>" >> K Formula.Iff) ||
+        (symbolParser "=>" >> K Formula.Imp) ||
+        (symbolParser "<=" >> K (fn (f,g) => Formula.Imp (g,f))) ||
+        (symbolParser "<~>" >> K (Formula.Not o Formula.Iff)) ||
+        (symbolParser "~|" >> K (Formula.Not o Formula.Or)) ||
+        (symbolParser "~&" >> K (Formula.Not o Formula.And));
 
-  and binaryFormulaParser input =
-      (nonAssocBinaryFormulaParser || assocBinaryFormulaParser) input
+    val quantifierParser =
+        (punctParser #"!" >> K Formula.listMkForall) ||
+        (punctParser #"?" >> K Formula.listMkExists);
 
-  and nonAssocBinaryFormulaParser input =
-      ((binaryConnectiveParser ++ unitaryFormulaParser) >>
-       (fn (c,g) => fn f => c (f,g))) input
+    fun fofFormulaParser mapping =
+        (unitaryFormulaParser mapping ++
+         optional (binaryFormulaParser mapping)) >>
+        (fn (f,NONE) => f | (f, SOME t) => t f)
 
-  and binaryConnectiveParser input =
-      ((symbolParser "<=>" >> K Formula.Iff) ||
-       (symbolParser "=>" >> K Formula.Imp) ||
-       (symbolParser "<=" >> K (fn (f,g) => Formula.Imp (g,f))) ||
-       (symbolParser "<~>" >> K (Formula.Not o Formula.Iff)) ||
-       (symbolParser "~|" >> K (Formula.Not o Formula.Or)) ||
-       (symbolParser "~&" >> K (Formula.Not o Formula.And))) input
+    and binaryFormulaParser mapping =
+        nonAssocBinaryFormulaParser mapping ||
+        assocBinaryFormulaParser mapping
 
-  and assocBinaryFormulaParser input =
-      (orFormulaParser || andFormulaParser) input
+    and nonAssocBinaryFormulaParser mapping =
+        (binaryConnectiveParser ++ unitaryFormulaParser mapping) >>
+        (fn (c,g) => fn f => c (f,g))
 
-  and orFormulaParser input =
-      (atLeastOne ((punctParser #"|" ++ unitaryFormulaParser) >> snd) >>
-       (fn fs => fn f => Formula.listMkDisj (f :: fs))) input
+    and assocBinaryFormulaParser mapping =
+        orFormulaParser mapping ||
+        andFormulaParser mapping
 
-  and andFormulaParser input =
-      (atLeastOne ((punctParser #"&" ++ unitaryFormulaParser) >> snd) >>
-       (fn fs => fn f => Formula.listMkConj (f :: fs))) input
+    and orFormulaParser mapping =
+        atLeastOne
+          ((punctParser #"|" ++ unitaryFormulaParser mapping) >> snd) >>
+        (fn fs => fn f => Formula.listMkDisj (f :: fs))
 
-  and unitaryFormulaParser input =
-      (quantifiedFormulaParser ||
-       unaryFormulaParser ||
-       ((punctParser #"(" ++ fofFormulaParser ++ punctParser #")") >>
-        (fn ((),(f,())) => f)) ||
-       (atomParser >>
-        (fn Boolean b => Formula.mkBoolean b
-          | Literal l => Literal.toFormula l))) input
+    and andFormulaParser mapping =
+        atLeastOne
+          ((punctParser #"&" ++ unitaryFormulaParser mapping) >> snd) >>
+        (fn fs => fn f => Formula.listMkConj (f :: fs))
 
-  and quantifiedFormulaParser input =
-      ((quantifierParser ++ varListParser ++ punctParser #":" ++
-        unitaryFormulaParser) >>
-       (fn (q,(vs,((),f))) => q (map Name.fromString vs, f))) input
+    and unitaryFormulaParser mapping =
+        quantifiedFormulaParser mapping ||
+        unaryFormulaParser mapping ||
+        ((punctParser #"(" ++ fofFormulaParser mapping ++ punctParser #")") >>
+         (fn ((),(f,())) => f)) ||
+        (atomParser mapping >>
+         (fn Boolean b => Formula.mkBoolean b
+           | Literal l => Literal.toFormula l))
 
-  and quantifierParser input =
-      ((punctParser #"!" >> K Formula.listMkForall) ||
-       (punctParser #"?" >> K Formula.listMkExists)) input
+    and quantifiedFormulaParser mapping =
+        (quantifierParser ++ varListParser ++ punctParser #":" ++
+         unitaryFormulaParser mapping) >>
+        (fn (q,(vs,((),f))) => q (map (mkVarName mapping) vs, f))
 
-  and unaryFormulaParser input =
-      ((unaryConnectiveParser ++ unitaryFormulaParser) >>
-       (fn (c,f) => c f)) input
+    and unaryFormulaParser mapping =
+        (unaryConnectiveParser ++ unitaryFormulaParser mapping) >>
+        (fn (c,f) => c f)
 
-  and unaryConnectiveParser input =
-      (punctParser #"~" >> K Formula.Not) input;
+    and unaryConnectiveParser input =
+        (punctParser #"~" >> K Formula.Not) input;
 
-  val cnfParser =
-      (alphaNumParser "cnf" ++ punctParser #"(" ++
-       nameParser ++ punctParser #"," ++
-       roleParser ++ punctParser #"," ++
-       clauseParser ++ punctParser #")" ++
-       punctParser #".") >>
-      (fn ((),((),(n,((),(r,((),(c,((),())))))))) =>
-          CnfFormula {name = n, role = r, clause = c});
+    fun cnfParser mapping =
+        (alphaNumParser "cnf" ++ punctParser #"(" ++
+         nameParser ++ punctParser #"," ++
+         roleParser ++ punctParser #"," ++
+         clauseParser mapping ++ punctParser #")" ++
+         punctParser #".") >>
+        (fn ((),((),(n,((),(r,((),(c,((),())))))))) =>
+            CnfFormula {name = n, role = r, clause = c});
 
-  val fofParser =
-      (alphaNumParser "fof" ++ punctParser #"(" ++
-       nameParser ++ punctParser #"," ++
-       roleParser ++ punctParser #"," ++
-       fofFormulaParser ++ punctParser #")" ++
-       punctParser #".") >>
-      (fn ((),((),(n,((),(r,((),(f,((),())))))))) =>
-          FofFormula {name = n, role = r, formula = f});
-
-  val formulaParser = cnfParser || fofParser;
+    fun fofParser mapping =
+        (alphaNumParser "fof" ++ punctParser #"(" ++
+         nameParser ++ punctParser #"," ++
+         roleParser ++ punctParser #"," ++
+         fofFormulaParser mapping ++ punctParser #")" ++
+         punctParser #".") >>
+        (fn ((),((),(n,((),(r,((),(f,((),())))))))) =>
+            FofFormula {name = n, role = r, formula = f});
+  in
+    fun formulaParser mapping =
+        cnfParser mapping ||
+        fofParser mapping;
+  end;
 
   fun parseChars parser chars =
       let
@@ -927,7 +1011,7 @@ in
         Parse.everything (parser >> singleton) tokens
       end;
 in
-  val parseFormula = parseChars formulaParser;
+  fun parseFormula mapping = parseChars (formulaParser mapping);
 end;
 
 (* ------------------------------------------------------------------------- *)
@@ -1221,7 +1305,7 @@ local
           SOME s => stripComments (s :: acc) (rest ())
         | NONE => (rev acc, Stream.filter (not o isComment) strm);
 in
-  fun read {filename} =
+  fun read {mapping,filename} =
       let
         val lines = Stream.fromTextFile {filename = filename}
 
@@ -1231,9 +1315,7 @@ in
 
         val chars = Stream.concat (Stream.map Stream.fromString lines)
 
-        val formulas = Stream.toList (parseFormula chars)
-
-        val formulas = formulasFromTptp formulas
+        val formulas = Stream.toList (parseFormula mapping chars)
       in
         {comments = comments, formulas = formulas}
       end;
@@ -1250,12 +1332,16 @@ local
         Stream.Cons (if start then s else "\n" ^ s, formulaStream false t)
       end;
 in
-  fun write {filename} {comments,formulas} =
-      Stream.toTextFile
-        {filename = filename}
-        (Stream.append
-           (Stream.map mkCommentLine (Stream.fromList comments))
-           (formulaStream (null comments) (formulasToTptp formulas)));
+  fun write {problem,mapping,filename} =
+      let
+        val {comments,formulas} = problem
+      in
+        Stream.toTextFile
+          {filename = filename}
+          (Stream.append
+             (Stream.map mkCommentLine (Stream.fromList comments))
+             (formulaStream (null comments) formulas))
+      end;
 end;
 
 local
@@ -1303,6 +1389,7 @@ local
         bump
       end;
 
+(***
   fun mapSubstTerm fr sub tm =
       let
         val {functionMap, relationMap = _} = fr
@@ -1332,6 +1419,7 @@ local
   fun mapSubstLiteral fr sub lit = Literal.subst sub (mapLit fr lit);
 
   fun mapSubstClause fr sub cl = clauseSubst sub (mapClause fr cl);
+***)
 
   val ppTermTstp = ppTerm;
 
