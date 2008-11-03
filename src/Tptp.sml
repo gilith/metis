@@ -467,56 +467,57 @@ fun ppAtom fr vm (r,tms) =
 local
   val neg = Print.sequence (Print.addString "~") (Print.addBreak 1);
 
-  fun fof fm =
+  fun fof fr vm fm =
       case fm of
-        Formula.And _ => assoc_binary ("&", Formula.stripConj fm)
-      | Formula.Or _ => assoc_binary ("|", Formula.stripDisj fm)
-      | Formula.Imp a_b => nonassoc_binary ("=>",a_b)
-      | Formula.Iff a_b => nonassoc_binary ("<=>",a_b)
-      | _ => unitary fm
+        Formula.And _ => assoc_binary fr vm ("&", Formula.stripConj fm)
+      | Formula.Or _ => assoc_binary fr vm ("|", Formula.stripDisj fm)
+      | Formula.Imp a_b => nonassoc_binary fr vm ("=>",a_b)
+      | Formula.Iff a_b => nonassoc_binary fr vm ("<=>",a_b)
+      | _ => unitary fr vm fm
 
-  and nonassoc_binary (s,a_b) = Print.ppOp2 (" " ^ s) unitary unitary a_b
+  and nonassoc_binary fr vm (s,a_b) =
+      Print.ppOp2 (" " ^ s) (unitary fr vm) (unitary fr vm) a_b
 
-  and assoc_binary (s,l) = Print.ppOpList (" " ^ s) unitary l
+  and assoc_binary fr vm (s,l) = Print.ppOpList (" " ^ s) (unitary fr vm) l
 
-  and unitary fm =
+  and unitary fr vm fm =
       case fm of
         Formula.True => Print.addString "$true"
       | Formula.False => Print.addString "$false"
-      | Formula.Forall _ => quantified ("!", Formula.stripForall fm)
-      | Formula.Exists _ => quantified ("?", Formula.stripExists fm)
+      | Formula.Forall _ => quantified fr vm ("!", Formula.stripForall fm)
+      | Formula.Exists _ => quantified fr vm ("?", Formula.stripExists fm)
       | Formula.Not _ =>
         (case total Formula.destNeq fm of
-           SOME a_b => Print.ppOp2 " !=" ppTerm ppTerm a_b
+           SOME a_b => Print.ppOp2 " !=" (ppTerm fr vm) (ppTerm fr vm) a_b
          | NONE =>
            let
              val (n,fm) = Formula.stripNeg fm
            in
              Print.blockProgram Print.Inconsistent 2
                [Print.duplicate n neg,
-                unitary fm]
+                unitary fr vm fm]
            end)
       | Formula.Atom atm =>
         (case total Formula.destEq fm of
-           SOME a_b => Print.ppOp2 " =" ppTerm ppTerm a_b
-         | NONE => ppAtom atm)
+           SOME a_b => Print.ppOp2 " =" (ppTerm fr vm) (ppTerm fr vm) a_b
+         | NONE => ppAtom fr vm atm)
       | _ =>
         Print.blockProgram Print.Inconsistent 1
           [Print.addString "(",
-           fof fm,
+           fof fr vm fm,
            Print.addString ")"]
 
-  and quantified (q,(vs,fm)) =
+  and quantified fr vm (q,(vs,fm)) =
       Print.blockProgram Print.Inconsistent 2
         [Print.addString (q ^ " "),
          Print.blockProgram Print.Inconsistent (String.size q)
            [Print.addString "[",
-            Print.ppOpList "," ppVar vs,
+            Print.ppOpList "," (ppVar vm) vs,
             Print.addString "] :"],
          Print.addBreak 1,
-         unitary fm]
+         unitary fr vm fm]
 in
-  fun ppFof fm = Print.block Print.Inconsistent 0 (fof fm);
+  fun ppFof fr vm fm = Print.block Print.Inconsistent 0 (fof fr vm fm);
 end;
 
 (* ------------------------------------------------------------------------- *)
@@ -561,7 +562,7 @@ fun clauseFromLiteralSet cl =
 
 fun clauseFromThm th = clauseFromLiteralSet (Thm.clause th);
 
-val ppClause = Print.ppMap clauseToFormula ppFof;
+fun ppClause fr vm = Print.ppMap clauseToFormula (ppFof fr vm);
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP formulas.                                                            *)
@@ -610,7 +611,7 @@ fun formulaIsConjecture (CnfFormula {role,...}) = roleIsCnfConjecture role
 (* Parsing and pretty-printing *)
 
 local
-  fun ppGen ppX (gen,name,role,x) =
+  fun ppGen fr vm ppX (gen,name,role,x) =
       Print.blockProgram Print.Inconsistent (size gen + 1)
         [Print.addString (gen ^ "(" ^ name ^ ","),
          Print.addBreak 1,
@@ -618,14 +619,16 @@ local
          Print.addBreak 1,
          Print.blockProgram Print.Consistent 1
            [Print.addString "(",
-            ppX x,
+            ppX fr vm x,
             Print.addString ")"],
          Print.addString ")."];
 in
-  fun ppFormula (CnfFormula {name,role,clause}) =
-      ppGen ppClause ("cnf",name,role,clause)
-    | ppFormula (FofFormula {name,role,formula}) =
-      ppGen ppFof ("fof",name,role,formula);
+  fun ppFormula fr vm fm =
+      case fm of
+        CnfFormula {name,role,clause} =>
+        ppGen fr vm ppClause ("cnf",name,role,clause)
+      | FofFormula {name,role,formula} =>
+        ppGen fr vm ppFof ("fof",name,role,formula);
 end;
 
 val formulaToString = Print.toString ppFormula;
