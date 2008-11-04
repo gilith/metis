@@ -144,11 +144,14 @@ val prove : {filename : string} -> bool
 (* TSTP proofs.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-val writeProof : {filename : string,
-                  avoid : StringSet.set,
-                  prefix : string,
-                  names : clauseNames,
-                  roles : clauseRoles,
-                  proofs : clauseProofs} -> Proof.proof -> unit
+val writeProof :
+    {proof : Proof.proof,
+     mapping : tptpMapping,
+     filename : string,
+     avoid : StringSet.set,
+     prefix : string,
+     names : clauseNames,
+     roles : clauseRoles,
+     proofs : clauseProofs} -> unit
 
 end

@@ -143,6 +143,18 @@ fun addVarToTptp vm v =
       VarToTptp (avoid,mapping)
     end;
 
+local
+  fun add (v,vm) = addVarToTptp vm v;
+in
+  val addListVarToTptp = List.foldl add;
+
+  val addSetVarToTptp = NameSet.foldl add;
+end;
+
+val fromListVarToTptp = addListVarToTptp emptyVarToTptp;
+
+val fromSetVarToTptp = addSetVarToTptp emptyVarToTptp;
+
 fun varToTptp vm v =
     let
       val VarToTptp (_,mapping) = vm
@@ -623,7 +635,7 @@ local
             Print.addString ")"],
          Print.addString ")."];
 in
-  fun ppFormula fr vm fm =
+  fun ppFvFormula fr vm fm =
       case fm of
         CnfFormula {name,role,clause} =>
         ppGen fr vm ppClause ("cnf",name,role,clause)
@@ -631,7 +643,14 @@ in
         ppGen fr vm ppFof ("fof",name,role,formula);
 end;
 
-val formulaToString = Print.toString ppFormula;
+fun ppFormula fr fm =
+    let
+      val vm = fromSetVarToTptp (formulaFreeVars fm)
+    in
+      ppFvFormula fr vm fm
+    end;
+
+fun formulaToString fr = Print.toString (ppFormula fr);
 
 local
   open Parse;
@@ -1327,12 +1346,13 @@ end;
 local
   fun mkCommentLine comment = mkComment comment ^ "\n";
 
-  fun formulaStream _ [] () = Stream.Nil
-    | formulaStream start (h :: t) () =
+  fun formulaStream _ _ [] () = Stream.Nil
+    | formulaStream mapping start (h :: t) () =
       let
-        val s = formulaToString h ^ "\n"
+        val s = formulaToString mapping h ^ "\n"
+        val s = if start then s else "\n" ^ s
       in
-        Stream.Cons (if start then s else "\n" ^ s, formulaStream false t)
+        Stream.Cons (s, formulaStream mapping false t)
       end;
 in
   fun write {problem,mapping,filename} =
@@ -1343,7 +1363,7 @@ in
           {filename = filename}
           (Stream.append
              (Stream.map mkCommentLine (Stream.fromList comments))
-             (formulaStream (null comments) formulas))
+             (formulaStream mapping (null comments) formulas))
       end;
 end;
 
@@ -1391,38 +1411,6 @@ local
       in
         bump
       end;
-
-(***
-  fun mapSubstTerm fr sub tm =
-      let
-        val {functionMap, relationMap = _} = fr
-      in
-        Subst.subst sub (mapTerm functionMap tm)
-      end;
-
-  fun mapSubstAtom fr sub atm = Atom.subst sub (mapAtom fr atm);
-
-  fun mapSubstSubst fr sub =
-      let
-        fun inc (v,tm,s) =
-            let
-              val v =
-                  case Subst.peek sub v of
-                    NONE => v
-                  | SOME vt => Term.destVar vt
-
-              val tm = mapSubstTerm fr sub tm
-            in
-              Subst.insert s (v,tm)
-            end
-      in
-        Subst.foldl inc Subst.empty
-      end;
-
-  fun mapSubstLiteral fr sub lit = Literal.subst sub (mapLit fr lit);
-
-  fun mapSubstClause fr sub cl = clauseSubst sub (mapClause fr cl);
-***)
 
   val ppTermTstp = ppTerm;
 
@@ -1502,7 +1490,7 @@ local
           Print.ppOp2 " :" (ppThm prevNames) ppSubstInfo (th,s)
         end;
 in
-  fun ppProof avoid prefix names roles proofs prf =
+  fun ppProof mapping avoid prefix names roles proofs prf =
       let
         val fr =
             {functionMap = mappingToTptp (!functionMapping),
@@ -1599,8 +1587,8 @@ in
 *)
 end;
 
-fun writeProof {filename,avoid,prefix,names,roles,proofs} =
-    Stream.toTextFile {filename = filename} o
-    Print.toStream (ppProof avoid prefix names roles proofs);
+fun writeProof {proof,mapping,filename,avoid,prefix,names,roles,proofs} =
+    Stream.toTextFile {filename = filename}
+      (Print.toStream (ppProof mapping avoid prefix names roles proofs) proof);
 
 end
