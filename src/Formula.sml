@@ -351,8 +351,12 @@ local
     | fv vs ((bv, Iff (p,q)) :: fms) = fv vs ((bv,p) :: (bv,q) :: fms)
     | fv vs ((bv, Forall (v,p)) :: fms) = fv vs ((NameSet.add bv v, p) :: fms)
     | fv vs ((bv, Exists (v,p)) :: fms) = fv vs ((NameSet.add bv v, p) :: fms);
+
+  fun add (fm,vs) = fv vs [(NameSet.empty,fm)];
 in
-  fun freeVars fm = fv NameSet.empty [(NameSet.empty,fm)];
+  fun freeVars fm = add (fm,NameSet.empty);
+
+  fun freeVarsList fms = List.foldl add NameSet.empty fms;
 end;
 
 fun specialize fm = snd (stripForall fm);

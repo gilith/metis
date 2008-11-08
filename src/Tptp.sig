@@ -7,7 +7,7 @@ signature Tptp =
 sig
 
 (* ------------------------------------------------------------------------- *)
-(* Mapping TPTP functions and relations to different names.                  *)
+(* Mapping to and from TPTP variable, function and relation names.           *)
 (* ------------------------------------------------------------------------- *)
 
 type tptpMapping
@@ -18,6 +18,8 @@ val mkTptpMapping :
     {functionMapping : {name : Name.name, arity : int, tptp : string} list,
      relationMapping : {name : Name.name, arity : int, tptp : string} list} ->
     tptpMapping
+
+val addVarSetTptpMapping : tptpMapping -> NameSet.set -> tptpMapping
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP roles.                                                               *)
@@ -78,6 +80,8 @@ val formulaRelations : formula -> NameAritySet.set
 
 val formulaFreeVars : formula -> NameSet.set
 
+val formulaListFreeVars : formula list -> NameSet.set
+
 val formulaIsConjecture : formula -> bool
 
 (* ------------------------------------------------------------------------- *)
@@ -136,9 +140,11 @@ val goal : problem -> Formula.formula
 val read : {mapping : tptpMapping, filename : string} -> problem
 
 val write :
-    {problem : problem, mapping : tptpMapping, filename : string} -> unit
+    {problem : problem,
+     mapping : tptpMapping,
+     filename : string} -> unit
 
-val prove : {filename : string} -> bool
+val prove : {filename : string, mapping : tptpMapping} -> bool
 
 (* ------------------------------------------------------------------------- *)
 (* TSTP proofs.                                                              *)

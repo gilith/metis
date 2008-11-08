@@ -127,20 +127,24 @@ end;
 (* Mapping to legal TPTP variable names.                                     *)
 (* ------------------------------------------------------------------------- *)
 
-datatype varToTptp =
-    VarToTptp of StringSet.set * string NameMap.map;
+datatype varToTptp = VarToTptp of StringSet.set * string NameMap.map;
 
 val emptyVarToTptp = VarToTptp (StringSet.empty, NameMap.new ());
 
 fun addVarToTptp vm v =
     let
       val VarToTptp (avoid,mapping) = vm
-      val s = variant avoid (mkTptpVarName (Name.toString v))
-
-      val avoid = StringSet.add avoid s
-      and mapping = NameMap.insert mapping (v,s)
     in
-      VarToTptp (avoid,mapping)
+      if NameMap.inDomain v mapping then vm
+      else
+        let
+          val s = variant avoid (mkTptpVarName (Name.toString v))
+
+          val avoid = StringSet.add avoid s
+          and mapping = NameMap.insert mapping (v,s)
+        in
+          VarToTptp (avoid,mapping)
+        end
     end;
 
 local
@@ -155,29 +159,26 @@ val fromListVarToTptp = addListVarToTptp emptyVarToTptp;
 
 val fromSetVarToTptp = addSetVarToTptp emptyVarToTptp;
 
-fun varToTptp vm v =
+fun getVarToTptp vm v =
     let
       val VarToTptp (_,mapping) = vm
     in
       case NameMap.peek mapping v of
         SOME s => s
-      | NONE => raise Bug "Tptp.varToTptp: unknown var"
+      | NONE => raise Bug "Tptp.getVarToTptp: unknown var"
     end;
 
 (* ------------------------------------------------------------------------- *)
 (* Mapping from TPTP variable names.                                         *)
 (* ------------------------------------------------------------------------- *)
 
-fun varFromTptp s = Name.fromString s;
+fun getVarFromTptp s = Name.fromString s;
 
 (* ------------------------------------------------------------------------- *)
 (* Mapping to TPTP function and relation names.                              *)
 (* ------------------------------------------------------------------------- *)
 
-datatype nameToTptp =
-    NameToTptp of
-      {funcs : string NameArityMap.map,
-       rels : string NameArityMap.map};
+datatype nameToTptp = NameToTptp of string NameArityMap.map;
 
 local
   val emptyNames : string NameArityMap.map = NameArityMap.new ();
@@ -187,20 +188,13 @@ local
 
   val fromListNames = List.foldl addNames emptyNames;
 in
-  fun mkNameToTptp mapping =
-      let
-        val {functionMapping = funcMap, relationMapping = relMap} = mapping
-        val funcs = fromListNames funcMap
-        and rels = fromListNames relMap
-      in
-        NameToTptp {funcs = funcs, rels = rels}
-      end;
+  fun mkNameToTptp mapping = NameToTptp (fromListNames mapping);
 end;
 
 local
   fun singleQuote s = "'" ^ s ^ "'";
-
-  fun nameToTptp zeroToTptp plusToTptp mapping na =
+in
+  fun getNameToTptp zeroToTptp plusToTptp (NameToTptp mapping) na =
       case NameArityMap.peek mapping na of
         SOME s => s
       | NONE =>
@@ -212,30 +206,13 @@ local
         in
           s
         end;
-in
-  fun fnNameToTptp names fa =
-      let
-        val NameToTptp {funcs, rels = _} = names
-      in
-        nameToTptp mkTptpConstName mkTptpFnName funcs fa
-      end;
-
-  fun relNameToTptp names ra =
-      let
-        val NameToTptp {funcs = _, rels} = names
-      in
-        nameToTptp mkTptpPropName mkTptpRelName rels ra
-      end;
 end;
 
 (* ------------------------------------------------------------------------- *)
 (* Mapping from TPTP function and relation names.                            *)
 (* ------------------------------------------------------------------------- *)
 
-datatype nameFromTptp =
-    NameFromTptp of
-      {funcs : (string * int, Name.name) Map.map,
-       rels : (string * int, Name.name) Map.map};
+datatype nameFromTptp = NameFromTptp of (string * int, Name.name) Map.map;
 
 local
   val stringArityCompare = prodCompare String.compare Int.compare;
@@ -248,87 +225,123 @@ local
   val fromListStringArityMap =
       List.foldl addStringArityMap emptyStringArityMap;
 in
-  fun mkNameFromTptp mapping =
-      let
-        val {functionMapping = funcMap, relationMapping = relMap} = mapping
-        val funcs = fromListStringArityMap funcMap
-        and rels = fromListStringArityMap relMap
-      in
-        NameFromTptp {funcs = funcs, rels = rels}
-      end;
+  fun mkNameFromTptp mapping = NameFromTptp (fromListStringArityMap mapping);
 end;
 
-local
-  fun nameFromTptp mapping sa =
-      case Map.peek mapping sa of
-        SOME n => n
-      | NONE =>
-        let
-          val (s,_) = sa
-        in
-          Name.fromString s
-        end;
-in
-  fun fnNameFromTptp names fa =
+fun getNameFromTptp (NameFromTptp mapping) sa =
+    case Map.peek mapping sa of
+      SOME n => n
+    | NONE =>
       let
-        val NameFromTptp {funcs, rels = _} = names
+        val (s,_) = sa
       in
-        nameFromTptp funcs fa
+        Name.fromString s
       end;
-
-  fun relNameFromTptp names ra =
-      let
-        val NameFromTptp {funcs = _, rels} = names
-      in
-        nameFromTptp rels ra
-      end;
-end;
 
 (* ------------------------------------------------------------------------- *)
-(* Mapping to and from TPTP function and relation names.                     *)
+(* Mapping to and from TPTP variable, function and relation names.           *)
 (* ------------------------------------------------------------------------- *)
 
 datatype tptpMapping =
     TptpMapping of
-      {toTptp : nameToTptp,
-       fromTptp : nameFromTptp};
+      {varTo : varToTptp,
+       fnTo : nameToTptp,
+       relTo : nameToTptp,
+       fnFrom : nameFromTptp,
+       relFrom : nameFromTptp};
 
 fun mkTptpMapping mapping =
     let
-      val toTptp = mkNameToTptp mapping
-      val fromTptp = mkNameFromTptp mapping
+      val {functionMapping,relationMapping} = mapping
+
+      val varTo = emptyVarToTptp
+      val fnTo = mkNameToTptp functionMapping
+      val relTo = mkNameToTptp relationMapping
+
+      val fnFrom = mkNameFromTptp functionMapping
+      val relFrom = mkNameFromTptp relationMapping
     in
       TptpMapping
-        {toTptp = toTptp,
-         fromTptp = fromTptp}
+        {varTo = varTo,
+         fnTo = fnTo,
+         relTo = relTo,
+         fnFrom = fnFrom,
+         relFrom = relFrom}
+    end;
+
+fun addVarListTptpMapping mapping vs =
+    let
+      val TptpMapping
+            {varTo,
+             fnTo,
+             relTo,
+             fnFrom,
+             relFrom} = mapping
+
+      val varTo = addListVarToTptp varTo vs
+    in
+      TptpMapping
+        {varTo = varTo,
+         fnTo = fnTo,
+         relTo = relTo,
+         fnFrom = fnFrom,
+         relFrom = relFrom}
+    end;
+
+fun addVarSetTptpMapping mapping vs =
+    let
+      val TptpMapping
+            {varTo,
+             fnTo,
+             relTo,
+             fnFrom,
+             relFrom} = mapping
+
+      val varTo = addSetVarToTptp varTo vs
+    in
+      TptpMapping
+        {varTo = varTo,
+         fnTo = fnTo,
+         relTo = relTo,
+         fnFrom = fnFrom,
+         relFrom = relFrom}
+    end;
+
+fun varToTptp mapping v =
+    let
+      val TptpMapping {varTo,...} = mapping
+    in
+      getVarToTptp varTo v
     end;
 
 fun fnToTptp mapping fa =
     let
-      val TptpMapping {toTptp, fromTptp = _} = mapping
+      val TptpMapping {fnTo,...} = mapping
     in
-      fnNameToTptp toTptp fa
+      getNameToTptp mkTptpConstName mkTptpFnName fnTo fa
     end;
 
-fun relToTptp mapping fa =
+fun relToTptp mapping ra =
     let
-      val TptpMapping {toTptp, fromTptp = _} = mapping
+      val TptpMapping {relTo,...} = mapping
     in
-      relNameToTptp toTptp fa
+      getNameToTptp mkTptpPropName mkTptpRelName relTo ra
     end;
+
+fun varFromTptp (_ : tptpMapping) v = getVarFromTptp v;
 
 fun fnFromTptp mapping fa =
     let
-      val TptpMapping {toTptp = _, fromTptp} = mapping
+      val TptpMapping {fnFrom,...} = mapping
     in
-      fnNameFromTptp fromTptp fa
+      getNameFromTptp fnFrom fa
     end;
 
-fun relFromTptp mapping fa =
+fun relFromTptp mapping ra =
     let
-      val TptpMapping {toTptp = _, fromTptp} = mapping
+      val TptpMapping {relFrom,...} = mapping
     in
-      relNameFromTptp fromTptp fa
+      getNameFromTptp relFrom ra
     end;
 
 val defaultTptpMapping =
@@ -433,28 +446,28 @@ fun destLiteral (Literal l) = l
 (* Printing formulas using TPTP syntax.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-fun ppVar vm v =
+fun ppVar mapping v =
     let
-      val s = varToTptp vm v
+      val s = varToTptp mapping v
     in
       Print.addString s
     end;
 
-fun ppFnName fr fa = Print.addString (fnToTptp fr fa);
+fun ppFnName mapping fa = Print.addString (fnToTptp mapping fa);
 
-fun ppConst fr c = ppFnName fr (c,0);
+fun ppConst mapping c = ppFnName mapping (c,0);
 
-fun ppTerm fr vm =
+fun ppTerm mapping =
     let
       fun term tm =
           case tm of
-            Term.Var v => ppVar vm v
+            Term.Var v => ppVar mapping v
           | Term.Fn (f,tms) =>
             case length tms of
-              0 => ppConst fr f
+              0 => ppConst mapping f
             | a =>
               Print.blockProgram Print.Inconsistent 2
-                [ppFnName fr (f,a),
+                [ppFnName mapping (f,a),
                  Print.addString "(",
                  Print.ppOpList "," term tms,
                  Print.addString ")"]
@@ -462,74 +475,78 @@ fun ppTerm fr vm =
       Print.block Print.Inconsistent 0 o term
     end;
 
-fun ppRelName fr ra = Print.addString (relToTptp fr ra);
+fun ppRelName mapping ra = Print.addString (relToTptp mapping ra);
 
-fun ppProp fr p = ppRelName fr (p,0);
+fun ppProp mapping p = ppRelName mapping (p,0);
 
-fun ppAtom fr vm (r,tms) =
+fun ppAtom mapping (r,tms) =
     case length tms of
-      0 => ppProp fr r
+      0 => ppProp mapping r
     | a =>
       Print.blockProgram Print.Inconsistent 2
-        [ppRelName fr (r,a),
+        [ppRelName mapping (r,a),
          Print.addString "(",
-         Print.ppOpList "," (ppTerm fr vm) tms,
+         Print.ppOpList "," (ppTerm mapping) tms,
          Print.addString ")"];
 
 local
   val neg = Print.sequence (Print.addString "~") (Print.addBreak 1);
 
-  fun fof fr vm fm =
+  fun fof mapping fm =
       case fm of
-        Formula.And _ => assoc_binary fr vm ("&", Formula.stripConj fm)
-      | Formula.Or _ => assoc_binary fr vm ("|", Formula.stripDisj fm)
-      | Formula.Imp a_b => nonassoc_binary fr vm ("=>",a_b)
-      | Formula.Iff a_b => nonassoc_binary fr vm ("<=>",a_b)
-      | _ => unitary fr vm fm
+        Formula.And _ => assoc_binary mapping ("&", Formula.stripConj fm)
+      | Formula.Or _ => assoc_binary mapping ("|", Formula.stripDisj fm)
+      | Formula.Imp a_b => nonassoc_binary mapping ("=>",a_b)
+      | Formula.Iff a_b => nonassoc_binary mapping ("<=>",a_b)
+      | _ => unitary mapping fm
 
-  and nonassoc_binary fr vm (s,a_b) =
-      Print.ppOp2 (" " ^ s) (unitary fr vm) (unitary fr vm) a_b
+  and nonassoc_binary mapping (s,a_b) =
+      Print.ppOp2 (" " ^ s) (unitary mapping) (unitary mapping) a_b
 
-  and assoc_binary fr vm (s,l) = Print.ppOpList (" " ^ s) (unitary fr vm) l
+  and assoc_binary mapping (s,l) = Print.ppOpList (" " ^ s) (unitary mapping) l
 
-  and unitary fr vm fm =
+  and unitary mapping fm =
       case fm of
         Formula.True => Print.addString "$true"
       | Formula.False => Print.addString "$false"
-      | Formula.Forall _ => quantified fr vm ("!", Formula.stripForall fm)
-      | Formula.Exists _ => quantified fr vm ("?", Formula.stripExists fm)
+      | Formula.Forall _ => quantified mapping ("!", Formula.stripForall fm)
+      | Formula.Exists _ => quantified mapping ("?", Formula.stripExists fm)
       | Formula.Not _ =>
         (case total Formula.destNeq fm of
-           SOME a_b => Print.ppOp2 " !=" (ppTerm fr vm) (ppTerm fr vm) a_b
+           SOME a_b => Print.ppOp2 " !=" (ppTerm mapping) (ppTerm mapping) a_b
          | NONE =>
            let
              val (n,fm) = Formula.stripNeg fm
            in
              Print.blockProgram Print.Inconsistent 2
                [Print.duplicate n neg,
-                unitary fr vm fm]
+                unitary mapping fm]
            end)
       | Formula.Atom atm =>
         (case total Formula.destEq fm of
-           SOME a_b => Print.ppOp2 " =" (ppTerm fr vm) (ppTerm fr vm) a_b
-         | NONE => ppAtom fr vm atm)
+           SOME a_b => Print.ppOp2 " =" (ppTerm mapping) (ppTerm mapping) a_b
+         | NONE => ppAtom mapping atm)
       | _ =>
         Print.blockProgram Print.Inconsistent 1
           [Print.addString "(",
-           fof fr vm fm,
+           fof mapping fm,
            Print.addString ")"]
 
-  and quantified fr vm (q,(vs,fm)) =
-      Print.blockProgram Print.Inconsistent 2
-        [Print.addString (q ^ " "),
-         Print.blockProgram Print.Inconsistent (String.size q)
-           [Print.addString "[",
-            Print.ppOpList "," (ppVar vm) vs,
-            Print.addString "] :"],
-         Print.addBreak 1,
-         unitary fr vm fm]
+  and quantified mapping (q,(vs,fm)) =
+      let
+        val mapping = addVarListTptpMapping mapping vs
+      in
+        Print.blockProgram Print.Inconsistent 2
+          [Print.addString (q ^ " "),
+           Print.blockProgram Print.Inconsistent (String.size q)
+             [Print.addString "[",
+              Print.ppOpList "," (ppVar mapping) vs,
+              Print.addString "] :"],
+           Print.addBreak 1,
+           unitary mapping fm]
+      end;
 in
-  fun ppFof fr vm fm = Print.block Print.Inconsistent 0 (fof fr vm fm);
+  fun ppFof mapping fm = Print.block Print.Inconsistent 0 (fof mapping fm);
 end;
 
 (* ------------------------------------------------------------------------- *)
@@ -574,7 +591,7 @@ fun clauseFromLiteralSet cl =
 
 fun clauseFromThm th = clauseFromLiteralSet (Thm.clause th);
 
-fun ppClause fr vm = Print.ppMap clauseToFormula (ppFof fr vm);
+fun ppClause mapping = Print.ppMap clauseToFormula (ppFof mapping);
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP formulas.                                                            *)
@@ -603,6 +620,13 @@ fun formulaRelations (CnfFormula {clause,...}) = clauseRelations clause
 fun formulaFreeVars (CnfFormula {clause,...}) = clauseFreeVars clause
   | formulaFreeVars (FofFormula {formula,...}) = Formula.freeVars formula;
 
+val formulaListFreeVars =
+    let
+      fun add (fm,vs) = NameSet.union vs (formulaFreeVars fm)
+    in
+      List.foldl add NameSet.empty
+    end;
+
 val formulasFunctions =
     let
       fun funcs (fm,acc) = NameAritySet.union (formulaFunctions fm) acc
@@ -623,7 +647,7 @@ fun formulaIsConjecture (CnfFormula {role,...}) = roleIsCnfConjecture role
 (* Parsing and pretty-printing *)
 
 local
-  fun ppGen fr vm ppX (gen,name,role,x) =
+  fun ppGen mapping ppX (gen,name,role,x) =
       Print.blockProgram Print.Inconsistent (size gen + 1)
         [Print.addString (gen ^ "(" ^ name ^ ","),
          Print.addBreak 1,
@@ -631,26 +655,19 @@ local
          Print.addBreak 1,
          Print.blockProgram Print.Consistent 1
            [Print.addString "(",
-            ppX fr vm x,
+            ppX mapping x,
             Print.addString ")"],
          Print.addString ")."];
 in
-  fun ppFvFormula fr vm fm =
+  fun ppFormula mapping fm =
       case fm of
         CnfFormula {name,role,clause} =>
-        ppGen fr vm ppClause ("cnf",name,role,clause)
+        ppGen mapping ppClause ("cnf",name,role,clause)
       | FofFormula {name,role,formula} =>
-        ppGen fr vm ppFof ("fof",name,role,formula);
+        ppGen mapping ppFof ("fof",name,role,formula);
 end;
 
-fun ppFormula fr fm =
-    let
-      val vm = fromSetVarToTptp (formulaFreeVars fm)
-    in
-      ppFvFormula fr vm fm
-    end;
-
-fun formulaToString fr = Print.toString (ppFormula fr);
+fun formulaToString mapping = Print.toString (ppFormula mapping);
 
 local
   open Parse;
@@ -790,7 +807,7 @@ local
          punctParser #"]") >>
         (fn ((),(h,(t,()))) => h :: t);
 
-    fun mkVarName _ v = varFromTptp v;
+    fun mkVarName mapping v = varFromTptp mapping v;
 
     fun mkVar mapping v =
         let
@@ -1412,61 +1429,56 @@ local
         bump
       end;
 
-  val ppTermTstp = ppTerm;
+  fun ppTermTstp mapping = ppTerm mapping;
 
-  fun ppAtomTstp atm =
+  fun ppAtomTstp mapping atm =
       case total Atom.destEq atm of
-        SOME (a,b) => ppAtom (Name.fromString "$equal", [a,b])
-      | NONE => ppAtom atm;
+        SOME (a,b) => ppAtom mapping (Name.fromString "$equal", [a,b])
+      | NONE => ppAtom mapping atm;
 
-  fun ppLiteralTstp (pol,atm) =
+  fun ppLiteralTstp mapping (pol,atm) =
       Print.sequence
         (if pol then Print.skip else Print.addString "~ ")
-        (ppAtomTstp atm);
+        (ppAtomTstp mapping atm);
 
-  val ppTermInfo = Print.ppBracket "$fot(" ")" ppTermTstp;
+  fun ppTermInfo mapping = Print.ppBracket "$fot(" ")" (ppTermTstp mapping);
 
-  val ppAtomInfo = Print.ppBracket "$cnf(" ")" ppAtomTstp;
+  fun ppAtomInfo mapping = Print.ppBracket "$cnf(" ")" (ppAtomTstp mapping);
 
-  val ppLiteralInfo = Print.ppBracket "$cnf(" ")" ppLiteralTstp;
+  fun ppLiteralInfo mapping =
+      Print.ppBracket "$cnf(" ")" (ppLiteralTstp mapping);
 
-  val ppAssumeInfo = ppAtomInfo;
+  fun ppAssumeInfo mapping = ppAtomInfo mapping;
 
-  val ppSubstInfo =
+  fun ppSubstInfo mapping =
       Print.ppMap
         Subst.toList
         (Print.ppList
            (Print.ppBracket "bind(" ")"
-              (Print.ppOp2 "," ppVar ppTermInfo)));
+              (Print.ppOp2 "," (ppVar mapping) (ppTermInfo mapping))));
 
-  val ppResolveInfo = ppAtomInfo;
+  fun ppResolveInfo mapping = ppAtomInfo mapping;
 
-  val ppReflInfo = ppTermInfo;
+  fun ppReflInfo mapping = ppTermInfo mapping;
 
-  fun ppEqualityInfo (lit,path,res) =
+  fun ppEqualityInfo mapping (lit,path,res) =
       Print.program
-        [ppLiteralInfo lit,
+        [ppLiteralInfo mapping lit,
          Print.addString ",",
          Print.addBreak 1,
          Term.ppPath path,
          Print.addString ",",
          Print.addBreak 1,
-         ppTermInfo res];
+         ppTermInfo mapping res];
 
-  fun ppInfInfo fr sub inf =
+  fun ppInfInfo mapping inf =
       case inf of
         Proof.Axiom _ => raise Bug "ppInfInfo"
-      | Proof.Assume a => ppAssumeInfo (mapSubstAtom fr sub a)
+      | Proof.Assume a => ppAssumeInfo mapping a
       | Proof.Subst _ => Print.skip
-      | Proof.Resolve (r,_,_) => ppResolveInfo (mapSubstAtom fr sub r)
-      | Proof.Refl t => ppReflInfo (mapSubstTerm fr sub t)
-      | Proof.Equality (l,p,t) =>
-        let
-          val l = mapSubstLiteral fr sub l
-          and t = mapSubstTerm fr sub t
-        in
-          ppEqualityInfo (l,p,t)
-        end;
+      | Proof.Resolve (r,_,_) => ppResolveInfo mapping r
+      | Proof.Refl t => ppReflInfo mapping t
+      | Proof.Equality (l,p,t) => ppEqualityInfo mapping (l,p,t);
 
   fun ppAxiomProof prf =
       Print.program
@@ -1481,23 +1493,12 @@ local
         SOME name => Print.addString name
       | NONE => raise Error "previous theorem not found";
 
-  fun ppThmSub prevNames fr sub (th,s) =
+  fun ppThmSub prevNames mapping (th,s) =
       if Subst.null s then ppThm prevNames th
-      else
-        let
-          val s = mapSubstSubst fr sub s
-        in
-          Print.ppOp2 " :" (ppThm prevNames) ppSubstInfo (th,s)
-        end;
+      else Print.ppOp2 " :" (ppThm prevNames) (ppSubstInfo mapping) (th,s);
 in
   fun ppProof mapping avoid prefix names roles proofs prf =
       let
-        val fr =
-            {functionMap = mappingToTptp (!functionMapping),
-             relationMap = mappingToTptp (!relationMapping)}
-
-        val (_,sub) = mkTptpVars (Proof.freeVars prf)
-
         fun ppInf prevNames inf =
             let
               val name = Thm.inferenceTypeToString (Proof.inferenceType inf)
@@ -1510,12 +1511,12 @@ in
               Print.program
                 ([Print.addString (name ^ ","),
                   Print.addBreak 1,
-                  Print.ppBracket "[" "]" (ppInfInfo fr sub) inf] @
+                  Print.ppBracket "[" "]" (ppInfInfo mapping) inf] @
                  (if null parentSubs then []
                   else
                     [Print.addString ",",
                      Print.addBreak 1,
-                     Print.ppList (ppThmSub prevNames fr sub) parentSubs]))
+                     Print.ppList (ppThmSub prevNames mapping) parentSubs]))
             end
 
         fun ppTaut inf =
@@ -1527,18 +1528,20 @@ in
         fun ppStepInfo prevNames (name,cl,inf) =
             let
               val is_axiom = case inf of Proof.Axiom _ => true | _ => false
+
               val role =
                   case LiteralSetMap.peek roles cl of
                     SOME role => role
                   | NONE => if is_axiom then ROLE_AXIOM else ROLE_PLAIN
-              val cl' = mapSubstClause fr sub (clauseFromLiteralSet cl)
+
+              val cl' = clauseFromLiteralSet cl
             in
               Print.program
                 ([Print.addString (name ^ ","),
                   Print.addBreak 1,
                   Print.addString (role ^ ","),
                   Print.addBreak 1,
-                  Print.ppBracket "(" ")" ppClause cl'] @
+                  Print.ppBracket "(" ")" (ppClause mapping) cl'] @
                  (if is_axiom then
                     case LiteralSetMap.peek proofs cl of
                       NONE => []

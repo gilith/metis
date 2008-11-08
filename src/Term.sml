@@ -224,7 +224,9 @@ local
     | free vs (Var v :: tms) = free (NameSet.add vs v) tms
     | free vs (Fn (_,args) :: tms) = free vs (args @ tms);
 in
-  fun freeVars tm = free NameSet.empty [tm];
+  val freeVarsList = free NameSet.empty;
+
+  fun freeVars tm = freeVarsList [tm];
 end;
 
 (* ------------------------------------------------------------------------- *)

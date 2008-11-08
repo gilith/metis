@@ -130,6 +130,8 @@ val freeIn : Term.var -> formula -> bool
 
 val freeVars : formula -> NameSet.set
 
+val freeVarsList : formula list -> NameSet.set
+
 val specialize : formula -> formula
 
 val generalize : formula -> formula

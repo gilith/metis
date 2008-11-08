@@ -137,7 +137,7 @@ local
         let
           fun plural 1 s = "1 " ^ s
             | plural n s = Int.toString n ^ " " ^ s ^ "s"
-                           
+
           val {clauses,literals,symbols,typedSymbols} = Problem.size cls
         in
           print
@@ -147,7 +147,7 @@ local
              plural symbols "symbol" ^ ", " ^
              plural typedSymbols "typed symbol" ^ ".\n\n")
         end;
-        
+
   fun display_category cls =
       if notshowing "category" then ()
       else
@@ -161,32 +161,44 @@ local
     fun display_proof_start filename =
         print ("\nSZS output start CNFRefutation for " ^ filename ^ "\n");
 
-    fun display_proof_body avoid prefix names roles proofs proof =
-        Tptp.writeProof
-          {filename = "-",
-           avoid = avoid,
-           prefix = prefix,
-           names = names,
-           roles = roles,
-           proofs = proofs}
-          proof;
+    fun display_proof_body mapping avoid prefix names roles proofs proof =
+        let
+          val mapping =
+              Tptp.addVarSetTptpMapping mapping (Proof.freeVars proof)
+
+          val filename = "-"
+        in
+          Tptp.writeProof
+            {proof = proof,
+             mapping = mapping,
+             filename = filename,
+             avoid = avoid,
+             prefix = prefix,
+             names = names,
+             roles = roles,
+             proofs = proofs}
+        end;
 
     fun display_proof_end filename =
         print ("SZS output end CNFRefutation for " ^ filename ^ "\n\n");
   in
-    fun display_cnf_proof filename names th = 
+    fun display_cnf_proof filename names th =
         if notshowing "proof" then ()
         else
           let
-            val avoid = Tptp.allClauseNames names
+            val mapping = Tptp.defaultTptpMapping
+            and avoid = Tptp.allClauseNames names
             and prefix = ""
             and roles = Tptp.noClauseRoles
             and proofs = Tptp.noClauseProofs
             and proof = Proof.proof th
+
+            val () = display_proof_start filename
+            val () =
+                display_proof_body mapping avoid prefix names roles proofs proof
+            val () = display_proof_end filename
           in
-            display_proof_start filename;
-            display_proof_body avoid prefix names roles proofs proof;
-            display_proof_end filename
+            ()
           end;
 
     fun display_fof_proof filename tptp acc =
@@ -258,21 +270,32 @@ local
 
             val names = Tptp.noClauseNames
 
+            val mapping = Tptp.defaultTptpMapping
+            val mapping =
+                Tptp.addVarSetTptpMapping mapping
+                  (Tptp.formulaListFreeVars formulas)
+
             fun display n ((roles,proofs,proof),(start,i)) =
                 let
                   val prefix = if n = 1 then ""
                                else "subgoal" ^ Int.toString (i + 1) ^ "_"
+
+                  val () = if start then () else print "\n"
+
+                  val () =
+                      display_proof_body mapping avoid
+                        prefix names roles proofs proof
                 in
-                  if start then () else print "\n";
-                  display_proof_body avoid prefix names roles proofs proof;
                   (false, i + 1)
                 end
+
+            val () = display_proof_start filename
+
+            val _ = List.foldl (display (length acc)) (null formulas, 0) acc
+
+            val () = display_proof_end filename
           in
-            display_proof_start filename;
-            if null formulas then ()
-            else Tptp.write {filename = "-"} axioms;
-            List.foldl (display (length acc)) (null formulas, 0) acc;
-            display_proof_end filename
+            ()
           end;
   end;
 
@@ -327,11 +350,11 @@ local
         Resolution.loop resolution
       end
 in
-  fun prove filename =
+  fun prove mapping filename =
       let
         val () = display_sep ()
         val () = display_name filename
-        val tptp = Tptp.read {filename = filename}
+        val tptp = Tptp.read {filename = filename, mapping = mapping}
         val () = display_goal tptp
       in
         if Tptp.isCnfProblem tptp then
@@ -400,9 +423,10 @@ in
           end
       end;
 
-  fun proveAll filenames =
+  fun proveAll mapping filenames =
       List.all
-        (if !QUIET then prove else fn filename => prove filename orelse true)
+        (if !QUIET then prove mapping
+         else fn filename => prove mapping filename orelse true)
         filenames;
 end;
 
@@ -415,7 +439,9 @@ let
   (*BasicDebug val () = print "Running in basic DEBUG mode.\n" *)
   (*MetisDebug val () = print "Running in metis DEBUG mode.\n" *)
 
-  val success = proveAll work
+  val mapping = Tptp.defaultTptpMapping
+
+  val success = proveAll mapping work
 in
   exit {message = NONE, usage = false, success = success}
 end

@@ -108,6 +108,8 @@ val freeIn : var -> term -> bool
 
 val freeVars : term -> NameSet.set
 
+val freeVarsList : term list -> NameSet.set
+
 (* ------------------------------------------------------------------------- *)
 (* Fresh variables.                                                          *)
 (* ------------------------------------------------------------------------- *)

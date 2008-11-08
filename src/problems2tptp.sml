@@ -65,8 +65,13 @@ fun outputProblem outputDir {name,comments,goal} =
           [Tptp.FofFormula {name = "goal", role = "conjecture", formula = goal}]
 
       val problem = {comments = comments, formulas = formulas}
+
+      val mapping = Tptp.defaultTptpMapping
+
+      val () =
+          Tptp.write {problem = problem, mapping = mapping, filename = filename}
     in
-      Tptp.write {filename = filename} problem
+      ()
     end;
 
 (* ------------------------------------------------------------------------- *)

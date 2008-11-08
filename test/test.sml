@@ -705,7 +705,9 @@ val TPTP_DIR = "../data/problems/all";
 fun tptp d f =
     let
       val () = print ("parsing " ^ f ^ "... ")
-      val goal = Tptp.goal (Tptp.read {filename = d ^ "/" ^ f})
+      val filename = d ^ "/" ^ f
+      val mapping = Tptp.defaultTptpMapping
+      val goal = Tptp.goal (Tptp.read {filename = filename, mapping = mapping})
       val () = print "ok\n"
     in
       pvFm goal
