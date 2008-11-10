@@ -257,7 +257,7 @@ end;
 
 val hasTypeName = Name.fromString ":";
 
-fun destFnHasType (f,a) =
+fun destFnHasType ((f,a) : Name.name * term list) =
     if not (Name.equal f hasTypeName) then raise Error "Term.destFnHasType"
     else
       case a of
@@ -335,7 +335,7 @@ fun mkFnComb (fTm,aTm) = (combName, [fTm,aTm]);
 
 fun mkComb f_a = Fn (mkFnComb f_a);
 
-fun destFnComb (f,a) =
+fun destFnComb ((f,a) : Name.name * term list) =
     if not (Name.equal f combName) then raise Error "Term.destFnComb"
     else
       case a of

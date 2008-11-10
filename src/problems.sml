@@ -875,9 +875,45 @@ rev nil = nil /\ (!h t. rev (h :: t) = rev t @ h :: nil) /\
 (!x y. x + y = y + x) /\ (!x y z. x * (y * z) = x * y * z) /\
 (!x y z. x * (y + z) = x * y + x * z) /\
 (!x y z. (x + y) * z = x * z + y * z) /\ (!x. x * (x * x) = x) ==>
-!x y. x * y = y * x`}
+!x y. x * y = y * x`},
 
-] @
+(* ------------------------------------------------------------------------- *)
+(* Set theory examples.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+{name = "UNION_2_SUBSET",
+ comments = [],
+ goal = `
+(!x y. subset x y ==> subset y x ==> x = y) /\
+(!x y. (!z. member z x ==> member z y) ==> subset x y) /\
+(!x y z. member z (x + y) <=> member z x \/ member z y) ==>
+!x y. subset (x + y) (y + x)`},
+
+{name = "UNION_2",
+ comments = [],
+ goal = `
+(!x y. subset x y ==> subset y x ==> x = y) /\
+(!x y. (!z. member z x ==> member z y) ==> subset x y) /\
+(!x y z. member z (x + y) <=> member z x \/ member z y) ==>
+!x y. x + y = y + x`},
+
+{name = "UNION_3_SUBSET",
+ comments = ["From an email from Tobias Nipkow, 4 Nov 2008.",
+             "The Isabelle version of metis diverges on this goal"],
+ goal = `
+(!x y. subset x y ==> subset y x ==> x = y) /\
+(!x y. (!z. member z x ==> member z y) ==> subset x y) /\
+(!x y z. member z (x + y) <=> member z x \/ member z y) ==>
+!x y z. subset (x + y + z) (z + y + x)`},
+
+{name = "UNION_3",
+ comments = ["From an email from Tobias Nipkow, 28 Oct 2008.",
+             "The Isabelle version of metis diverges on this goal"],
+ goal = `
+(!x y. subset x y ==> subset y x ==> x = y) /\
+(!x y. (!z. member z x ==> member z y) ==> subset x y) /\
+(!x y z. member z (x + y) <=> member z x \/ member z y) ==>
+!x y z. x + y + z = z + y + x`}] @
 
 (* ========================================================================= *)
 (* Some sample problems from the TPTP archive.                               *)
