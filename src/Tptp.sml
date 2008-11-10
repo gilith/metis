@@ -832,64 +832,106 @@ local
           (r,tms)
         end;
 
-    fun termParser mapping =
-        (functionArgumentsParser mapping >> mkFn mapping) ||
-        nonFunctionArgumentsTermParser mapping
+    fun termParser mapping input =
+        let
+          val fnP = functionArgumentsParser mapping >> mkFn mapping
+          val nonFnP = nonFunctionArgumentsTermParser mapping
+        in
+          fnP || nonFnP
+        end input
 
-    and functionArgumentsParser mapping =
-        (functionParser ++ punctParser #"(" ++ termParser mapping ++
-         many ((punctParser #"," ++ termParser mapping) >> snd) ++
-         punctParser #")") >>
-        (fn (f,((),(t,(ts,())))) => (f, t :: ts))
+    and functionArgumentsParser mapping input =
+        let
+          val commaTmP = (punctParser #"," ++ termParser mapping) >> snd
+        in
+          (functionParser ++ punctParser #"(" ++ termParser mapping ++
+           many commaTmP ++ punctParser #")") >>
+          (fn (f,((),(t,(ts,())))) => (f, t :: ts))
+        end input
 
-    and nonFunctionArgumentsTermParser mapping =
-        varParser >> mkVar mapping ||
-        constantParser >> mkConst mapping
+    and nonFunctionArgumentsTermParser mapping input =
+        let
+          val varP = varParser >> mkVar mapping
+          val constP = constantParser >> mkConst mapping
+        in
+          varP || constP
+        end input;
 
-    fun binaryAtomParser mapping tm =
-      ((punctParser #"=" ++ termParser mapping) >>
-       (fn ((),r) => (true,("$equal",[tm,r])))) ||
-      ((symbolParser "!=" ++ termParser mapping) >>
-       (fn ((),r) => (false,("$equal",[tm,r]))));
+    fun binaryAtomParser mapping tm input =
+        let
+          val eqP =
+              (punctParser #"=" ++ termParser mapping) >>
+              (fn ((),r) => (true,("$equal",[tm,r])))
 
-    fun maybeBinaryAtomParser mapping (s,tms) =
+          val neqP =
+              (symbolParser "!=" ++ termParser mapping) >>
+              (fn ((),r) => (false,("$equal",[tm,r])))
+        in
+          eqP || neqP
+        end input;
+
+    fun maybeBinaryAtomParser mapping (s,tms) input =
         let
           val tm = mkFn mapping (s,tms)
         in
           optional (binaryAtomParser mapping tm) >>
           (fn SOME lit => lit
             | NONE => (true,(s,tms)))
-        end;
+        end input;
 
-    fun literalAtomParser mapping =
-        (functionArgumentsParser mapping >>++
-         maybeBinaryAtomParser mapping) ||
-        (nonFunctionArgumentsTermParser mapping >>++
-         binaryAtomParser mapping) ||
-        (propositionParser >> (fn s => (true,(s,[]))));
+    fun literalAtomParser mapping input =
+        let
+          val fnP =
+              functionArgumentsParser mapping >>++
+              maybeBinaryAtomParser mapping
 
-    fun atomParser mapping =
-        literalAtomParser mapping >>
-        (fn (pol,rel) =>
+          val nonFnP =
+              nonFunctionArgumentsTermParser mapping >>++
+              binaryAtomParser mapping
+
+          val propP = propositionParser >> (fn s => (true,(s,[])))
+        in
+          fnP || nonFnP || propP
+        end input;
+
+    fun atomParser mapping input =
+        let
+          fun mk (pol,rel) =
             case rel of
               ("$true",[]) => Boolean pol
             | ("$false",[]) => Boolean (not pol)
             | ("$equal",[l,r]) => Literal (pol, Atom.mkEq (l,r))
-            | (r,tms) => Literal (pol, mkAtom mapping (r,tms)));
+            | (r,tms) => Literal (pol, mkAtom mapping (r,tms))
+        in
+          literalAtomParser mapping >> mk
+        end input;
 
-    fun literalParser mapping =
-        ((punctParser #"~" ++ atomParser mapping) >> (negate o snd)) ||
-        atomParser mapping;
+    fun literalParser mapping input =
+        let
+          val negP = (punctParser #"~" ++ atomParser mapping) >> (negate o snd)
 
-    fun disjunctionParser mapping =
-        (literalParser mapping ++
-         many ((punctParser #"|" ++ literalParser mapping) >> snd)) >>
-        (fn (h,t) => h :: t);
+          val posP = atomParser mapping
+        in
+          negP || posP
+        end input;
 
-    fun clauseParser mapping =
-        ((punctParser #"(" ++ disjunctionParser mapping ++ punctParser #")") >>
-         (fn ((),(c,())) => c)) ||
-        disjunctionParser mapping;
+    fun disjunctionParser mapping input =
+        let
+          val orLitP = (punctParser #"|" ++ literalParser mapping) >> snd
+        in
+          (literalParser mapping ++ many orLitP) >> (fn (h,t) => h :: t)
+        end input;
+
+    fun clauseParser mapping input =
+        let
+          val disjP = disjunctionParser mapping
+
+          val bracketDisjP =
+              (punctParser #"(" ++ disjP ++ punctParser #")") >>
+              (fn ((),(c,())) => c)
+        in
+          bracketDisjP || disjP
+        end input;
 
 (*
     An exact transcription of the fof_formula syntax from
@@ -972,75 +1014,128 @@ local
         (punctParser #"!" >> K Formula.listMkForall) ||
         (punctParser #"?" >> K Formula.listMkExists);
 
-    fun fofFormulaParser mapping =
-        (unitaryFormulaParser mapping ++
-         optional (binaryFormulaParser mapping)) >>
-        (fn (f,NONE) => f | (f, SOME t) => t f)
+    fun fofFormulaParser mapping input =
+        let
+          fun mk (f,NONE) = f
+            | mk (f, SOME t) = t f
+        in
+          (unitaryFormulaParser mapping ++
+           optional (binaryFormulaParser mapping)) >> mk
+        end input
 
-    and binaryFormulaParser mapping =
-        nonAssocBinaryFormulaParser mapping ||
-        assocBinaryFormulaParser mapping
+    and binaryFormulaParser mapping input =
+        let
+          val nonAssocP = nonAssocBinaryFormulaParser mapping
 
-    and nonAssocBinaryFormulaParser mapping =
-        (binaryConnectiveParser ++ unitaryFormulaParser mapping) >>
-        (fn (c,g) => fn f => c (f,g))
+          val assocP = assocBinaryFormulaParser mapping
+        in
+          nonAssocP || assocP
+        end input
 
-    and assocBinaryFormulaParser mapping =
-        orFormulaParser mapping ||
-        andFormulaParser mapping
+    and nonAssocBinaryFormulaParser mapping input =
+        let
+          fun mk (c,g) f = c (f,g)
+        in
+          (binaryConnectiveParser ++ unitaryFormulaParser mapping) >> mk
+        end input
 
-    and orFormulaParser mapping =
-        atLeastOne
-          ((punctParser #"|" ++ unitaryFormulaParser mapping) >> snd) >>
-        (fn fs => fn f => Formula.listMkDisj (f :: fs))
+    and assocBinaryFormulaParser mapping input =
+        let
+          val orP = orFormulaParser mapping
 
-    and andFormulaParser mapping =
-        atLeastOne
-          ((punctParser #"&" ++ unitaryFormulaParser mapping) >> snd) >>
-        (fn fs => fn f => Formula.listMkConj (f :: fs))
+          val andP = andFormulaParser mapping
+        in
+          orP || andP
+        end input
 
-    and unitaryFormulaParser mapping =
-        quantifiedFormulaParser mapping ||
-        unaryFormulaParser mapping ||
-        ((punctParser #"(" ++ fofFormulaParser mapping ++ punctParser #")") >>
-         (fn ((),(f,())) => f)) ||
-        (atomParser mapping >>
-         (fn Boolean b => Formula.mkBoolean b
-           | Literal l => Literal.toFormula l))
+    and orFormulaParser mapping input =
+        let
+          val orFmP = (punctParser #"|" ++ unitaryFormulaParser mapping) >> snd
+        in
+          atLeastOne orFmP >>
+          (fn fs => fn f => Formula.listMkDisj (f :: fs))
+        end input
 
-    and quantifiedFormulaParser mapping =
-        (quantifierParser ++ varListParser ++ punctParser #":" ++
-         unitaryFormulaParser mapping) >>
-        (fn (q,(vs,((),f))) => q (map (mkVarName mapping) vs, f))
+    and andFormulaParser mapping input =
+        let
+          val andFmP = (punctParser #"&" ++ unitaryFormulaParser mapping) >> snd
+        in
+          atLeastOne andFmP >>
+          (fn fs => fn f => Formula.listMkConj (f :: fs))
+        end input
 
-    and unaryFormulaParser mapping =
-        (unaryConnectiveParser ++ unitaryFormulaParser mapping) >>
-        (fn (c,f) => c f)
+    and unitaryFormulaParser mapping input =
+        let
+          val quantP = quantifiedFormulaParser mapping
+
+          val unaryP = unaryFormulaParser mapping
+
+          val brackP =
+              (punctParser #"(" ++ fofFormulaParser mapping ++
+               punctParser #")") >>
+              (fn ((),(f,())) => f)
+
+          val atomP =
+              atomParser mapping >>
+              (fn Boolean b => Formula.mkBoolean b
+                | Literal l => Literal.toFormula l)
+        in
+          quantP ||
+          unaryP ||
+          brackP ||
+          atomP
+        end input
+
+    and quantifiedFormulaParser mapping input =
+        let
+          fun mk (q,(vs,((),f))) = q (map (mkVarName mapping) vs, f)
+        in
+          (quantifierParser ++ varListParser ++ punctParser #":" ++
+           unitaryFormulaParser mapping) >> mk
+        end input
+
+    and unaryFormulaParser mapping input =
+        let
+          fun mk (c,f) = c f
+        in
+          (unaryConnectiveParser ++ unitaryFormulaParser mapping) >> mk
+        end input
 
     and unaryConnectiveParser input =
         (punctParser #"~" >> K Formula.Not) input;
 
-    fun cnfParser mapping =
-        (alphaNumParser "cnf" ++ punctParser #"(" ++
-         nameParser ++ punctParser #"," ++
-         roleParser ++ punctParser #"," ++
-         clauseParser mapping ++ punctParser #")" ++
-         punctParser #".") >>
-        (fn ((),((),(n,((),(r,((),(c,((),())))))))) =>
-            CnfFormula {name = n, role = r, clause = c});
+    fun cnfParser mapping input =
+        let
+          fun mk ((),((),(n,((),(r,((),(c,((),())))))))) =
+              CnfFormula {name = n, role = r, clause = c}
+        in
+          (alphaNumParser "cnf" ++ punctParser #"(" ++
+           nameParser ++ punctParser #"," ++
+           roleParser ++ punctParser #"," ++
+           clauseParser mapping ++ punctParser #")" ++
+           punctParser #".") >> mk
+        end input;
 
-    fun fofParser mapping =
-        (alphaNumParser "fof" ++ punctParser #"(" ++
-         nameParser ++ punctParser #"," ++
-         roleParser ++ punctParser #"," ++
-         fofFormulaParser mapping ++ punctParser #")" ++
-         punctParser #".") >>
-        (fn ((),((),(n,((),(r,((),(f,((),())))))))) =>
-            FofFormula {name = n, role = r, formula = f});
+    fun fofParser mapping input =
+        let
+          fun mk ((),((),(n,((),(r,((),(f,((),())))))))) =
+              FofFormula {name = n, role = r, formula = f}
+        in
+          (alphaNumParser "fof" ++ punctParser #"(" ++
+           nameParser ++ punctParser #"," ++
+           roleParser ++ punctParser #"," ++
+           fofFormulaParser mapping ++ punctParser #")" ++
+           punctParser #".") >> mk
+        end input;
   in
-    fun formulaParser mapping =
-        cnfParser mapping ||
-        fofParser mapping;
+    fun formulaParser mapping input =
+        let
+          val cnfP = cnfParser mapping
+
+          val fofP = fofParser mapping
+        in
+          cnfP || fofP
+        end input;
   end;
 
   fun parseChars parser chars =
