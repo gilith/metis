@@ -233,15 +233,9 @@ end;
 (* Fresh variables.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
-local
-  val prefix  = "_";
+fun newVar () = Var (Name.newName ());
 
-  fun numVar i = Var (Name.fromString (mkPrefix prefix (Int.toString i)));
-in
-  fun newVar () = numVar (newInt ());
-
-  fun newVars n = map numVar (newInts n);
-end;
+fun newVars n = map Var (Name.newNames n);
 
 local
   fun avoidAcceptable avoid n = not (NameSet.member n avoid);

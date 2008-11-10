@@ -24,6 +24,10 @@ val equal : name -> name -> bool
 (* Fresh names.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
+val newName : unit -> name
+
+val newNames : int -> name list
+
 val variantPrime : (name -> bool) -> name -> name
 
 val variantNum : (name -> bool) -> name -> name

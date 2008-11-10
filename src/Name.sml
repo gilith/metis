@@ -6,6 +6,8 @@
 structure Name :> Name =
 struct
 
+open Useful;
+
 (* ------------------------------------------------------------------------- *)
 (* Helper functions.                                                         *)
 (* ------------------------------------------------------------------------- *)
@@ -41,6 +43,16 @@ fun equal n1 n2 = n1 = n2;
 (* ------------------------------------------------------------------------- *)
 (* Fresh variables.                                                          *)
 (* ------------------------------------------------------------------------- *)
+
+local
+  val prefix  = "_";
+
+  fun numName i = mkPrefix prefix (Int.toString i);
+in
+  fun newName () = numName (newInt ());
+
+  fun newNames n = map numName (newInts n);
+end;
 
 fun variantPrime acceptable =
     let
