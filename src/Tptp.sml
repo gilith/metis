@@ -366,14 +366,12 @@ val defaultTptpMapping =
 fun mkComment "" = "%"
   | mkComment line = "% " ^ line;
 
-fun destComment "" = ""
-  | destComment l =
-    let
-      val _ = String.sub (l,0) = #"%" orelse raise Error "destComment"
-      val n = if size l >= 2 andalso String.sub (l,1) = #" " then 2 else 1
-    in
-      String.extract (l,n,NONE)
-    end;
+fun destComment cs =
+    case cs of
+      [] => ""
+    | #"%" :: #" " :: rest => implode rest
+    | #"%" :: rest => implode rest
+    | _ => raise Error "Tptp.destComment";
 
 val isComment = can destComment;
 
@@ -1441,17 +1439,29 @@ local
 in
   fun read {mapping,filename} =
       let
+        (* Estimating parse error line numbers *)
+
         val lines = Stream.fromTextFile {filename = filename}
 
-        val lines = Stream.map chomp lines
-
-        val (comments,lines) = stripComments [] lines
-
-        val chars = Stream.concat (Stream.map Stream.fromString lines)
-
-        val formulas = Stream.toList (parseFormula mapping chars)
+        val {chars,parseErrorLocation} = Parse.initialize {lines = lines}
       in
-        {comments = comments, formulas = formulas}
+        (let
+           (* The character stream *)
+
+           val (comments,chars) = stripComments [] chars
+
+           val chars = Parse.everything Parse.any chars
+
+           (* The formula stream *)
+
+           val formulas = Stream.toList (parseFormula mapping chars)
+         in
+           {comments = comments, formulas = formulas}
+         end
+         handle Parse.NoParse => raise Error "parse error")
+        handle Error err =>
+          raise Error ("error in TPTP file \"" ^ filename ^ "\" " ^
+                       parseErrorLocation () ^ "\n" ^ err)
       end;
 end;
 
