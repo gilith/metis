@@ -159,7 +159,7 @@ local
   fun clauseSymbols cl = Real.fromInt (LiteralSet.typedSymbols cl);
 
   fun clauseVariables cl =
-      Real.fromInt (NameSet.size (LiteralSet.freeVars cl));
+      Real.fromInt (NameSet.size (LiteralSet.freeVars cl) + 1);
 
   fun clauseLiterals cl = Real.fromInt (LiteralSet.size cl);
 
