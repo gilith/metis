@@ -23,6 +23,7 @@ type modelParameters =
 
 type parameters =
      {symbolsWeight : weight,
+      variablesWeight : weight,
       literalsWeight : weight,
       models : modelParameters list};
 
@@ -56,6 +57,7 @@ val defaultModels : modelParameters list =
 val default : parameters =
      {symbolsWeight = 1.0,
       literalsWeight = 1.0,
+      variablesWeight = 1.0,
       models = defaultModels};
 
 fun size (Waiting {clauses,...}) = Heap.size clauses;
@@ -156,18 +158,22 @@ fun perturbModels parms models cls =
 local
   fun clauseSymbols cl = Real.fromInt (LiteralSet.typedSymbols cl);
 
+  fun clauseVariables cl =
+      Real.fromInt (NameSet.size (LiteralSet.freeVars cl));
+
   fun clauseLiterals cl = Real.fromInt (LiteralSet.size cl);
 
-  fun priority cl = 1e~12 * Real.fromInt (Clause.id cl);
+  fun clausePriority cl = 1e~12 * Real.fromInt (Clause.id cl);
 in
   fun clauseWeight (parm : parameters) mods dist mcl cl =
       let
 (*MetisTrace3
         val () = Print.trace Clause.pp "Waiting.clauseWeight: cl" cl
 *)
-        val {symbolsWeight,literalsWeight,models,...} = parm
+        val {symbolsWeight,variablesWeight,literalsWeight,models,...} = parm
         val lits = Clause.literals cl
         val symbolsW = Math.pow (clauseSymbols lits, symbolsWeight)
+        val variablesW = Math.pow (clauseVariables lits, variablesWeight)
         val literalsW = Math.pow (clauseLiterals lits, literalsWeight)
         val modelsW = checkModels models mods mcl
 (*MetisTrace4
@@ -175,12 +181,15 @@ in
                         Real.toString dist ^ "\n")
         val () = trace ("Waiting.clauseWeight: symbolsW = " ^
                         Real.toString symbolsW ^ "\n")
+        val () = trace ("Waiting.clauseWeight: variablesW = " ^
+                        Real.toString variablesW ^ "\n")
         val () = trace ("Waiting.clauseWeight: literalsW = " ^
                         Real.toString literalsW ^ "\n")
         val () = trace ("Waiting.clauseWeight: modelsW = " ^
                         Real.toString modelsW ^ "\n")
 *)
-        val weight = dist * symbolsW * literalsW * modelsW + priority cl
+        val weight = dist * symbolsW * variablesW * literalsW * modelsW
+        val weight = weight + clausePriority cl
 (*MetisTrace3
         val () = trace ("Waiting.clauseWeight: weight = " ^
                         Real.toString weight ^ "\n")

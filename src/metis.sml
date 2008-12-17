@@ -83,7 +83,7 @@ end;
 
 val VERSION = "2.1";
 
-val versionString = "Metis "^VERSION^" (release 20081215)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20081216)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -304,13 +304,17 @@ local
       else
         let
 (*MetisDebug
-          val () = Tptp.write {filename = "saturation.tptp"}
-                     (Tptp.mkCnfProblem
-                        {comments = ["Saturation clause set for " ^ filename],
-                         names = Tptp.noClauseNames,
-                         roles = Tptp.noClauseRoles,
-                         problem = {axioms = [],
-                                    conjecture = map Thm.clause ths}})
+          val () =
+              Tptp.write
+                {problem =
+                   Tptp.mkCnfProblem
+                     {comments = ["Saturation clause set for " ^ filename],
+                      names = Tptp.noClauseNames,
+                      roles = Tptp.noClauseRoles,
+                      problem = {axioms = [],
+                                 conjecture = map Thm.clause ths}},
+                 mapping = Tptp.defaultTptpMapping,
+                 filename = "saturation.tptp"}
 *)
           val () = print ("\nSZS output start Saturation for " ^ filename ^ "\n")
           val () = app (fn th => print (Thm.toString th ^ "\n")) ths
@@ -326,12 +330,16 @@ local
   fun display_problem filename cls =
       let
 (*MetisDebug
-          val () = Tptp.write {filename = "cnf.tptp"}
-                     (Tptp.mkCnfProblem
-                        {comments = ["CNF clauses for " ^ filename],
-                         names = Tptp.noClauseNames,
-                         roles = Tptp.noClauseRoles,
-                         problem = cls})
+          val () =
+              Tptp.write
+                {problem =
+                   Tptp.mkCnfProblem
+                     {comments = ["CNF clauses for " ^ filename],
+                      names = Tptp.noClauseNames,
+                      roles = Tptp.noClauseRoles,
+                      problem = cls},
+                 mapping = Tptp.defaultTptpMapping,
+                 filename = "cnf.tptp"}
 *)
         val () = display_clauses cls
         val () = display_size cls

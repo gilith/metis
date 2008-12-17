@@ -13,12 +13,13 @@ sig
 (*                                                                           *)
 (* The weight of a clause is defined to be                                   *)
 (*                                                                           *)
-(*   d * s^symbolsWeight * l^literalsWeight * m                              *)
+(*   d * s^symbolsWeight * v^variablesWeight * l^literalsWeight * m          *)
 (*                                                                           *)
 (* where                                                                     *)
 (*                                                                           *)
 (*   d = the derivation distance of the clause from the axioms               *)
 (*   s = the number of symbols in the clause                                 *)
+(*   v = the number of distinct variables in the clause                      *)
 (*   l = the number of literals in the clause                                *)
 (*   m = the truth of the clause wrt the models                              *)
 (* ------------------------------------------------------------------------- *)
@@ -34,6 +35,7 @@ type modelParameters =
 
 type parameters =
      {symbolsWeight : weight,
+      variablesWeight : weight,
       literalsWeight : weight,
       models : modelParameters list}
 
