@@ -118,6 +118,8 @@ val isFofProblem : problem -> bool
 
 val hasConjecture : problem -> bool
 
+val freeVars : problem -> NameSet.set
+
 val mkCnfProblem : {comments : comments,
                     names : clauseNames,
                     roles : clauseRoles,

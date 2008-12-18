@@ -453,6 +453,7 @@ val x = pvPo (kboCmp (T`f (g $x a)`, T`f (h a $x)`));
 val x = pvPo (kboCmp (T`f (g a)`, T`f (h $x)`));
 val x = pvPo (kboCmp (T`f (h a)`, T`f (g $x)`));
 val x = pvPo (kboCmp (T`f $y`, T`f (g a b c)`));
+val x = pvPo (kboCmp (T`$x * $y + $x * $z`, T`$x * ($y + $z)`));
 
 (* ------------------------------------------------------------------------- *)
 val () = SAY "Rewriting";

@@ -83,7 +83,7 @@ end;
 
 val VERSION = "2.1";
 
-val versionString = "Metis "^VERSION^" (release 20081217)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20081218)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -291,7 +291,22 @@ local
 
             val () = display_proof_start filename
 
-            val _ = List.foldl (display (length acc)) (null formulas, 0) acc
+            val top =
+                let
+                  val noAxioms = null formulas
+
+                  val () =
+                      if noAxioms then ()
+                      else
+                        Tptp.write
+                          {problem = axioms,
+                           mapping = mapping,
+                           filename = "-"}
+                in
+                  noAxioms
+                end
+
+            val (top,_) = List.foldl (display (length acc)) (top,0) acc
 
             val () = display_proof_end filename
           in
@@ -305,16 +320,24 @@ local
         let
 (*MetisDebug
           val () =
-              Tptp.write
-                {problem =
-                   Tptp.mkCnfProblem
-                     {comments = ["Saturation clause set for " ^ filename],
-                      names = Tptp.noClauseNames,
-                      roles = Tptp.noClauseRoles,
-                      problem = {axioms = [],
-                                 conjecture = map Thm.clause ths}},
-                 mapping = Tptp.defaultTptpMapping,
-                 filename = "saturation.tptp"}
+              let
+                val problem =
+                    Tptp.mkCnfProblem
+                      {comments = ["Saturation clause set for " ^ filename],
+                       names = Tptp.noClauseNames,
+                       roles = Tptp.noClauseRoles,
+                       problem = {axioms = [],
+                                  conjecture = map Thm.clause ths}}
+
+                val mapping =
+                    Tptp.addVarSetTptpMapping Tptp.defaultTptpMapping
+                      (Tptp.freeVars problem)
+              in
+                Tptp.write
+                  {problem = problem,
+                   mapping = mapping,
+                   filename = "saturation.tptp"}
+              end
 *)
           val () = print ("\nSZS output start Saturation for " ^ filename ^ "\n")
           val () = app (fn th => print (Thm.toString th ^ "\n")) ths
@@ -330,16 +353,24 @@ local
   fun display_problem filename cls =
       let
 (*MetisDebug
-          val () =
+        val () =
+            let
+              val problem =
+                  Tptp.mkCnfProblem
+                    {comments = ["CNF clauses for " ^ filename],
+                     names = Tptp.noClauseNames,
+                     roles = Tptp.noClauseRoles,
+                     problem = cls}
+
+              val mapping =
+                  Tptp.addVarSetTptpMapping Tptp.defaultTptpMapping
+                    (Tptp.freeVars problem)
+            in
               Tptp.write
-                {problem =
-                   Tptp.mkCnfProblem
-                     {comments = ["CNF clauses for " ^ filename],
-                      names = Tptp.noClauseNames,
-                      roles = Tptp.noClauseRoles,
-                      problem = cls},
-                 mapping = Tptp.defaultTptpMapping,
+                {problem = problem,
+                 mapping = mapping,
                  filename = "cnf.tptp"}
+            end
 *)
         val () = display_clauses cls
         val () = display_size cls

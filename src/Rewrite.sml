@@ -9,10 +9,28 @@ struct
 open Useful;
 
 (* ------------------------------------------------------------------------- *)
-(* A type of rewrite systems.                                                *)
+(* Orientations of equations.                                                *)
 (* ------------------------------------------------------------------------- *)
 
 datatype orient = LeftToRight | RightToLeft;
+
+fun toStringOrient ort =
+    case ort of
+      LeftToRight => "-->"
+    | RightToLeft => "<--";
+
+val ppOrient = Print.ppMap toStringOrient Print.ppString;
+
+fun toStringOrientOption orto =
+    case orto of
+      SOME ort => toStringOrient ort
+    | NONE => "<->";
+
+val ppOrientOption = Print.ppMap toStringOrientOption Print.ppString;
+
+(* ------------------------------------------------------------------------- *)
+(* A type of rewrite systems.                                                *)
+(* ------------------------------------------------------------------------- *)
 
 type reductionOrder = Term.term * Term.term -> order option;
 
@@ -63,14 +81,8 @@ val pp = Print.ppMap equations (Print.ppList Rule.ppEquation);
 
 (*MetisTrace1
 local
-  fun orientOptionToString ort =
-      case ort of
-        SOME LeftToRight => "-->"
-      | SOME RightToLeft => "<--"
-      | NONE => "<->";
-
   fun ppEq ((x_y,_),ort) =
-      Print.ppOp2 (" " ^ orientOptionToString ort) Term.pp Term.pp x_y;
+      Print.ppOp2 (" " ^ toStringOrientOption ort) Term.pp Term.pp x_y;
 
   fun ppField f ppA a =
       Print.blockProgram Print.Inconsistent 2
@@ -85,9 +97,7 @@ local
 
   val ppRedexes =
       ppField "redexes"
-        (TermNet.pp
-           (Print.ppPair Print.ppInt
-              (Print.ppMap (orientOptionToString o SOME) Print.ppString)));
+        (TermNet.pp (Print.ppPair Print.ppInt ppOrient));
 
   val ppSubterms =
       ppField "subterms"

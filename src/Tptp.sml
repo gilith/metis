@@ -1195,6 +1195,8 @@ fun isFofProblem prob = not (isCnfProblem prob);
 fun hasConjecture ({formulas,...} : problem) =
     List.exists formulaIsConjecture formulas;
 
+fun freeVars ({formulas,...} : problem) = formulaListFreeVars formulas;
+
 local
   fun bump n avoid =
       let

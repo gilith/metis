@@ -304,13 +304,17 @@ fun resolve (cl1,lit1) (cl2,lit2) =
       cl
     end;
 
-fun paramodulate (cl1,lit1,ort,tm1) (cl2,lit2,path,tm2) =
+fun paramodulate (cl1,lit1,ort1,tm1) (cl2,lit2,path2,tm2) =
     let
 (*MetisTrace5
       val () = Print.trace pp "Clause.paramodulate: cl1" cl1
       val () = Print.trace Literal.pp "Clause.paramodulate: lit1" lit1
+      val () = Print.trace Rewrite.ppOrient "Clause.paramodulate: ort1" ort1
+      val () = Print.trace Term.pp "Clause.paramodulate: tm1" tm1
       val () = Print.trace pp "Clause.paramodulate: cl2" cl2
       val () = Print.trace Literal.pp "Clause.paramodulate: lit2" lit2
+      val () = Print.trace Term.ppPath "Clause.paramodulate: path2" path2
+      val () = Print.trace Term.pp "Clause.paramodulate: tm2" tm2
 *)
       val Clause {parameters, thm = th1, ...} = cl1
       and Clause {thm = th2, ...} = cl2
@@ -319,32 +323,36 @@ fun paramodulate (cl1,lit1,ort,tm1) (cl2,lit2,path,tm2) =
       and lit2 = Literal.subst sub lit2
       and th1 = Thm.subst sub th1
       and th2 = Thm.subst sub th2
+
       val _ = isLargerLiteral parameters (Thm.clause th1) lit1 orelse
-(*MetisTrace5
-              (trace "Clause.paramodulate: cl1 ordering\n"; false) orelse
-*)
-              raise Error "paramodulate: with clause: ordering constraints"
+              raise Error "Clause.paramodulate: with clause: ordering"
       val _ = isLargerLiteral parameters (Thm.clause th2) lit2 orelse
-(*MetisTrace5
-              (trace "Clause.paramodulate: cl2 ordering\n"; false) orelse
-*)
-              raise Error "paramodulate: into clause: ordering constraints"
+              raise Error "Clause.paramodulate: into clause: ordering"
+
       val eqn = (Literal.destEq lit1, th1)
       val eqn as (l_r,_) =
-          case ort of
+          case ort1 of
             Rewrite.LeftToRight => eqn
           | Rewrite.RightToLeft => Rule.symEqn eqn
-      val _ = isLargerTerm parameters l_r orelse
-(*MetisTrace5
-              (trace "Clause.paramodulate: eqn ordering\n"; false) orelse
+(*MetisTrace6
+      val () = Print.trace Rule.ppEquation "Clause.paramodulate: eqn" eqn
 *)
-              raise Error "paramodulate: equation: ordering constraints"
-      val th = Rule.rewrRule eqn lit2 path th2
+      val _ = isLargerTerm parameters l_r orelse
+              raise Error "Clause.paramodulate: equation: ordering constraints"
+      val th = Rule.rewrRule eqn lit2 path2 th2
 (*MetisTrace5
       val () = Print.trace Thm.pp "Clause.paramodulate: th" th
 *)
     in
       Clause {parameters = parameters, id = newId (), thm = th}
-    end;
+    end
+(*MetisTrace5
+    handle Error err =>
+      let
+        val () = trace ("Clause.paramodulate: failed: " ^ err ^ "\n")
+      in
+        raise Error err
+      end;
+*)
 
 end

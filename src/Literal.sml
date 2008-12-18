@@ -234,6 +234,13 @@ struct
         foldl f NameSet.empty
       end;
 
+  val freeVarsList =
+      let
+        fun f (lits,set) = NameSet.union set (freeVars lits)
+      in
+        List.foldl f NameSet.empty
+      end;
+
   val symbols =
       let
         fun f (lit,z) = Literal.symbols lit + z

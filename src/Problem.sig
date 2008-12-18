@@ -19,6 +19,8 @@ val size : problem -> {clauses : int,
                        symbols : int,
                        typedSymbols : int}
 
+val freeVars : problem -> NameSet.set
+
 val toClauses : problem -> Thm.clause list
 
 val toFormula : problem -> Formula.formula

@@ -34,6 +34,11 @@ fun size prob =
        typedSymbols = foldl typedSyms 0 cls}
     end;
 
+fun freeVars {axioms,conjecture} =
+    NameSet.union
+      (LiteralSet.freeVarsList axioms)
+      (LiteralSet.freeVarsList conjecture);
+
 local
   fun clauseToFormula cl =
       Formula.listMkDisj (LiteralSet.transform Literal.toFormula cl);

@@ -12,10 +12,32 @@ open Useful;
 (* Helper functions.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
+(*MetisDebug
 local
+  fun mkRewrite ordering =
+      let
+        fun add (cl,rw) =
+            let
+              val {id, thm = th, ...} = Clause.dest cl
+            in
+              case total Thm.destUnitEq th of
+                SOME l_r => Rewrite.add rw (id,(l_r,th))
+              | NONE => rw
+            end
+      in
+        foldl add (Rewrite.new (KnuthBendixOrder.compare ordering))
+      end;
+
   fun allFactors red =
       let
-        fun allClause cl = List.all red (cl :: Clause.factor cl)
+        fun allClause cl =
+            List.all red (cl :: Clause.factor cl) orelse
+            let
+              val () = Print.trace Clause.pp
+                         "Active.isSaturated.allFactors: cl" cl
+            in
+              false
+            end
       in
         List.all allClause
       end;
@@ -30,6 +52,12 @@ local
                   | SOME cl => allFactors red [cl]
             in
               LiteralSet.all allLiteral2 (Clause.literals cl)
+            end orelse
+            let
+              val () = Print.trace Clause.pp
+                         "Active.isSaturated.allResolutions: cl2" cl
+            in
+              false
             end
 
         fun allClause1 allCls cl =
@@ -39,7 +67,14 @@ local
               fun allLiteral1 lit = List.all (allClause2 (cl,lit)) allCls
             in
               LiteralSet.all allLiteral1 (Clause.literals cl)
+            end orelse
+            let
+              val () = Print.trace Clause.pp
+                         "Active.isSaturated.allResolutions: cl1" cl
+            in
+              false
             end
+
       in
         fn [] => true
          | allCls as cl :: cls =>
@@ -60,9 +95,24 @@ local
                         | SOME cl => allFactors red [cl]
                   in
                     List.all allSubterms (Literal.nonVarTypedSubterms lit)
+                  end orelse
+                  let
+                    val () = Print.trace Literal.pp
+                               "Active.isSaturated.allParamodulations: lit2" lit
+                  in
+                    false
                   end
             in
               LiteralSet.all allLiteral2 (Clause.literals cl)
+            end orelse
+            let
+              val () = Print.trace Clause.pp
+                         "Active.isSaturated.allParamodulations: cl2" cl
+              val (_,_,ort,_) = cl_lit_ort_tm
+              val () = Print.trace Rewrite.ppOrient
+                         "Active.isSaturated.allParamodulations: ort1" ort
+            in
+              false
             end
 
         fun allClause1 cl =
@@ -78,9 +128,21 @@ local
                     | SOME (l,r) =>
                       allCl2 (cl,lit,Rewrite.LeftToRight,l) andalso
                       allCl2 (cl,lit,Rewrite.RightToLeft,r)
+                  end orelse
+                  let
+                    val () = Print.trace Literal.pp
+                               "Active.isSaturated.allParamodulations: lit1" lit
+                  in
+                    false
                   end
             in
               LiteralSet.all allLiteral1 (Clause.literals cl)
+            end orelse
+            let
+              val () = Print.trace Clause.pp
+                         "Active.isSaturated.allParamodulations: cl1" cl
+            in
+              false
             end
       in
         List.all allClause1 cls
@@ -98,31 +160,49 @@ local
                 val cl' = Clause.reduce reduce cl'
                 val cl' = Clause.rewrite rewrite cl'
               in
-                not (Clause.equalThms cl cl') andalso simp cl'
+                not (Clause.equalThms cl cl') andalso
+                (simp cl' orelse
+                 let
+                   val () = Print.trace Clause.pp
+                              "Active.isSaturated.redundant: cl'" cl'
+                 in
+                   false
+                 end)
               end
       in
-        simp
+        fn cl =>
+           simp cl orelse
+           let
+             val () = Print.trace Clause.pp
+                        "Active.isSaturated.redundant: cl" cl
+           in
+             false
+           end
       end;
 in
   fun isSaturated ordering subs cls =
       let
-(*MetisTrace2
-        val ppCls = Print.ppList Clause.pp
-        val () = Print.trace ppCls "Active.isSaturated: clauses" cls
-*)
-        val red = Units.empty
-        val rw = Rewrite.new (KnuthBendixOrder.compare ordering)
-        val red = redundant {subsume = subs, reduce = red, rewrite = rw}
+        val rd = Units.empty
+        val rw = mkRewrite ordering cls
+        val red = redundant {subsume = subs, reduce = rd, rewrite = rw}
       in
-        allFactors red cls andalso
-        allResolutions red cls andalso
-        allParamodulations red cls
+        (allFactors red cls andalso
+         allResolutions red cls andalso
+         allParamodulations red cls) orelse
+        let
+          val () = Print.trace Rewrite.pp "Active.isSaturated: rw" rw
+          val () = Print.trace (Print.ppList Clause.pp)
+                     "Active.isSaturated: clauses" cls
+        in
+          false
+        end
       end;
-
-  fun checkSaturated ordering subs cls =
-      if isSaturated ordering subs cls then ()
-      else raise Bug "Active.checkSaturated";
 end;
+
+fun checkSaturated ordering subs cls =
+    if isSaturated ordering subs cls then ()
+    else raise Bug "Active.checkSaturated";
+*)
 
 (* ------------------------------------------------------------------------- *)
 (* A type of active clause sets.                                             *)
@@ -492,13 +572,30 @@ fun deduce active cl =
       val eqns = Clause.largestEquations cl
       val subtms =
           if TermNet.null equations then [] else Clause.largestSubterms cl
+(*MetisTrace5
+      val () = Print.trace LiteralSet.pp "Active.deduce: lits" lits
+      val () = Print.trace
+                 (Print.ppList
+                    (Print.ppMap (fn (lit,ort,_) => (lit,ort))
+                      (Print.ppPair Literal.pp Rewrite.ppOrient)))
+                 "Active.deduce: eqns" eqns
+      val () = Print.trace
+                 (Print.ppList
+                    (Print.ppTriple Literal.pp Term.ppPath Term.pp))
+                 "Active.deduce: subtms" subtms
+*)
 
       val acc = []
       val acc = LiteralSet.foldl (deduceResolution literals cl) acc lits
       val acc = foldl (deduceParamodulationWith subterms cl) acc eqns
       val acc = foldl (deduceParamodulationInto equations cl) acc subtms
+      val acc = rev acc
+
+(*MetisTrace5
+      val () = Print.trace (Print.ppList Clause.pp) "Active.deduce: acc" acc
+*)
     in
-      rev acc
+      acc
     end;
 
 (* ------------------------------------------------------------------------- *)
@@ -796,7 +893,7 @@ fun add active cl =
       else if not (Clause.equalThms cl cl') then factor active [cl']
       else
         let
-(*MetisTrace3
+(*MetisTrace2
           val () = Print.trace Clause.pp "Active.add: cl" cl
 *)
           val active = addClause active cl
