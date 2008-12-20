@@ -65,7 +65,8 @@ fun countOr2 (count1,count2) =
       Count {positive = p, negative = n}
     end;
 
-(*** Is this associative? ***)
+(* Whether countXor2 is associative is an open question. *)
+
 fun countXor2 (count1,count2) =
     let
       val Count {positive = p1, negative = n1} = count1
@@ -267,7 +268,7 @@ fun And2 (False,_) = False
         end
     end;
 
-val AndList = foldl And2 True;
+val AndList = List.foldl And2 True;
 
 val AndSet = Set.foldl And2 True;
 
@@ -303,7 +304,7 @@ fun Or2 (True,_) = True
         end
     end;
 
-val OrList = foldl Or2 False;
+val OrList = List.foldl Or2 False;
 
 val OrSet = Set.foldl Or2 False;
 
@@ -313,12 +314,13 @@ fun pushOr2 (f1,f2) =
       and s2 = case f2 of And (_,_,s) => s | _ => singleton f2
 
       fun g x1 (x2,acc) = And2 (Or2 (x1,x2), acc)
+
       fun f (x1,acc) = Set.foldl (g x1) acc s2
     in
       Set.foldl f True s1
     end;
 
-val pushOrList = foldl pushOr2 False;
+val pushOrList = List.foldl pushOr2 False;
 
 local
   fun normalize fm =
@@ -356,7 +358,7 @@ in
       end;
 end;
 
-val XorList = foldl Xor2 False;
+val XorList = List.foldl Xor2 False;
 
 val XorSet = Set.foldl Xor2 False;
 
@@ -418,7 +420,7 @@ fun Exists1 (v,init_fm) =
       exists init_fm
     end;
 
-fun ExistsList (vs,f) = foldl Exists1 f vs;
+fun ExistsList (vs,f) = List.foldl Exists1 f vs;
 
 fun ExistsSet (n,f) = NameSet.foldl Exists1 f n;
 
@@ -456,7 +458,7 @@ fun Forall1 (v,init_fm) =
       forall init_fm
     end;
 
-fun ForallList (vs,f) = foldl Forall1 f vs;
+fun ForallList (vs,f) = List.foldl Forall1 f vs;
 
 fun ForallSet (n,f) = NameSet.foldl Forall1 f n;
 
@@ -682,16 +684,24 @@ local
       | False => False
       | Literal _ => fm
       | And (_,_,s) => AndList (Set.transform (cnfFm avoid) s)
-      | Or (_,_,s) => pushOrList (snd (Set.foldl cnfOr (avoid,[]) s))
+      | Or (fv,_,s) =>
+        let
+          val avoid = NameSet.union avoid fv
+          val (fms,_) = Set.foldl cnfOr ([],avoid) s
+        in
+          pushOrList fms
+        end
       | Xor _ => cnfFm avoid (pushXor fm)
       | Exists (fv,_,n,f) => cnfFm avoid (skolemize fv n f)
       | Forall (fv,_,n,f) => cnfFm avoid (rename avoid fv n f)
 
-  and cnfOr (fm,(avoid,acc)) =
+  and cnfOr (fm,(fms,avoid)) =
       let
         val fm = cnfFm avoid fm
+        val fms = fm :: fms
+        val avoid = NameSet.union avoid (freeVars fm)
       in
-        (NameSet.union (freeVars fm) avoid, fm :: acc)
+        (fms,avoid)
       end;
 in
   val basicCnf = cnfFm NameSet.empty;
@@ -1091,10 +1101,10 @@ datatype cnfState =
 val cnfStateInitial = CnfState simplifyEmpty;
 
 local
-  fun def_cnf defs cls simp [] =
-      ({definitions = defs, clauses = cls}, CnfState simp)
-    | def_cnf defs cls simp (fm :: fms) =
-      def_cnf_formula defs cls simp (simplify simp fm) fms
+  fun def_cnf defs cls simp fms =
+      case fms of
+        [] => ({definitions = defs, clauses = cls}, CnfState simp)
+      | fm :: fms => def_cnf_formula defs cls simp (simplify simp fm) fms
 
   and def_cnf_formula defs cls simp (fm_prf as (fm,prf)) fms =
       case fm of
@@ -1113,6 +1123,7 @@ local
         case minimumDefinition fm of
           SOME def =>
           let
+            val () = raise Bug "no definitions allowed during debugging"
             val (def,fm) = newDefinition def
             and fms = fm_prf :: fms
           in
@@ -1121,6 +1132,7 @@ local
         | NONE =>
           let
             val simp = simplifyAdd simp fm_prf
+
             fun add (f,l) =
                 (toClause f, prf) :: l
 (*MetisDebug
@@ -1143,10 +1155,10 @@ local
         ({definitions = defs, clauses = cls}, CnfInconsistent)
       end;
 in
-  fun cnfStateAdd (fm,prf) (CnfState simp) =
-      def_cnf [] [] simp [(fromFormula fm, prf)]
-    | cnfStateAdd _ CnfInconsistent =
-      ({definitions = [], clauses = []}, CnfInconsistent);
+  fun cnfStateAdd (fm,prf) state =
+      case state of
+        CnfState simp => def_cnf [] [] simp [(fromFormula fm, prf)]
+      | CnfInconsistent => ({definitions = [], clauses = []}, CnfInconsistent);
 end;
 
 local

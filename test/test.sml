@@ -109,36 +109,6 @@ fun chop_newline s =
 fun unquote (QUOTE q) = q
   | unquote (ANTIQUOTE _) = raise Fail "unquote";
 
-(***
-fun quick_prove slv goal =
-  let
-    val {thms,hyps} = Thm.clauses goal
-    val solv = initialize slv
-  in
-    (printval (pp_map Option.isSome pp_bool) o (time o try) refute)
-    (solv {limit = unlimited, thms = thms, hyps = hyps})
-  end;
-
-val meson_prove =
-    quick_prove (Solver.apply_sos_filter Solver.all_negative meson);
-val resolution_prove = quick_prove resolution;
-val metis_prove = quick_prove metis;
-
-fun quick_solve slv n ruls =
-  printval (pp_list (pp_list pp_thm)) o
-  (time o try)
-  (solve
-   (initialize slv {limit = unlimited, thms = axiomatize ruls, hyps = []}) n);
-
-val meson_solve = quick_solve meson 1;
-val prolog_solve = quick_solve prolog 1;
-val resolution_solve = quick_solve resolution 1;
-val metis_solve = quick_solve metis 1;
-
-val pfm  = printval pp_formula;
-val pfms = printval (pp_list pp_formula);
-***)
-
 (* ------------------------------------------------------------------------- *)
 val () = SAY "The parser and pretty-printer";
 (* ------------------------------------------------------------------------- *)
@@ -539,6 +509,8 @@ in
   fun clausesToFormula cls = Formula.listMkConj (map clauseToFormula cls);
 end;
 
+val cnf' = pvFm o clausesToFormula o Normalize.cnf o F;
+
 val cnf = pvFm o clausesToFormula o Normalize.cnf o
           Formula.Not o Formula.generalize o F;
 
@@ -550,6 +522,7 @@ val _ = cnf `((p <=> q) <=> r) <=> (p <=> (q <=> r))`;
 val _ = cnf `~(!x. ?y. x < y ==> !v. ?w. x * v < y * w)`;
 val _ = cnf `~(!x. P x ==> (?y z. Q y \/ ~(?z. P z /\ Q z)))`;
 val _ = cnf `~(?x y. x + y = 2)`;
+val _ = cnf' `(!x. p x) \/ (!y. r $x y)`;
 
 val _ = cnf
   `(!x. P x ==> (!x. Q x)) /\ ((!x. Q x \/ R x) ==> (?x. Q x /\ R x)) /\
@@ -566,12 +539,13 @@ User: 0.017  System: 0.000  GC: 0.000  Real: 0.017  (* Negation *)
 User: 0.706  System: 0.004  GC: 0.050  Real: 0.724  (* CNF *)
 *)
 
-(***
 (* ------------------------------------------------------------------------- *)
 val () = SAY "Finite models";
 (* ------------------------------------------------------------------------- *)
 
+(***
 val pv = printval M.pp_model;
+
 fun f m fm =
   let
     val PRINT_TIMING_INFO = false
@@ -616,31 +590,8 @@ val () = print ("e = " ^ M.term_to_string m (Syntax.parseTerm `e`) ^ "\n\n");
 val () = print ("i x =\n" ^ M.term_to_string m (Syntax.parseTerm `i x`) ^ "\n");
 val () = print ("x * y =\n" ^ M.term_to_string m (Syntax.parseTerm `x * y`) ^ "\n");
 val () = print ("x = y =\n"^M.formula_to_string m (Syntax.parseFormula `x = y`)^"\n");
-
-(* ------------------------------------------------------------------------- *)
-val () = SAY "Completion engine";
-(* ------------------------------------------------------------------------- *)
-
-val pv = printval C.pp_completion;
-fun wght ("i",1) = 0 | wght ("*",2) = 2 | wght _ = 1;
-fun prec (("i",1),("i",1)) = EQUAL
-  | prec (_,("i",1)) = LESS
-  | prec (("i",1),_) = GREATER
-  | prec ((f,m),(g,n)) =
-  if m < n then LESS else if m > n then GREATER else String.compare (f,g);
-val c_parm = {weight = wght, precedence = prec, precision = 3};
-val c_emp = C.empty (T.empty c_parm);
-val add = try (foldl (fn (q,r) => C.add (axiom [q]) r) c_emp);
-
-val c = pv (add [`f (f x) = g x`]);
-val c = pv (funpow 2 C.deduce c);
-
-val c = pv (add [`x * y * z = x * (y * z)`, `1 * x = x`, `i x * x = 1`]);
-val c = pv (funpow 44 C.deduce c);
-
-val c = pv (add [`x*y * z = x * (y*z)`, `1 * x = x`, `x * 1 = x`, `x * x = 1`]);
-val c = pv (funpow 4 C.deduce c);
 ***)
+
 (* ------------------------------------------------------------------------- *)
 val () = SAY "Syntax checking the problem sets";
 (* ------------------------------------------------------------------------- *)
@@ -777,197 +728,3 @@ end;
 val cl = pvCl (LcpCL[`~($y <= (2 + (2 * $x + pow $x 2)) / 2)`, `~(0 <= $x)`,
                      `$y <= exp $x`]);
 val _ = pvLits (Clause.largestLiterals cl);
-
-(***
-(* ------------------------------------------------------------------------- *)
-val () = SAY "Problems for provers";
-(* ------------------------------------------------------------------------- *)
-
-(* Non-equality *)
-
-val p59 = pfm (Syntax.parseFormula `(!x. P x <=> ~P (f x)) ==> ?x. P x /\ ~P (f x)`);
-
-val p39 = pfm (Syntax.parseFormula `~?x. !y. P y x <=> ~P y y`);
-
-(* Equality *)
-
-val p48 = (pfm o Syntax.parseFormula)
-  `(a = b \/ c = d) /\ (a = c \/ b = d) ==> a = d \/ b = c`;
-
-val cong = (pfm o Syntax.parseFormula)
-  `(!x. f (f (f (f (f x)))) = x) /\ (!x. f (f (f x)) = x) ==> !x. f x = x`;
-
-(* Impossible problems to test failure modes *)
-
-val square = (pfm o Syntax.parseFormula)
-  `sq 0 should_be_zero_here /\
-   (!x. sq x x ==> sq 0 (s x)) /\ (!x y. sq x y ==> sq (s x) y) ==>
-   sq 0 (s (s (s (s (s (s (s (s (s (s (s (s 0))))))))))))`;
-
-(* ------------------------------------------------------------------------- *)
-val () = SAY "Problems for solvers";
-(* ------------------------------------------------------------------------- *)
-
-val fib_rules = (pfm o Syntax.parseFormula)
-  `(!x. x + 0 = x) /\ (!x y z. x + y = z ==> x + suc y = suc z) /\
-   fib 0 = 0 /\ fib (suc 0) = suc 0 /\
-   (!x y z w.
-      fib x = y /\ fib (suc x) = z /\ y + z = w ==> fib (suc (suc x)) = w)`;
-
-val fib_query = pfms [Syntax.parseFormula `fib x = suc (suc y)`];
-
-val agatha_rules = (pfm o Syntax.parseFormula)
-  `lives agatha /\ lives butler /\ lives charles /\
-   (killed agatha agatha \/ killed butler agatha \/ killed charles agatha) /\
-   (!x y. killed x y ==> hates x y /\ ~richer x y) /\
-   (!x. hates agatha x ==> ~hates charles x) /\
-   hates agatha agatha /\ hates agatha charles /\
-   (!x. lives x /\ ~richer x agatha ==> hates butler x) /\
-   (!x. hates agatha x ==> hates butler x) /\
-   (!x. ~hates x agatha \/ ~hates x butler \/ ~hates x charles)`;
-
-val agatha_query1 = pfms [Syntax.parseFormula `killed x agatha`];
-val agatha_query2 = pfms [Syntax.parseFormula `~killed x agatha`];
-val agatha_query3 = pfms (map Syntax.parseFormula [`killed x agatha`, `lives x`]);
-
-val subset_rules = (pfm o Syntax.parseFormula)
-  `subset nil nil /\
-   (!v x y. subset x y ==> subset (v :: x) (v :: y)) /\
-   (!v x y. subset x y ==> subset x        (v :: y))`;
-
-val subset_query1 = pfms [Syntax.parseFormula `subset x (0 :: 1 :: 2 :: nil)`];
-val subset_query2 = pfms [Syntax.parseFormula `subset (0 :: 1 :: 2 :: nil) x`];
-
-val matchorder_rules = (pfm o Syntax.parseFormula)
-  `p 0 3 /\
-   (!x. p x 4) /\
-   (!x. p x 3 ==> p (s (s (s x))) 3) /\
-   (!x. p (s x) 3 ==> p x 3)`;
-
-val matchorder_query = pfms [Syntax.parseFormula `p (s 0) 3`];
-
-val ackermann_rules = (pfm o Syntax.parseFormula)
-  `(!x. ack 0 x = s x) /\
-   (!x y. ack x (s 0) = y ==> ack (s x) 0 = y) /\
-   (!x y z. ack (s x) y = w /\ ack x w = z ==> ack (s x) (s y) = z)`;
-
-val ackermann_query = pfms [Syntax.parseFormula `ack (s (s (s 0))) 0 = x`];
-
-(* ------------------------------------------------------------------------- *)
-(* Debugging Central.                                                        *)
-(* ------------------------------------------------------------------------- *)
-
-(*
-val () = Useful.trace_level := 4;
-val () = Clause.show_constraint := true;
-
-local
-  open Resolution;
-  val to_parm = Termorder.update_precision I Termorder.defaults;
-  val cl_parm = {term_order = true, literal_order = true,
-                 order_stickiness = 0, termorder_parm = to_parm};
-in
-  val tres_prove = (quick_prove o resolution')
-    ("tres",
-     {clause_parm = cl_parm,
-      set_parm    = Clauseset.defaults,
-      sos_parm    = Support.defaults});
-end;
-
-val prob = Syntax.parseFormula `
-  (!x. x = x) /\ (!x y z v. x + y <= z + v \/ ~(x <= z) \/ ~(y <= v)) /\
-  (!x. x + 0 = x) /\ (!x. x + ~x = 0) /\
-  (!x y z. x + (y + z) = x + y + z) ==>
-  ~d <= 0 /\ c + d <= i /\ ~(c <= i) ==> F`;
-val prob = Syntax.parseFormula (get std "P21");
-val prob = Syntax.parseFormula (get std "ROB002-1");
-val prob = Syntax.parseFormula (get std "KLEIN_GROUP_COMMUTATIVE");
-val prob = Syntax.parseFormula (get hol "pred_set_1");
-
-(*
-(cnf o Not o generalize) prob;
-stop;
-*)
-
-tres_prove prob;
-stop;
-
-val SOME th = meson_prove prob;
-print (proof_to_string' 70 (proof th));
-
-stop;
-*)
-
-(* ------------------------------------------------------------------------- *)
-val () = SAY "Meson prover";
-(* ------------------------------------------------------------------------- *)
-
-val meson_prove_p59 = meson_prove p59;
-val meson_prove_p39 = meson_prove p39;
-
-val meson_prove_p48  = meson_prove p48;
-val meson_prove_cong = meson_prove cong;
-
-val meson_prove_square = meson_prove square;
-
-(* ------------------------------------------------------------------------- *)
-val () = SAY "Meson solver";
-(* ------------------------------------------------------------------------- *)
-
-val meson_solve_fib = meson_solve fib_rules fib_query;
-
-val meson_solve_agatha1 = meson_solve agatha_rules agatha_query1;
-val meson_solve_agatha2 = meson_solve agatha_rules agatha_query2;
-val meson_solve_agatha3 = meson_solve agatha_rules agatha_query3;
-
-val meson_solve_subset1 = meson_solve subset_rules subset_query1;
-val meson_solve_subset2 = meson_solve subset_rules subset_query2;
-
-val meson_solve_matchorder = meson_solve matchorder_rules matchorder_query;
-
-val meson_solve_ackermann = meson_solve ackermann_rules ackermann_query;
-
-(* ------------------------------------------------------------------------- *)
-val () = SAY "Prolog solver";
-(* ------------------------------------------------------------------------- *)
-
-val prolog_solve_subset1 = prolog_solve subset_rules subset_query1;
-val prolog_solve_subset2 = prolog_solve subset_rules subset_query2;
-
-val prolog_solve_matchorder = prolog_solve matchorder_rules matchorder_query;
-
-(* ------------------------------------------------------------------------- *)
-val () = SAY "Resolution prover";
-(* ------------------------------------------------------------------------- *)
-
-val resolution_prove_p59 = resolution_prove p59;
-val resolution_prove_p39 = resolution_prove p39;
-
-val resolution_prove_p48  = resolution_prove p48;
-val resolution_prove_cong = resolution_prove cong;
-
-(* It would appear that resolution can't detect that this is unprovable
-val resolution_prove_square = resolution_prove square; *)
-
-(* Printing proofs
-load "Problem";
-val p21 = Syntax.parseFormula (Problem.get Problem.std "P21");
-val p21_cnf = cnf (Not (generalize p21));
-val SOME th = resolution_prove p21;
-print (proof_to_string' 70 (proof th));
-*)
-
-(* ------------------------------------------------------------------------- *)
-val () = SAY "Metis prover";
-(* ------------------------------------------------------------------------- *)
-
-val metis_prove_p59 = metis_prove p59;
-val metis_prove_p39 = metis_prove p39;
-
-val metis_prove_p48  = metis_prove p48;
-val metis_prove_cong = metis_prove cong;
-
-(* Poor delta is terribly slow at giving up on impossible problems
-   and in any case resolution can't detect that this is unprovable.
-val metis_prove_square = metis_prove square; *)
-***)

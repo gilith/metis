@@ -93,6 +93,12 @@ f a = f b`},
 !x y z t.
   x @ y = z @ t <=> ?u. x = z @ u /\ u @ y = t \/ x @ u = z /\ y = u @ t`},
 
+{name = "SPLITTING_UNSOUNDNESS",
+ comments = ["A trivial example to illustrate a bug spotted by",
+             "Geoff Sutcliffe in Dec 2008."],
+ goal = `
+(!x. p x /\ q x ==> F) ==> !x. p x ==> !x. q x ==> F`},
+
 (* ------------------------------------------------------------------------- *)
 (* Propositional Logic.                                                      *)
 (* ------------------------------------------------------------------------- *)
@@ -571,9 +577,8 @@ p (f a b) (f b c) /\ p (f b c) (f a c) /\
 ?x y. p0 x /\ p0 y /\ ?z. q1 z /\ r y z /\ r x y`},
 
 {name = "MODEL_COMPLETENESS",
- comments =
-["An incestuous example used to establish completeness",
- "characterization. [JRH]"],
+ comments = ["An incestuous example used to establish completeness",
+             "characterization. [JRH]"],
  goal = `
 (!w x. sentence x ==> holds w x \/ holds w (not x)) /\
 (!w x. ~(holds w x /\ holds w (not x))) ==>
@@ -668,9 +673,9 @@ p a /\ p b /\ ~(a = b) /\ ~p c /\ (!x. x = a \/ x = d) ==> F`},
 f (g (h c)) = h c /\ g (h c) = b /\ f b = a /\ (!x. ~(a = h x)) ==> F`},
 
 {name = "EQUALITY_ORDERING",
- comments =
-["Positive resolution saturates if equality literals are ordered like other",
- "literals, instead of considering their left and right sides."],
+ comments = ["Positive resolution saturates if equality literals are",
+             "ordered like other literals, instead of considering their",
+             "left and right sides."],
  goal = `
 p a /\ q a /\ q b /\ r b /\ (~p c \/ c = a) /\ (~r c \/ c = b) /\
 (!x. ~q x \/ p x \/ r x) /\ (~p c \/ ~q c) /\ (~q c \/ ~r c) /\

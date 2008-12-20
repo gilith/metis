@@ -1,18 +1,15 @@
 .cvsignore
 CVS
-metis/cnf.tptp
+metis/cnf_*.tptp
 metis/graph.png
-metis/Makefile.dev
-metis/saturation.tptp
-metis/std-log
-metis/tptp-log
 metis/data/problems/tptp-cnf
 metis/data/problems/tptp-fof
 metis/data/logs
 metis/doc/DONT-RELEASE
 metis/doc/TODO
-metis/hol
+metis/Makefile.dev
 metis/release
+metis/saturation.tptp
 metis/scripts/compare
 metis/scripts/copy_problem
 metis/scripts/copy_src
@@ -23,3 +20,5 @@ metis/scripts/mosml_dep
 metis/scripts/release_stamp
 metis/scripts/summarize
 metis/scripts/unproved
+metis/std-log
+metis/tptp-log

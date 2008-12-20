@@ -109,6 +109,21 @@ val () = if null work then usage "no input problem files" else ();
 (* The core application.                                                     *)
 (* ------------------------------------------------------------------------- *)
 
+(*MetisDebug
+val next_cnf =
+    let
+      val cnf_counter = ref 0
+    in
+      fn () =>
+         let
+           val ref cnf_count = cnf_counter
+           val () = cnf_counter := cnf_count + 1
+         in
+           cnf_count
+         end
+    end;
+*)
+
 local
   fun display_sep () =
       if notshowing_any () then ()
@@ -365,11 +380,13 @@ local
               val mapping =
                   Tptp.addVarSetTptpMapping Tptp.defaultTptpMapping
                     (Tptp.freeVars problem)
+
+              val filename = "cnf_" ^ Int.toString (next_cnf ()) ^ ".tptp"
             in
               Tptp.write
                 {problem = problem,
                  mapping = mapping,
-                 filename = "cnf.tptp"}
+                 filename = filename}
             end
 *)
         val () = display_clauses cls

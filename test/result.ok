@@ -388,12 +388,17 @@ $x * $v < skolemFOFtoCNF_y_1 $x * skolemFOFtoCNF_w $v $x
 
 skolemFOFtoCNF_x + skolemFOFtoCNF_y_3 = 2
 
+p $x' \/ r $x $y
+
 (~Q skolemFOFtoCNF_x_1 \/ Q skolemFOFtoCNF_x_2) /\
 (~Q skolemFOFtoCNF_x_1 \/ R skolemFOFtoCNF_x_2) /\
 (~R skolemFOFtoCNF_x_1 \/ Q skolemFOFtoCNF_x_2) /\
 (~R skolemFOFtoCNF_x_1 \/ R skolemFOFtoCNF_x_2) /\ (~P $x \/ Q $x') /\
 (~L $x' \/ ~R $x \/ M $x') /\ ~M skolemFOFtoCNF_x_3 /\
 L skolemFOFtoCNF_x_3 /\ P skolemFOFtoCNF_x_3
+
+--------------------------------------------------------------------------
+Finite models
 
 --------------------------------------------------------------------------
 Syntax checking the problem sets

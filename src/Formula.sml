@@ -464,57 +464,6 @@ fun lhs fm = fst (destEq fm);
 fun rhs fm = snd (destEq fm);
 
 (* ------------------------------------------------------------------------- *)
-(* Splitting goals.                                                          *)
-(* ------------------------------------------------------------------------- *)
-
-local
-  fun split acc [] = rev acc
-    | split acc ((asms,pol,fm) :: rest) =
-      case (pol,fm) of
-        (* Positive splittables *)
-        (true,True) =>
-        split acc rest
-      | (true, Not f) =>
-        split acc ((asms,false,f) :: rest)
-      | (true, And (f1,f2)) =>
-        split acc ((asms,true,f1) :: (f1 :: asms, true, f2) :: rest)
-      | (true, Or (f1,f2)) =>
-        split acc ((Not f1 :: asms, true, f2) :: rest)
-      | (true, Imp (f1,f2)) =>
-        split acc ((f1 :: asms, true, f2) :: rest)
-      | (true, Iff (f1,f2)) =>
-        split acc ((f1 :: asms, true, f2) :: (f2 :: asms, true, f1) :: rest)
-      | (true, Forall (_,f)) =>
-        split acc ((asms,true,f) :: rest)
-        (* Negative splittables *)
-      | (false,False) =>
-        split acc rest
-      | (false, Not f) =>
-        split acc ((asms,true,f) :: rest)
-      | (false, And (f1,f2)) =>
-        split acc ((f1 :: asms, false, f2) :: rest)
-      | (false, Or (f1,f2)) =>
-        split acc ((asms,false,f1) :: (Not f1 :: asms, false, f2) :: rest)
-      | (false, Imp (f1,f2)) =>
-        split acc ((asms,true,f1) :: (f1 :: asms, false, f2) :: rest)
-      | (false, Iff (f1,f2)) =>
-        split acc ((f1 :: asms, false, f2) :: (f2 :: asms, false, f1) :: rest)
-      | (false, Exists (_,f)) =>
-        split acc ((asms,false,f) :: rest)
-        (* Unsplittables *)
-      | _ =>
-        let
-          val goal = if pol then fm else Not fm
-          val goal =
-              if null asms then goal else Imp (listMkConj (rev asms), goal)
-        in
-          split (goal :: acc) rest
-        end;
-in
-  fun splitGoal fm = split [] [([],true,fm)];
-end;
-
-(* ------------------------------------------------------------------------- *)
 (* Parsing and pretty-printing.                                              *)
 (* ------------------------------------------------------------------------- *)
 
@@ -583,5 +532,53 @@ in
 end;
 
 val parse = Parse.parseQuotation toString fromString;
+
+(* ------------------------------------------------------------------------- *)
+(* Splitting goals.                                                          *)
+(* ------------------------------------------------------------------------- *)
+
+local
+  fun add_asms asms goal =
+      if null asms then goal else Imp (listMkConj (rev asms), goal);
+
+  fun add_var_asms asms v goal = add_asms asms (Forall (v,goal));
+
+  fun split asms pol fm =
+      case (pol,fm) of
+        (* Positive splittables *)
+        (true,True) => []
+      | (true, Not f) => split asms false f
+      | (true, And (f1,f2)) => split asms true f1 @ split (f1 :: asms) true f2
+      | (true, Or (f1,f2)) => split (Not f1 :: asms) true f2
+      | (true, Imp (f1,f2)) => split (f1 :: asms) true f2
+      | (true, Iff (f1,f2)) =>
+        split (f1 :: asms) true f2 @ split (f2 :: asms) true f1
+      | (true, Forall (v,f)) => map (add_var_asms asms v) (split [] true f)
+        (* Negative splittables *)
+      | (false,False) => []
+      | (false, Not f) => split asms true f
+      | (false, And (f1,f2)) => split (f1 :: asms) false f2
+      | (false, Or (f1,f2)) =>
+        split asms false f1 @ split (Not f1 :: asms) false f2
+      | (false, Imp (f1,f2)) => split asms true f1 @ split (f1 :: asms) false f2
+      | (false, Iff (f1,f2)) =>
+        split (f1 :: asms) false f2 @ split (f2 :: asms) false f1
+      | (false, Exists (v,f)) => map (add_var_asms asms v) (split [] false f)
+        (* Unsplittables *)
+      | _ => [add_asms asms (if pol then fm else Not fm)];
+in
+  fun splitGoal fm = split [] true fm;
+end;
+
+(*MetisTrace3
+val splitGoal = fn fm =>
+    let
+      val result = splitGoal fm
+      val () = Print.trace pp "Formula.splitGoal: fm" fm
+      val () = Print.trace (Print.ppList pp) "Formula.splitGoal: result" result
+    in
+      result
+    end;
+*)
 
 end
