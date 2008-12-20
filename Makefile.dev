@@ -21,7 +21,7 @@ TEMP += $(TEMPFILE) \
 # The ML preprocessor.
 ###############################################################################
 
-MLPP_OPTS += -r 'MetisDebug'
+#MLPP_OPTS += -r 'MetisDebug'
 #MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-1]'
 #MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-2]'
 #MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-3]'
