@@ -74,6 +74,8 @@ datatype formula =
     CnfFormula of {name : string, role : role, clause : literal list}
   | FofFormula of {name : string, role : role, formula : Formula.formula}
 
+val formulaName : formula -> string
+
 val formulaFunctions : formula -> NameAritySet.set
 
 val formulaRelations : formula -> NameAritySet.set
@@ -82,6 +84,8 @@ val formulaFreeVars : formula -> NameSet.set
 
 val formulaListFreeVars : formula list -> NameSet.set
 
+val formulaIsCnfConjecture : formula -> bool
+val formulaIsFofConjecture : formula -> bool
 val formulaIsConjecture : formula -> bool
 
 (* ------------------------------------------------------------------------- *)
@@ -112,10 +116,14 @@ type comments = string list
 
 type problem = {comments : comments, formulas : formula list}
 
+(***
 val isCnfProblem : problem -> bool
 
 val isFofProblem : problem -> bool
+***)
 
+val hasCnfConjecture : problem -> bool
+val hasFofConjecture : problem -> bool
 val hasConjecture : problem -> bool
 
 val freeVars : problem -> NameSet.set
@@ -125,17 +133,21 @@ val mkCnfProblem : {comments : comments,
                     roles : clauseRoles,
                     problem : Problem.problem} -> problem
 
+(***
 val destCnfProblem : problem -> {comments : comments,
                                  names : clauseNames,
                                  roles : clauseRoles,
                                  problem : Problem.problem}
+***)
 
-val normalizeFof : problem -> {definitions : (string * Formula.formula) list,
-                               roles : clauseRoles,
-                               problem : Problem.problem,
-                               proofs : clauseProofs} list
+val normalize : problem -> {definitions : (string * Formula.formula) list,
+                            roles : clauseRoles,
+                            problem : Problem.problem,
+                            proofs : clauseProofs} list
 
+(***
 val normalizeFofToCnf : problem -> problem list
+***)
 
 val goal : problem -> Formula.formula
 
@@ -146,7 +158,9 @@ val write :
      mapping : tptpMapping,
      filename : string} -> unit
 
+(***
 val prove : {filename : string, mapping : tptpMapping} -> bool
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* TSTP proofs.                                                              *)

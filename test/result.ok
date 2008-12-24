@@ -416,7 +416,7 @@ lives agatha /\ lives butler /\ lives charles /\
 hates agatha agatha /\ hates agatha charles /\
 (!X Y. ~killed X Y \/ hates X Y) /\
 (!X. ~hates agatha X \/ hates butler X) /\
-(!X. ~lives X \/ hates butler X \/ richer X agatha) ==>
+(!X. ~lives X \/ richer X agatha \/ hates butler X) ==>
 killed butler agatha \/ killed charles agatha ==> F
 
 parsing NUMBERED_FORMULAS.tptp... ok
@@ -443,6 +443,18 @@ $times_int 2 3 = 6 ==> '$times_int' 2 3 = 6
 
 parsing RENAMING_VARIABLES.tptp... ok
 !V_X Y. ?Z. p V_X \/ p Y ==> p Z
+
+parsing MIXED_PROBLEM.tptp... ok
+(!X Y. ~killed X Y \/ hates X Y) ==>
+(?X. lives X /\ killed X agatha) /\
+(lives agatha /\ lives butler /\ lives charles) /\
+(!X. lives X ==> X = agatha \/ X = butler \/ X = charles) /\
+(!X Y. killed X Y ==> ~richer X Y) /\
+(!X. hates agatha X ==> ~hates charles X) /\
+(!X. ~(X = butler) ==> hates agatha X) /\
+(!X. ~richer X agatha ==> hates butler X) /\
+(!X. hates agatha X ==> hates butler X) /\ (!X. ?Y. ~hates X Y) /\
+~(agatha = butler) ==> killed agatha agatha
 
 --------------------------------------------------------------------------
 Clauses

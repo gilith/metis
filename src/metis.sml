@@ -83,7 +83,7 @@ end;
 
 val VERSION = "2.1";
 
-val versionString = "Metis "^VERSION^" (release 20081219)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20081224)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -197,26 +197,7 @@ local
     fun display_proof_end filename =
         print ("SZS output end CNFRefutation for " ^ filename ^ "\n\n");
   in
-    fun display_cnf_proof filename names th =
-        if notshowing "proof" then ()
-        else
-          let
-            val mapping = Tptp.defaultTptpMapping
-            and avoid = Tptp.allClauseNames names
-            and prefix = ""
-            and roles = Tptp.noClauseRoles
-            and proofs = Tptp.noClauseProofs
-            and proof = Proof.proof th
-
-            val () = display_proof_start filename
-            val () =
-                display_proof_body mapping avoid prefix names roles proofs proof
-            val () = display_proof_end filename
-          in
-            ()
-          end;
-
-    fun display_fof_proof filename tptp acc =
+    fun display_proof filename tptp acc =
         if notshowing "proof" then ()
         else
           let
@@ -260,12 +241,15 @@ local
                 List.foldl calc_used (avoid,used,defs,[]) acc
 
             fun get_used (formula,(avoid,formulas)) =
-                case formula of
-                  Tptp.FofFormula {name,...} =>
-                  (StringSet.add avoid name,
-                   if not (StringSet.member name used) then formulas
-                   else formula :: formulas)
-                | Tptp.CnfFormula _ => raise Bug "get_used"
+                let
+                  val name = Tptp.formulaName formula
+                  val avoid = StringSet.add avoid name
+                  val formulas =
+                      if not (StringSet.member name used) then formulas
+                      else formula :: formulas
+                in
+                  (avoid,formulas)
+                end
 
             val {comments = _, formulas} = tptp
             val (avoid,formulas) = List.foldl get_used (avoid,[]) formulas
@@ -404,7 +388,48 @@ local
         val resolution = Resolution.new Resolution.default problem
       in
         Resolution.loop resolution
-      end
+      end;
+
+  fun refuteAll filename tptp probs acc =
+      case probs of
+        [] =>
+        let
+          val status =
+              if !TEST then Tptp.STATUS_UNKNOWN
+              else if Tptp.hasFofConjecture tptp then Tptp.STATUS_THEOREM
+              else Tptp.STATUS_UNSATISFIABLE
+
+          val () = display_status filename status
+
+          val () = if !TEST then () else display_proof filename tptp acc
+        in
+          true
+        end
+      | prob :: probs =>
+        let
+          val {definitions, roles = _, problem, proofs} = prob
+
+          val () = display_problem filename problem
+        in
+          if !TEST then refuteAll filename tptp probs acc
+          else
+            case refute problem of
+              Resolution.Contradiction th =>
+              refuteAll filename tptp probs ((definitions,proofs,th) :: acc)
+            | Resolution.Satisfiable ths =>
+              let
+                val status =
+                    if Tptp.hasFofConjecture tptp then
+                      Tptp.STATUS_COUNTER_SATISFIABLE
+                    else
+                      Tptp.STATUS_SATISFIABLE
+
+                val () = display_status filename status
+                val () = display_saturation filename ths
+              in
+                false
+              end
+        end;
 in
   fun prove mapping filename =
       let
@@ -412,71 +437,9 @@ in
         val () = display_name filename
         val tptp = Tptp.read {filename = filename, mapping = mapping}
         val () = display_goal tptp
+        val problems = Tptp.normalize tptp
       in
-        if Tptp.isCnfProblem tptp then
-          let
-            val {names,problem,...} = Tptp.destCnfProblem tptp
-            val () = display_problem filename problem
-          in
-            if !TEST then
-              (display_status filename Tptp.STATUS_UNKNOWN;
-               true)
-            else
-              case refute problem of
-                Resolution.Contradiction th =>
-                (display_status filename Tptp.STATUS_UNSATISFIABLE;
-                 display_cnf_proof filename names th;
-                 true)
-              | Resolution.Satisfiable ths =>
-                (display_status filename Tptp.STATUS_SATISFIABLE;
-                 display_saturation filename ths;
-                 false)
-          end
-        else
-          let
-            fun refuteAll acc [] =
-                let
-                  val status =
-                      if !TEST then Tptp.STATUS_UNKNOWN
-                      else if Tptp.hasConjecture tptp then Tptp.STATUS_THEOREM
-                      else Tptp.STATUS_UNSATISFIABLE
-
-                  val () = display_status filename status
-
-                  val () = if !TEST then ()
-                           else display_fof_proof filename tptp acc
-                in
-                  true
-                end
-              | refuteAll acc (prob :: problems) =
-                let
-                  val {definitions, roles = _, problem, proofs} = prob
-                  val () = display_problem filename problem
-                in
-                  if !TEST then refuteAll acc problems
-                  else
-                    case refute problem of
-                      Resolution.Contradiction th =>
-                      refuteAll ((definitions,proofs,th) :: acc) problems
-                    | Resolution.Satisfiable ths =>
-                      let
-                        val status =
-                            if Tptp.hasConjecture tptp then
-                              Tptp.STATUS_COUNTER_SATISFIABLE
-                            else
-                              Tptp.STATUS_SATISFIABLE
-
-                        val () = display_status filename status
-                        val () = display_saturation filename ths
-                      in
-                        false
-                      end
-                end
-
-            val problems = Tptp.normalizeFof tptp
-          in
-            refuteAll [] problems
-          end
+        refuteAll filename tptp problems []
       end;
 
   fun proveAll mapping filenames =

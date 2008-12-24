@@ -425,6 +425,9 @@ fun literalToFormula (Boolean true) = Formula.True
   | literalToFormula (Boolean false) = Formula.False
   | literalToFormula (Literal lit) = Literal.toFormula lit;
 
+fun literalListToFormula lits =
+    Formula.listMkDisj (map literalToFormula lits);
+
 fun literalFromFormula Formula.True = Boolean true
   | literalFromFormula Formula.False = Boolean false
   | literalFromFormula fm = Literal (Literal.fromFormula fm);
@@ -439,6 +442,9 @@ fun literalSubst sub lit =
 
 fun destLiteral (Literal l) = l
   | destLiteral _ = raise Error "destLiteral";
+
+fun literalIsBooleanTrue (Boolean true) = true
+  | literalIsBooleanTrue _ = false;
 
 (* ------------------------------------------------------------------------- *)
 (* Printing formulas using TPTP syntax.                                      *)
@@ -599,6 +605,11 @@ datatype formula =
     CnfFormula of {name : string, role : string, clause : clause}
   | FofFormula of {name : string, role : string, formula : Formula.formula};
 
+fun formulaName formula =
+    case formula of
+      CnfFormula {name,...} => name
+    | FofFormula {name,...} => name;
+
 fun destCnfFormula (CnfFormula x) = x
   | destCnfFormula _ = raise Error "destCnfFormula";
 
@@ -639,8 +650,18 @@ val formulasRelations =
       foldl rels NameAritySet.empty
     end;
 
-fun formulaIsConjecture (CnfFormula {role,...}) = roleIsCnfConjecture role
-  | formulaIsConjecture (FofFormula {role,...}) = roleIsFofConjecture role;
+fun formulaIsCnfConjecture fm =
+    case fm of
+      CnfFormula {role,...} => roleIsCnfConjecture role
+    | FofFormula _ => false;
+
+fun formulaIsFofConjecture fm =
+    case fm of
+      FofFormula {role,...} => roleIsFofConjecture role
+    | CnfFormula _ => false;
+
+fun formulaIsConjecture fm =
+    formulaIsCnfConjecture fm orelse formulaIsFofConjecture fm;
 
 (* Parsing and pretty-printing *)
 
@@ -1179,6 +1200,12 @@ type comments = string list;
 
 type problem = {comments : comments, formulas : formula list};
 
+(***
+fun isFofProblem ({formulas,...} : problem) =
+
+
+prob = not (isCnfProblem prob);
+
 fun isCnfProblem ({formulas,...} : problem) =
     let
       val cnf = List.exists isCnfFormula formulas
@@ -1191,6 +1218,13 @@ fun isCnfProblem ({formulas,...} : problem) =
     end;
 
 fun isFofProblem prob = not (isCnfProblem prob);
+***)
+
+fun hasCnfConjecture ({formulas,...} : problem) =
+    List.exists formulaIsCnfConjecture formulas;
+
+fun hasFofConjecture ({formulas,...} : problem) =
+    List.exists formulaIsFofConjecture formulas;
 
 fun hasConjecture ({formulas,...} : problem) =
     List.exists formulaIsConjecture formulas;
@@ -1239,6 +1273,7 @@ in
       end;
 end;
 
+(***
 local
   fun addCnfFormula (CnfFormula {name,role,clause}, acc) =
       if List.exists (fn Boolean true => true | _ => false) clause then acc
@@ -1276,42 +1311,81 @@ in
          problem = problem}
       end;
 end;
+***)
 
-type normalizedFof =
+type normalization =
      {definitions : (string * Formula.formula) list,
       roles : clauseRoles,
       problem : Problem.problem,
       proofs : clauseProofs};
 
-val initialNormalizedFof : normalizedFof =
+val initialNormalization : normalization =
     {definitions = [],
      roles = LiteralSetMap.new (),
      problem = {axioms = [], conjecture = []},
      proofs = LiteralSetMap.new ()};
 
-local
-  fun partitionFofFormula (fm,(axioms,goals)) =
-      case fm of
-        FofFormula {name,role,formula} =>
-        if roleIsFofConjecture role then (axioms, (name,formula) :: goals)
-        else ((name,formula) :: axioms, goals)
-      | _ => raise Bug "Tptp.partitionFofFormula";
+datatype problemGoal =
+    NoGoal
+  | CnfGoal of (string * clause) list
+  | FofGoal of (string * Formula.formula) list;
 
-  fun partitionFofFormulas fms =
+local
+  fun partitionFormula (fm,(cnfAxioms,fofAxioms,cnfGoals,fofGoals)) =
+      case fm of
+        CnfFormula {name,role,clause} =>
+        if roleIsCnfConjecture role then
+          let
+            val cnfGoals = (name,clause) :: cnfGoals
+          in
+            (cnfAxioms,fofAxioms,cnfGoals,fofGoals)
+          end
+        else
+          let
+            val cnfAxioms = (name,clause) :: cnfAxioms
+          in
+            (cnfAxioms,fofAxioms,cnfGoals,fofGoals)
+          end
+      | FofFormula {name,role,formula} =>
+        if roleIsFofConjecture role then
+          let
+            val fofGoals = (name,formula) :: fofGoals
+          in
+            (cnfAxioms,fofAxioms,cnfGoals,fofGoals)
+          end
+        else
+          let
+            val fofAxioms = (name,formula) :: fofAxioms
+          in
+            (cnfAxioms,fofAxioms,cnfGoals,fofGoals)
+          end;
+
+  fun partitionFormulas fms =
       let
-        val (axioms,goals) = List.foldl partitionFofFormula ([],[]) fms
+        val (cnfAxioms,fofAxioms,cnfGoals,fofGoals) =
+            List.foldl partitionFormula ([],[],[],[]) fms
+
+        val goal =
+            case (rev cnfGoals, rev fofGoals) of
+              ([],[]) => NoGoal
+            | (cnfGoals,[]) => CnfGoal cnfGoals
+            | ([],fofGoals) => FofGoal fofGoals
+            | (_ :: _, _ :: _) =>
+              raise Error "TPTP problem has both cnf and fof conjecture formulas"
       in
-        {axioms = rev axioms, goals = rev goals}
+        {cnfAxioms = rev cnfAxioms,
+         fofAxioms = rev fofAxioms,
+         goal = goal}
       end;
 
-  fun addClauses role new acc : normalizedFof =
+  fun addClauses role new acc : normalization =
       let
         fun addClause ((cl,prf),(roles,proofs)) =
             (LiteralSetMap.insert roles (cl,role),
              LiteralSetMap.insert proofs (cl,prf))
 
         val {definitions = defs, clauses} = new
-        and {definitions,roles,problem,proofs} : normalizedFof = acc
+        and {definitions,roles,problem,proofs} : normalization = acc
         val {axioms,conjecture} = problem
 
         val cls = map fst clauses
@@ -1327,20 +1401,35 @@ local
          roles = roles,
          problem = problem,
          proofs = proofs}
-      end
+      end;
 
-  fun addFof role ((name,fm),(acc,cnf)) =
+  fun addCnf role ((name,clause),(norm,cnf)) =
+      if List.exists literalIsBooleanTrue clause then (norm,cnf)
+      else
+        let
+          val cl = List.mapPartial (total destLiteral) clause
+          val cl = LiteralSet.fromList cl
+
+          val prf = Normalize.singletonProof name
+          val new = {definitions = [], clauses = [(cl,prf)]}
+
+          val norm = addClauses role new norm
+        in
+          (norm,cnf)
+        end;
+
+  fun addFof role ((name,fm),(norm,cnf)) =
       let
         val prf = Normalize.singletonProof name
         val (new,cnf) = Normalize.cnfStateAdd (fm,prf) cnf
-        val acc = addClauses role new acc
+        val norm = addClauses role new norm
       in
-        (acc,cnf)
+        (norm,cnf)
       end;
 
-  fun mkProblem (acc,_) : normalizedFof =
+  fun mkProblem (norm,_) : normalization =
       let
-        val {definitions,roles,problem,proofs} = acc
+        val {definitions,roles,problem,proofs} = norm
         val {axioms,conjecture} = problem
       in
         {definitions = rev definitions,
@@ -1348,50 +1437,85 @@ local
          problem = {axioms = rev axioms, conjecture = rev conjecture},
          proofs = proofs}
       end;
-in
-  fun goalFofProblem ({formulas,...} : problem) =
+
+  fun splitProblem acc =
       let
-        val {axioms,goals} = partitionFofFormulas formulas
-        val hyp = Formula.listMkConj (map (Formula.generalize o snd) axioms)
-        and concl = Formula.listMkConj (map (Formula.generalize o snd) goals)
+        fun mk name goal =
+            let
+              val goal = Formula.Not (Formula.generalize goal)
+              val acc = addFof ROLE_NEGATED_CONJECTURE ((name,goal),acc)
+            in
+              mkProblem acc
+            end
+
+        fun split (name,goal) =
+            let
+              val subgoals = Formula.splitGoal goal
+              val subgoals =
+                  if null subgoals then [Formula.True] else subgoals
+            in
+              map (mk name) subgoals
+            end
       in
-        case (null axioms, null goals) of
-          (true,true) => raise Bug "Tptp.goalFofProblem"
-        | (false,true) => Formula.Imp (hyp,Formula.False)
-        | (true,false) => concl
-        | (false,false) => Formula.Imp (hyp,concl)
+        fn goals => List.concat (map split goals)
       end;
 
-  fun normalizeFof ({formulas,...} : problem) : normalizedFof list =
+  fun clausesToGoal cls =
       let
-        val {axioms,goals} = partitionFofFormulas formulas
-        val acc = (initialNormalizedFof, Normalize.cnfStateInitial)
-        val acc = List.foldl (addFof ROLE_AXIOM) acc axioms
+        val cls = map (Formula.generalize o literalListToFormula o snd) cls
       in
-        if null goals then [mkProblem acc]
-        else
-          let
-            fun mk name goal =
-                let
-                  val goal = Formula.Not (Formula.generalize goal)
-                  val acc = addFof ROLE_NEGATED_CONJECTURE ((name,goal),acc)
-                in
-                  mkProblem acc
-                end
+        Formula.listMkConj cls
+      end;
 
-            fun split (name,goal) =
-                let
-                  val goals = Formula.splitGoal goal
-                  val goals = if null goals then [Formula.True] else goals
-                in
-                  map (mk name) goals
-                end
+  fun formulasToGoal fms =
+      let
+        val fms = map (Formula.generalize o snd) fms
+      in
+        Formula.listMkConj fms
+      end;
+in
+  fun goal ({formulas,...} : problem) =
+      let
+        val {cnfAxioms,fofAxioms,goal} = partitionFormulas formulas
+
+        val fm =
+            case goal of
+              NoGoal => Formula.False
+            | CnfGoal cls => Formula.Imp (clausesToGoal cls, Formula.False)
+            | FofGoal goals => formulasToGoal goals
+
+        val fm =
+            if null fofAxioms then fm
+            else Formula.Imp (formulasToGoal fofAxioms, fm)
+
+        val fm =
+            if null cnfAxioms then fm
+            else Formula.Imp (clausesToGoal cnfAxioms, fm)
+      in
+        fm
+      end;
+
+  fun normalize ({formulas,...} : problem) : normalization list =
+      let
+        val {cnfAxioms,fofAxioms,goal} = partitionFormulas formulas
+
+        val acc = (initialNormalization, Normalize.cnfStateInitial)
+        val acc = List.foldl (addCnf ROLE_AXIOM) acc cnfAxioms
+        val acc = List.foldl (addFof ROLE_AXIOM) acc fofAxioms
+      in
+        case goal of
+          NoGoal => [mkProblem acc]
+        | CnfGoal cls =>
+          let
+            val acc = List.foldl (addCnf ROLE_NEGATED_CONJECTURE) acc cls
           in
-            List.concat (map split goals)
+            [mkProblem acc]
           end
+        | FofGoal goals => splitProblem acc goals
       end;
 end;
 
+(***
 fun normalizeFofToCnf (problem as {comments,...}) =
     let
       val comments = comments @ (if null comments then [] else [""])
@@ -1429,6 +1553,7 @@ fun goal problem =
       end
     else
       goalFofProblem problem;
+***)
 
 local
   fun stripComments acc strm =
@@ -1491,6 +1616,7 @@ in
       end;
 end;
 
+(***
 local
   fun refute problem =
       let
@@ -1515,6 +1641,7 @@ in
         List.all refute problems
       end;
 end;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* TSTP proofs.                                                              *)
@@ -1589,7 +1716,7 @@ local
 
   fun ppAxiomProof prf =
       Print.program
-        [Print.addString "fof_to_cnf,",
+        [Print.addString "cnf_normalization,",
          Print.addBreak 1,
          Print.addString "[],",
          Print.addBreak 1,

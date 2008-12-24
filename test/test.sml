@@ -674,6 +674,7 @@ val _ = tptp "tptp" "QUOTED_TERMS_IDENTITY.tptp";
 val _ = tptp "tptp" "QUOTED_TERMS_DIFFERENT.tptp";
 val _ = tptp "tptp" "QUOTED_TERMS_SPECIAL.tptp";
 val _ = tptp "tptp" "RENAMING_VARIABLES.tptp";
+val _ = tptp "tptp" "MIXED_PROBLEM.tptp";
 
 (* ------------------------------------------------------------------------- *)
 val () = SAY "Clauses";
