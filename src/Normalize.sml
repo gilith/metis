@@ -1123,7 +1123,6 @@ local
         case minimumDefinition fm of
           SOME def =>
           let
-            val () = raise Bug "no definitions allowed during debugging"
             val (def,fm) = newDefinition def
             and fms = fm_prf :: fms
           in
