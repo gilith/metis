@@ -116,38 +116,24 @@ type comments = string list
 
 type problem = {comments : comments, formulas : formula list}
 
-(***
-val isCnfProblem : problem -> bool
-
-val isFofProblem : problem -> bool
-***)
-
 val hasCnfConjecture : problem -> bool
 val hasFofConjecture : problem -> bool
 val hasConjecture : problem -> bool
 
 val freeVars : problem -> NameSet.set
 
-val mkCnfProblem : {comments : comments,
-                    names : clauseNames,
-                    roles : clauseRoles,
-                    problem : Problem.problem} -> problem
+val mkProblem :
+    {comments : comments,
+     names : clauseNames,
+     roles : clauseRoles,
+     problem : Problem.problem} -> problem
 
-(***
-val destCnfProblem : problem -> {comments : comments,
-                                 names : clauseNames,
-                                 roles : clauseRoles,
-                                 problem : Problem.problem}
-***)
-
-val normalize : problem -> {definitions : (string * Formula.formula) list,
-                            roles : clauseRoles,
-                            problem : Problem.problem,
-                            proofs : clauseProofs} list
-
-(***
-val normalizeFofToCnf : problem -> problem list
-***)
+val normalize :
+    problem ->
+    {definitions : (string * Formula.formula) list,
+     roles : clauseRoles,
+     problem : Problem.problem,
+     proofs : clauseProofs} list
 
 val goal : problem -> Formula.formula
 

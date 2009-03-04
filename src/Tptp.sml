@@ -1200,26 +1200,6 @@ type comments = string list;
 
 type problem = {comments : comments, formulas : formula list};
 
-(***
-fun isFofProblem ({formulas,...} : problem) =
-
-
-prob = not (isCnfProblem prob);
-
-fun isCnfProblem ({formulas,...} : problem) =
-    let
-      val cnf = List.exists isCnfFormula formulas
-      and fof = List.exists isFofFormula formulas
-    in
-      case (cnf,fof) of
-        (false,false) => raise Error "TPTP problem has no formulas"
-      | (true,true) => raise Error "TPTP problem has both cnf and fof formulas"
-      | (cnf,_) => cnf
-    end;
-
-fun isFofProblem prob = not (isCnfProblem prob);
-***)
-
 fun hasCnfConjecture ({formulas,...} : problem) =
     List.exists formulaIsCnfConjecture formulas;
 
@@ -1254,7 +1234,7 @@ local
         (CnfFormula {name = name, role = role, clause = clause}, (n,avoid))
       end;
 in
-  fun mkCnfProblem {comments,names,roles,problem} =
+  fun mkProblem {comments,names,roles,problem} =
       let
         fun fromCl defaultRole = fromClause defaultRole names roles
 
@@ -1272,46 +1252,6 @@ in
         {comments = comments, formulas = formulas}
       end;
 end;
-
-(***
-local
-  fun addCnfFormula (CnfFormula {name,role,clause}, acc) =
-      if List.exists (fn Boolean true => true | _ => false) clause then acc
-      else
-        let
-          val litl = List.mapPartial (total destLiteral) clause
-          val lits = LiteralSet.fromList litl
-          val (names,roles,axioms,conjecture) = acc
-        in
-          if LiteralSetMap.inDomain lits names then acc
-          else
-            let
-              val names = LiteralSetMap.insert names (lits,name)
-              val roles = LiteralSetMap.insert roles (lits,role)
-              val (axioms,conjecture) =
-                  if roleIsCnfConjecture role then (axioms, lits :: conjecture)
-                  else (lits :: axioms, conjecture)
-            in
-              (names,roles,axioms,conjecture)
-            end
-        end
-    | addCnfFormula (FofFormula _, _) = raise Bug "destCnfProblem";
-in
-  fun destCnfProblem ({comments,formulas} : problem) =
-      let
-        val names = LiteralSetMap.new ()
-        val roles = LiteralSetMap.new ()
-        val (names,roles,axioms,conjecture) =
-            foldl addCnfFormula (names,roles,[],[]) formulas
-        val problem = {axioms = rev axioms, conjecture = rev conjecture}
-      in
-        {comments = comments,
-         names = names,
-         roles = roles,
-         problem = problem}
-      end;
-end;
-***)
 
 type normalization =
      {definitions : (string * Formula.formula) list,
