@@ -829,42 +829,33 @@ end;
 (* ------------------------------------------------------------------------- *)
 
 datatype inference =
-    Axiom of string * Formula.formula
-  | Conjecture of string * Formula.formula
+    Axiom of string
+  | Conjecture of string
   | Definition of string * Formula.formula
   | Negation
   | Simplification
   | Conjunct
   | Specialization
-  | Skolemization;
+  | Skolemization
+  | Clausification;
 
 datatype thm = Thm of formula * proof
 
 and proof = Proof of inference * thm list;
 
-fun destThm (Thm (fm, Proof (inf,ths))) = (toFormula fm, inf, ths);
+fun axiomProof n = Proof (Axiom n, []);
 
-fun axiomProof n fm = Proof (Axiom (n,fm), []);
-
-fun axiomThm n fm =
-    let
-      val prf = axiomProof n fm
-      val fm = fromFormula fm
-    in
-      Thm (fm,prf)
-    end;
-
-fun conjectureProof n fm = Proof (Conjecture (n,fm), []);
-
-fun conjectureThm n fm =
-    let
-      val prf = conjectureProof n fm
-      val fm = fromFormula fm
-    in
-      Thm (fm,prf)
-    end;
+fun conjectureProof n = Proof (Conjecture n, []);
 
 fun negationProof th = Proof (Negation,[th]);
+
+fun mkThm (fm,prf) = Thm (fromFormula fm, prf);
+
+fun destThm (Thm (fm,prf)) = (toFormula fm, prf);
+
+fun axiomThm fm n = mkThm (fm, axiomProof n);
+
+fun conjectureThm fm n = mkThm (fm, conjectureProof n);
 
 fun negationThm th =
     let
@@ -1175,7 +1166,7 @@ val initialCnf = ConsistentCnf simplifyEmpty;
 local
   fun def_cnf_inconsistent th =
       let
-        val cls = [(LiteralSet.empty,th)]
+        val cls = [(LiteralSet.empty, Proof (Clausification, [th]))]
       in
         (cls,InconsistentCnf)
       end;
@@ -1221,7 +1212,7 @@ local
             val simp = simplifyAdd simp th
 
             fun add (f,l) =
-                (toClause f, th) :: l
+                (toClause f, Proof (Clausification, [th])) :: l
 (*MetisDebug
                 handle Error err =>
                   (Print.trace pp "Normalize.addCnf.def_cnf_formula: f" f;
@@ -1259,7 +1250,7 @@ end;
 
 fun cnf fm =
     let
-      val cls = thmCnf [axiomThm "" fm]
+      val cls = thmCnf [axiomThm fm ""]
     in
       map fst cls
     end;

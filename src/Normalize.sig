@@ -17,27 +17,40 @@ val nnf : Formula.formula -> Formula.formula
 (* ------------------------------------------------------------------------- *)
 
 datatype inference =
-    Axiom of string * Formula.formula
-  | Conjecture of string * Formula.formula
+    Axiom of string
+  | Conjecture of string
   | Definition of string * Formula.formula
   | Negation
   | Simplification
   | Conjunct
   | Specialization
   | Skolemization
+  | Clausification
 
 type thm
 
-val destThm : thm -> Formula.formula * inference * thm list
+datatype proof = Proof of inference * thm list
 
-val axiomThm : string -> Formula.formula -> thm
+val axiomProof : string -> proof
 
-val conjectureThm : string -> Formula.formula -> thm
+val conjectureProof : string -> proof
+
+val negationProof : thm -> proof
+
+val mkThm : Formula.formula * proof -> thm
+
+val destThm : thm -> Formula.formula * proof
+
+val axiomThm : Formula.formula -> string -> thm
+
+val conjectureThm : Formula.formula -> string -> thm
 
 val negationThm : thm -> thm
 
+(***
 val thmProof :
     thm list -> (Formula.formula * inference * Formula.formula list) list
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Conjunctive normal form.                                                  *)
@@ -47,9 +60,9 @@ type cnf
 
 val initialCnf : cnf
 
-val addCnf : thm -> cnf -> (Thm.clause * thm) list * cnf
+val addCnf : thm -> cnf -> (Thm.clause * proof) list * cnf
 
-val thmCnf : thm list -> (Thm.clause * thm) list
+val thmCnf : thm list -> (Thm.clause * proof) list
 
 val cnf : Formula.formula -> Thm.clause list
 

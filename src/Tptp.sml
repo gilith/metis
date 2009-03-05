@@ -1254,15 +1254,11 @@ in
 end;
 
 type normalization =
-     {definitions : (string * Formula.formula) list,
-      roles : clauseRoles,
-      problem : Problem.problem,
+     {problem : Problem.problem,
       proofs : clauseProofs};
 
 val initialNormalization : normalization =
-    {definitions = [],
-     roles = LiteralSetMap.new (),
-     problem = {axioms = [], conjecture = []},
+    {problem = {axioms = [], conjecture = []},
      proofs = LiteralSetMap.new ()};
 
 datatype problemGoal =
@@ -1318,14 +1314,11 @@ local
          goal = goal}
       end;
 
-  fun addClauses role new acc : normalization =
+  fun addClauses role clauses acc : normalization =
       let
-        fun addClause ((cl,prf),(roles,proofs)) =
-            (LiteralSetMap.insert roles (cl,role),
-             LiteralSetMap.insert proofs (cl,prf))
+        fun addClause (cl_prf,proofs) = LiteralSetMap.insert proofs cl_prf
 
-        val {definitions = defs, clauses} = new
-        and {definitions,roles,problem,proofs} : normalization = acc
+        val {problem,proofs} : normalization = acc
         val {axioms,conjecture} = problem
 
         val cls = map fst clauses
@@ -1333,13 +1326,10 @@ local
             if roleIsCnfConjecture role then (axioms, cls @ conjecture)
             else (cls @ axioms, conjecture)
 
-        val definitions = defs @ definitions
-        and problem = {axioms = axioms, conjecture = conjecture}
-        and (roles,proofs) = List.foldl addClause (roles,proofs) clauses
+        val problem = {axioms = axioms, conjecture = conjecture}
+        and proofs = List.foldl addClause proofs clauses
       in
-        {definitions = definitions,
-         roles = roles,
-         problem = problem,
+        {problem = problem,
          proofs = proofs}
       end;
 
@@ -1350,40 +1340,39 @@ local
           val cl = List.mapPartial (total destLiteral) clause
           val cl = LiteralSet.fromList cl
 
-          val prf = Normalize.singletonProof name
-          val new = {definitions = [], clauses = [(cl,prf)]}
+          val prf = Normalize.axiomProof name
 
-          val norm = addClauses role new norm
+          val norm = addClauses role [(cl,prf)] norm
         in
           (norm,cnf)
         end;
 
-  fun addFof role ((name,fm),(norm,cnf)) =
+  fun addFof role (th,(norm,cnf)) =
       let
-        val prf = Normalize.singletonProof name
-        val (new,cnf) = Normalize.cnfStateAdd (fm,prf) cnf
-        val norm = addClauses role new norm
+        val (clauses,cnf) = Normalize.addCnf th cnf
+        val norm = addClauses role clauses norm
       in
         (norm,cnf)
       end;
 
   fun normProblem (norm,_) : normalization =
       let
-        val {definitions,roles,problem,proofs} = norm
+        val {problem,proofs} = norm
         val {axioms,conjecture} = problem
       in
-        {definitions = rev definitions,
-         roles = roles,
-         problem = {axioms = rev axioms, conjecture = rev conjecture},
+        {problem = {axioms = rev axioms, conjecture = rev conjecture},
          proofs = proofs}
       end;
 
   fun splitProblem acc =
       let
-        fun mk name goal =
+        fun mk prf subgoal =
             let
-              val goal = Formula.Not (Formula.generalize goal)
-              val acc = addFof ROLE_NEGATED_CONJECTURE ((name,goal),acc)
+              val subgoal = Normalize.mkThm (Formula.generalize subgoal, prf)
+
+              val th = Normalize.negationThm subgoal
+
+              val acc = addFof ROLE_NEGATED_CONJECTURE (th,acc)
             in
               normProblem acc
             end
@@ -1393,8 +1382,10 @@ local
               val subgoals = Formula.splitGoal goal
               val subgoals =
                   if null subgoals then [Formula.True] else subgoals
+
+              val prf = Normalize.conjectureProof name
             in
-              map (mk name) subgoals
+              map (mk prf) subgoals
             end
       in
         fn goals => List.concat (map split goals)
@@ -1439,7 +1430,7 @@ in
       let
         val {cnfAxioms,fofAxioms,goal} = partitionFormulas formulas
 
-        val acc = (initialNormalization, Normalize.cnfStateInitial)
+        val acc = (initialNormalization, Normalize.initialCnf)
         val acc = List.foldl (addCnf ROLE_AXIOM) acc cnfAxioms
         val acc = List.foldl (addFof ROLE_AXIOM) acc fofAxioms
       in

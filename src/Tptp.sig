@@ -130,8 +130,7 @@ val mkProblem :
 
 val normalize :
     problem ->
-    {definitions : (string * Formula.formula) list,
-     roles : clauseRoles,
+    {roles : clauseRoles,
      problem : Problem.problem,
      proofs : clauseProofs} list
 
@@ -151,13 +150,9 @@ val prove : {filename : string, mapping : tptpMapping} -> bool
 (* ------------------------------------------------------------------------- *)
 
 val writeProof :
-    {proof : Proof.proof,
+    {problem : problem,
+     proofs : (clauseProofs * Proof.proof) list,
      mapping : tptpMapping,
-     filename : string,
-     avoid : StringSet.set,
-     prefix : string,
-     names : clauseNames,
-     roles : clauseRoles,
-     proofs : clauseProofs} -> unit
+     filename : string} -> unit
 
 end
