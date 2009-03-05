@@ -65,7 +65,7 @@ fun countOr2 (count1,count2) =
       Count {positive = p, negative = n}
     end;
 
-(* Whether countXor2 is associative is an open question. *)
+(* Whether countXor2 is associative or not is an open question. *)
 
 fun countXor2 (count1,count2) =
     let
@@ -828,13 +828,57 @@ end;
 (* Normalization proofs.                                                     *)
 (* ------------------------------------------------------------------------- *)
 
-type proof = StringSet.set;
+datatype inference =
+    Axiom of string * Formula.formula
+  | Conjecture of string * Formula.formula
+  | Definition of string * Formula.formula
+  | Negation
+  | Simplification
+  | Conjunct
+  | Specialization
+  | Skolemization;
 
-val noProof = StringSet.empty;
+datatype thm = Thm of formula * proof
 
-val singletonProof = StringSet.singleton;
+and proof = Proof of inference * thm list;
 
-val combineProofs = StringSet.union;
+fun destThm (Thm (fm, Proof (inf,ths))) = (toFormula fm, inf, ths);
+
+fun axiomProof n fm = Proof (Axiom (n,fm), []);
+
+fun axiomThm n fm =
+    let
+      val prf = axiomProof n fm
+      val fm = fromFormula fm
+    in
+      Thm (fm,prf)
+    end;
+
+fun conjectureProof n fm = Proof (Conjecture (n,fm), []);
+
+fun conjectureThm n fm =
+    let
+      val prf = conjectureProof n fm
+      val fm = fromFormula fm
+    in
+      Thm (fm,prf)
+    end;
+
+fun negationProof th = Proof (Negation,[th]);
+
+fun negationThm th =
+    let
+      val Thm (fm,_) = th
+      val fm = negate fm
+      val prf = negationProof th
+    in
+      Thm (fm,prf)
+    end;
+
+(***
+val thmProof :
+    (Formula.formula * inference * Formula.formula list) list
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Simplifying with definitions.                                             *)
@@ -842,10 +886,10 @@ val combineProofs = StringSet.union;
 
 datatype simplify =
     Simplify of
-      {formula : (formula, formula * proof) Map.map,
-       andSet : (formula Set.set * formula * proof) list,
-       orSet : (formula Set.set * formula * proof) list,
-       xorSet : (formula Set.set * formula * proof) list};
+      {formula : (formula, formula * thm) Map.map,
+       andSet : (formula Set.set * formula * thm) list,
+       orSet : (formula Set.set * formula * thm) list,
+       xorSet : (formula Set.set * formula * thm) list};
 
 val simplifyEmpty =
     Simplify
@@ -883,12 +927,12 @@ local
         add [] set_defs
       end;
 
-  fun add simp (body,False,prf) = add simp (negate body, True, prf)
+  fun add simp (body,False,th) = add simp (negate body, True, th)
     | add simp (True,_,_) = simp
-    | add (Simplify {formula,andSet,orSet,xorSet}) (And (_,_,s), def, prf) =
+    | add (Simplify {formula,andSet,orSet,xorSet}) (And (_,_,s), def, th) =
       let
-        val andSet = addSet andSet (s,def,prf)
-        and orSet = addSet orSet (negateSet s, negate def, prf)
+        val andSet = addSet andSet (s,def,th)
+        and orSet = addSet orSet (negateSet s, negate def, th)
       in
         Simplify
           {formula = formula,
@@ -896,10 +940,10 @@ local
            orSet = orSet,
            xorSet = xorSet}
       end
-    | add (Simplify {formula,andSet,orSet,xorSet}) (Or (_,_,s), def, prf) =
+    | add (Simplify {formula,andSet,orSet,xorSet}) (Or (_,_,s), def, th) =
       let
-        val orSet = addSet orSet (s,def,prf)
-        and andSet = addSet andSet (negateSet s, negate def, prf)
+        val orSet = addSet orSet (s,def,th)
+        and andSet = addSet andSet (negateSet s, negate def, th)
       in
         Simplify
           {formula = formula,
@@ -907,9 +951,9 @@ local
            orSet = orSet,
            xorSet = xorSet}
       end
-    | add simp (Xor (_,_,p,s), def, prf) =
+    | add simp (Xor (_,_,p,s), def, th) =
       let
-        val simp = addXorSet simp (s, applyPolarity p def, prf)
+        val simp = addXorSet simp (s, applyPolarity p def, th)
       in
         case def of
           True =>
@@ -919,7 +963,7 @@ local
                   val s = Set.delete s fm
                 in
                   if not (simpler fm s) then simp
-                  else addXorSet simp (s, applyPolarity (not p) fm, prf)
+                  else addXorSet simp (s, applyPolarity (not p) fm, th)
                 end
               | addXorLiteral (_,simp) = simp
           in
@@ -927,12 +971,12 @@ local
           end
         | _ => simp
       end
-    | add (simp as Simplify {formula,andSet,orSet,xorSet}) (body,def,prf) =
+    | add (simp as Simplify {formula,andSet,orSet,xorSet}) (body,def,th) =
       if Map.inDomain body formula then simp
       else
         let
-          val formula = Map.insert formula (body,(def,prf))
-          val formula = Map.insert formula (negate body, (negate def, prf))
+          val formula = Map.insert formula (body,(def,th))
+          val formula = Map.insert formula (negate body, (negate def, th))
         in
           Simplify
             {formula = formula,
@@ -941,11 +985,11 @@ local
              xorSet = xorSet}
         end
 
-  and addXorSet (simp as Simplify {formula,andSet,orSet,xorSet}) (s,def,prf) =
-      if Set.size s = 1 then add simp (Set.pick s, def, prf)
+  and addXorSet (simp as Simplify {formula,andSet,orSet,xorSet}) (s,def,th) =
+      if Set.size s = 1 then add simp (Set.pick s, def, th)
       else
         let
-          val xorSet = addSet xorSet (s,def,prf)
+          val xorSet = addSet xorSet (s,def,th)
         in
           Simplify
             {formula = formula,
@@ -954,22 +998,21 @@ local
              xorSet = xorSet}
         end;
 in
-  fun simplifyAdd simp (fm,prf) = add simp (fm,True,prf);
+  fun simplifyAdd simp (th as Thm (fm,_)) = add simp (fm,True,th);
 end;
 
 local
-  fun simplifySet set_defs set prf =
+  fun simplifySet set_defs set =
       let
         fun pred (s,_,_) = Set.subset s set
       in
         case List.find pred set_defs of
           NONE => NONE
-        | SOME (s,f,p) =>
+        | SOME (s,f,th) =>
           let
             val set = Set.add (Set.difference set s) f
-            val prf = combineProofs prf p
           in
-            SOME (set,prf)
+            SOME (set,th)
           end
       end;
 in
@@ -988,21 +1031,44 @@ in
         and simp_top fm prf =
             case fm of
               And (_,_,s) =>
-              (case simplifySet andSet s prf of
+              (case simplifySet andSet s of
                  NONE => NONE
-               | SOME (s,prf) => try_simp_top (AndSet s) prf)
+               | SOME (s,th) =>
+                 let
+                   val fm = AndSet s
+                   val prf = th :: prf
+                 in
+                   try_simp_top fm prf
+                 end)
             | Or (_,_,s) =>
-              (case simplifySet orSet s prf of
+              (case simplifySet orSet s of
                  NONE => NONE
-               | SOME (s,prf) => try_simp_top (OrSet s) prf)
+               | SOME (s,th) =>
+                 let
+                   val fm = OrSet s
+                   val prf = th :: prf
+                 in
+                   try_simp_top fm prf
+                 end)
             | Xor (_,_,p,s) =>
-              (case simplifySet xorSet s prf of
+              (case simplifySet xorSet s of
                  NONE => NONE
-               | SOME (s,prf) => try_simp_top (XorPolaritySet (p,s)) prf)
+               | SOME (s,th) =>
+                 let
+                   val fm = XorPolaritySet (p,s)
+                   val prf = th :: prf
+                 in
+                   try_simp_top fm prf
+                 end)
             | _ =>
               (case Map.peek formula fm of
                  NONE => NONE
-               | SOME (fm,p) => try_simp_top fm (combineProofs prf p))
+               | SOME (fm,th) =>
+                 let
+                   val prf = th :: prf
+                 in
+                   try_simp_top fm prf
+                 end)
 
         and simp_sub fm prf =
             case fm of
@@ -1040,7 +1106,15 @@ in
               NONE => (changed, fm :: l, prf)
             | SOME (fm,prf) => (true, fm :: l, prf)
       in
-        fn fm_prf as (fm,prf) => Option.getOpt (simp fm prf, fm_prf)
+        fn th as Thm (fm,_) =>
+           case simp fm [] of
+             SOME (fm,ths) =>
+             let
+               val prf = Proof (Simplification, th :: ths)
+             in
+               Thm (fm,prf)
+             end
+           | NONE => th
       end;
 end;
 
@@ -1080,107 +1154,114 @@ fun newDefinition def =
       val rel = newDefinitionRelation ()
       val atm = (Name.fromString rel, NameSet.transform Term.Var fv)
       val fm = Formula.Iff (Formula.Atom atm, toFormula def)
+      val fm = Formula.setMkForall (fv,fm)
+      val prf = Proof (Definition (rel,fm), [])
       val lit = Literal (fv,(false,atm))
-      val prf = singletonProof rel
+      val fm = Xor2 (lit,def)
     in
-      ((rel, Formula.setMkForall (fv,fm)), (Xor2 (lit,def), prf))
+      Thm (fm,prf)
     end;
 
 (* ------------------------------------------------------------------------- *)
 (* Definitional conjunctive normal form.                                     *)
 (* ------------------------------------------------------------------------- *)
 
-type cnfResult =
-     {definitions : (string * Formula.formula) list,
-      clauses : (Thm.clause * proof) list};
+datatype cnf =
+    ConsistentCnf of simplify
+  | InconsistentCnf;
 
-datatype cnfState =
-    CnfState of simplify
-  | CnfInconsistent;
-
-val cnfStateInitial = CnfState simplifyEmpty;
+val initialCnf = ConsistentCnf simplifyEmpty;
 
 local
-  fun def_cnf defs cls simp fms =
-      case fms of
-        [] => ({definitions = defs, clauses = cls}, CnfState simp)
-      | fm :: fms => def_cnf_formula defs cls simp (simplify simp fm) fms
+  fun def_cnf_inconsistent th =
+      let
+        val cls = [(LiteralSet.empty,th)]
+      in
+        (cls,InconsistentCnf)
+      end;
 
-  and def_cnf_formula defs cls simp (fm_prf as (fm,prf)) fms =
+  fun def_cnf cls simp ths =
+      case ths of
+        [] => (cls, ConsistentCnf simp)
+      | th :: ths => def_cnf_formula cls simp (simplify simp th) ths
+
+  and def_cnf_formula cls simp (th as Thm (fm,_)) ths =
       case fm of
-        True => def_cnf defs cls simp fms
-      | False => def_cnf_inconsistent defs prf
+        True => def_cnf cls simp ths
+      | False => def_cnf_inconsistent th
       | And (_,_,s) =>
         let
-          fun add (f,z) = (f,prf) :: z
+          fun add (f,z) = Thm (f, Proof (Conjunct, [th])) :: z
         in
-          def_cnf defs cls simp (Set.foldr add fms s)
+          def_cnf cls simp (Set.foldr add ths s)
         end
       | Exists (fv,_,n,f) =>
-        def_cnf_formula defs cls simp (skolemize fv n f, prf) fms
-      | Forall (_,_,_,f) => def_cnf_formula defs cls simp (f,prf) fms
+        let
+          val th = Thm (skolemize fv n f, Proof (Skolemization, [th]))
+        in
+          def_cnf_formula cls simp th ths
+        end
+      | Forall (_,_,_,f) =>
+        let
+          val th = Thm (f, Proof (Specialization, [th]))
+        in
+          def_cnf_formula cls simp th ths
+        end
       | _ =>
         case minimumDefinition fm of
           SOME def =>
           let
-            val (def,fm) = newDefinition def
-            and fms = fm_prf :: fms
+            val ths = th :: ths
+            val th = newDefinition def
           in
-            def_cnf_formula (def :: defs) cls simp fm fms
+            def_cnf_formula cls simp th ths
           end
         | NONE =>
           let
-            val simp = simplifyAdd simp fm_prf
+            val simp = simplifyAdd simp th
 
             fun add (f,l) =
-                (toClause f, prf) :: l
+                (toClause f, th) :: l
 (*MetisDebug
                 handle Error err =>
-                  (Print.trace pp "Normalize.def_cnf_formula: f" f;
-                   raise Bug ("Normalize.cnfStateAdd.def_cnf_formula: "^err))
+                  (Print.trace pp "Normalize.addCnf.def_cnf_formula: f" f;
+                   raise Bug ("Normalize.addCnf.def_cnf_formula: " ^ err))
 *)
           in
             case basicCnf fm of
-              True => def_cnf defs cls simp fms
-            | False => def_cnf_inconsistent defs prf
-            | And (_,_,s) => def_cnf defs (Set.foldl add cls s) simp fms
-            | fm => def_cnf defs (add (fm,cls)) simp fms
-          end
-
-  and def_cnf_inconsistent defs prf =
-      let
-        val cls = [(LiteralSet.empty,prf)]
-      in
-        ({definitions = defs, clauses = cls}, CnfInconsistent)
-      end;
+              True => def_cnf cls simp ths
+            | False => def_cnf_inconsistent th
+            | And (_,_,s) => def_cnf (Set.foldl add cls s) simp ths
+            | fm => def_cnf (add (fm,cls)) simp ths
+          end;
 in
-  fun cnfStateAdd (fm,prf) state =
-      case state of
-        CnfState simp => def_cnf [] [] simp [(fromFormula fm, prf)]
-      | CnfInconsistent => ({definitions = [], clauses = []}, CnfInconsistent);
+  fun addCnf th cnf =
+      case cnf of
+        ConsistentCnf simp => def_cnf [] simp [th]
+      | InconsistentCnf => ([],cnf);
 end;
 
 local
-  fun add (fm,(defs,cls,state)) =
+  fun add (th,(cls,cnf)) =
       let
-        val ({definitions,clauses},state) = cnfStateAdd fm state
+        val (cls',cnf) = addCnf th cnf
       in
-        (definitions @ defs, clauses @ cls, state)
+        (cls' @ cls, cnf)
       end;
 in
-  fun cnfProof fms : cnfResult =
+  fun thmCnf ths =
       let
-        val (defs,cls,_) = List.foldl add ([],[],cnfStateInitial) fms
+        val (cls,_) = List.foldl add ([],initialCnf) ths
       in
-        {definitions = rev defs, clauses = rev cls}
+        rev cls
       end;
 end;
 
 fun cnf fm =
     let
-      val {clauses,...} = cnfProof [(fm,noProof)]
+      val cls = thmCnf [axiomThm "" fm]
     in
-      map fst clauses
+      map fst cls
     end;
 
 end

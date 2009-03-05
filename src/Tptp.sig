@@ -144,9 +144,7 @@ val write :
      mapping : tptpMapping,
      filename : string} -> unit
 
-(***
 val prove : {filename : string, mapping : tptpMapping} -> bool
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* TSTP proofs.                                                              *)

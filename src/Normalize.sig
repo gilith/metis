@@ -16,29 +16,40 @@ val nnf : Formula.formula -> Formula.formula
 (* Normalization proofs.                                                     *)
 (* ------------------------------------------------------------------------- *)
 
-type proof = StringSet.set
+datatype inference =
+    Axiom of string * Formula.formula
+  | Conjecture of string * Formula.formula
+  | Definition of string * Formula.formula
+  | Negation
+  | Simplification
+  | Conjunct
+  | Specialization
+  | Skolemization
 
-val noProof : proof
+type thm
 
-val singletonProof : string -> proof
+val destThm : thm -> Formula.formula * inference * thm list
 
-val combineProofs : proof -> proof -> proof
+val axiomThm : string -> Formula.formula -> thm
+
+val conjectureThm : string -> Formula.formula -> thm
+
+val negationThm : thm -> thm
+
+val thmProof :
+    thm list -> (Formula.formula * inference * Formula.formula list) list
 
 (* ------------------------------------------------------------------------- *)
 (* Conjunctive normal form.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-type cnfState
+type cnf
 
-type cnfResult =
-     {definitions : (string * Formula.formula) list,
-      clauses : (Thm.clause * proof) list}
+val initialCnf : cnf
 
-val cnfStateInitial : cnfState
+val addCnf : thm -> cnf -> (Thm.clause * thm) list * cnf
 
-val cnfStateAdd : Formula.formula * proof -> cnfState -> cnfResult * cnfState
-
-val cnfProof : (Formula.formula * proof) list -> cnfResult
+val thmCnf : thm list -> (Thm.clause * thm) list
 
 val cnf : Formula.formula -> Thm.clause list
 

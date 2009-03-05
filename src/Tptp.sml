@@ -1367,7 +1367,7 @@ local
         (norm,cnf)
       end;
 
-  fun mkProblem (norm,_) : normalization =
+  fun normProblem (norm,_) : normalization =
       let
         val {definitions,roles,problem,proofs} = norm
         val {axioms,conjecture} = problem
@@ -1385,7 +1385,7 @@ local
               val goal = Formula.Not (Formula.generalize goal)
               val acc = addFof ROLE_NEGATED_CONJECTURE ((name,goal),acc)
             in
-              mkProblem acc
+              normProblem acc
             end
 
         fun split (name,goal) =
@@ -1444,56 +1444,16 @@ in
         val acc = List.foldl (addFof ROLE_AXIOM) acc fofAxioms
       in
         case goal of
-          NoGoal => [mkProblem acc]
+          NoGoal => [normProblem acc]
         | CnfGoal cls =>
           let
             val acc = List.foldl (addCnf ROLE_NEGATED_CONJECTURE) acc cls
           in
-            [mkProblem acc]
+            [normProblem acc]
           end
         | FofGoal goals => splitProblem acc goals
       end;
 end;
-
-(***
-fun normalizeFofToCnf (problem as {comments,...}) =
-    let
-      val comments = comments @ (if null comments then [] else [""])
-
-      val names = LiteralSetMap.new ()
-
-      val problems = normalizeFof problem
-
-      val n = Int.toString (length problems)
-
-      fun mk {definitions = _, roles, problem = p, proofs = _} i =
-          let
-            val i = i + 1
-            val comments =
-                comments @ ["FOFtoCNF subgoal: " ^ Int.toString i ^ "/" ^ n]
-            val prob = mkCnfProblem {comments = comments,
-                                     names = names,
-                                     roles = roles,
-                                     problem = p}
-          in
-            (prob,i)
-          end
-
-      val (probs,_) = maps mk problems 0
-    in
-      probs
-    end;
-
-fun goal problem =
-    if isCnfProblem problem then
-      let
-        val {problem,...} = destCnfProblem problem
-      in
-        Problem.toGoal problem
-      end
-    else
-      goalFofProblem problem;
-***)
 
 local
   fun stripComments acc strm =
@@ -1556,17 +1516,15 @@ in
       end;
 end;
 
-(***
 local
-  fun refute problem =
+  fun refute {axioms,conjecture} =
       let
-        val {problem = {axioms,conjecture}, ...} = destCnfProblem problem
         val axioms = map Thm.axiom axioms
         and conjecture = map Thm.axiom conjecture
-        val prob = {axioms = axioms, conjecture = conjecture}
-        val res = Resolution.new Resolution.default prob
+        val problem = {axioms = axioms, conjecture = conjecture}
+        val resolution = Resolution.new Resolution.default problem
       in
-        case Resolution.loop res of
+        case Resolution.loop resolution of
           Resolution.Contradiction _ => true
         | Resolution.Satisfiable _ => false
       end;
@@ -1574,14 +1532,11 @@ in
   fun prove filename =
       let
         val problem = read filename
-        val problems =
-            if isCnfProblem problem then [problem]
-            else normalizeFofToCnf problem
+        val problems = map #problem (normalize problem)
       in
         List.all refute problems
       end;
 end;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* TSTP proofs.                                                              *)
