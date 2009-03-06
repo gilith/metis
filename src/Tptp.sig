@@ -80,7 +80,7 @@ datatype formulaBody =
 
 datatype formulaSource =
     NoFormulaSource
-  | NormalizationFormulaSource of
+  | NormalizeFormulaSource of
       {inference : Normalize.inference,
        parents : string list}
   | ProofFormulaSource of Proof.inference

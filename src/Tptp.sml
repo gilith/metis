@@ -645,7 +645,7 @@ fun ppFormulaBody mapping body =
 
 datatype formulaSource =
     NoFormulaSource
-  | NormalizationFormulaSource of
+  | NormalizeFormulaSource of
       {inference : Normalize.inference,
        parents : string list}
   | ProofFormulaSource of Proof.inference;
@@ -656,12 +656,39 @@ fun isNoFormulaSource source =
     | _ => false;
 
 local
+  val GEN_INFERENCE = "inference";
+
+  fun inferenceName inf =
+      case inf of
+        Normalize.Axiom _ => "canonicalize"
+      | Normalize.Conjecture _ => "canonicalize"
+      | Normalize.Definition _ => "canonicalize"
+      | Normalize.Negation => "negate"
+      | Normalize.Simplification => "simplify"
+      | Normalize.Conjunct => "conjunct"
+      | Normalize.Specialization => "specialize"
+      | Normalize.Skolemization => "skolemize"
+      | Normalize.Clausification => "clausify";
+
+  fun ppInference mapping inf = Print.skip;
 in
   fun ppFormulaSource mapping source =
       case source of
         NoFormulaSource => Print.skip
-      | NormalizationFormulaSource {inference,parents} =>
-        raise Bug "Tptp.ppFormulaSource"
+      | NormalizeFormulaSource {inference,parents} =>
+        let
+          val gen = GEN_INFERENCE
+
+          val name = inferenceName inference
+        in
+          Print.blockProgram Print.Inconsistent (size gen + 1)
+            [Print.addString (gen ^ "(" ^ name ^ ","),
+             Print.addBreak 1,
+             Print.ppBracket "[" "]" (ppInference mapping) inference,
+             Print.addString ",",
+             Print.addBreak 1,
+             Print.ppList Print.ppString parents]
+        end
       | ProofFormulaSource inf => raise Bug "Tptp.ppFormulaSource";
 end;
 
@@ -745,21 +772,20 @@ fun ppFormula mapping fm =
           | FofFormulaBody _ => "fof"
     in
       Print.blockProgram Print.Inconsistent (size gen + 1)
-        [Print.addString (gen ^ "(" ^ name ^ ","),
-         Print.addBreak 1,
-         Print.addString (role ^ ","),
-         Print.addBreak 1,
-         Print.blockProgram Print.Consistent 1
-           [Print.addString "(",
-            ppFormulaBody mapping body,
-            Print.addString ")"],
-         (if isNoFormulaSource source then Print.skip
+        ([Print.addString (gen ^ "(" ^ name ^ ","),
+          Print.addBreak 1,
+          Print.addString (role ^ ","),
+          Print.addBreak 1,
+          Print.blockProgram Print.Consistent 1
+            [Print.addString "(",
+             ppFormulaBody mapping body,
+             Print.addString ")"]] @
+         (if isNoFormulaSource source then []
           else
-            Print.blockProgram Print.Consistent 1
-              [Print.addString "(",
-               ppFormulaSource mapping source,
-               Print.addString ")"]),
-         Print.addString ")."]
+            [Print.addString ",",
+             Print.addBreak 1,
+             ppFormulaSource mapping source]) @
+         [Print.addString ")."])
     end;
 
 fun formulaToString mapping = Print.toString (ppFormula mapping);
@@ -1886,18 +1912,20 @@ local
   fun collectNormDeps (norm,names_defs) =
       List.foldl collectNormInferenceDeps names_defs norm;
 
-  fun addProblemFormula names (formula,formulas) =
+  fun addProblemFormula names (formula,(formulas,avoid)) =
       let
         val name = formulaName formula
 
         val formulas =
             if not (StringSet.member name names) then formulas
             else formula :: formulas
+
+        val avoid = StringSet.add avoid name
       in
-        formulas
+        (formulas,avoid)
       end;
 
-  fun addDefinitionFormula avoid (_,def,(formulas,i)) =
+  fun addDefinitionFormula avoid (defName,def,(formulas,i,defNames)) =
       let
         val (name,i) = newName avoid "definition_" i
 
@@ -1915,8 +1943,67 @@ local
                source = source}
 
         val formulas = formula :: formulas
+
+        val defNames = StringMap.insert defNames (defName,name)
       in
-        (formulas,i)
+        (formulas,i,defNames)
+      end;
+
+  fun lookupDefName defNames defName =
+      case StringMap.peek defNames defName of
+        SOME name => name
+      | NONE => raise Bug "Tptp.lookupDefName";
+
+  fun lookupFmName fmNames fm =
+      case FormulaMap.peek fmNames fm of
+        SOME name => name
+      | NONE => raise Bug "Tptp.lookupFmName";
+
+  fun mkNormalizeFormulaSource defNames fmNames inference fms =
+      let
+        val parents = map (lookupFmName fmNames) fms
+
+        val parents =
+            case inference of
+              Normalize.Axiom name => name :: parents
+            | Normalize.Conjecture name => name :: parents
+            | Normalize.Definition (defName,_) =>
+              let
+                val name = lookupDefName defNames defName
+              in
+                name :: parents
+              end
+            | _ => parents
+      in
+        NormalizeFormulaSource
+          {inference = inference,
+           parents = parents}
+      end;
+
+  fun addNormalizationFormula avoid defNames ((fm,inf,fms),acc) =
+      let
+        val (formulas,i,fmNames) = acc
+
+        val (name,i) = newName avoid "normalization_" i
+
+        val role = ROLE_PLAIN
+
+        val body = FofFormulaBody fm
+
+        val source = mkNormalizeFormulaSource defNames fmNames inf fms
+
+        val formula =
+            Formula
+              {name = name,
+               role = role,
+               body = body,
+               source = source}
+
+        val formulas = formula :: formulas
+
+        val fmNames = FormulaMap.insert fmNames (fm,name)
+      in
+        (formulas,i,fmNames)
       end;
 in
   fun writeProof {problem,proofs,mapping,filename} =
@@ -1933,10 +2020,17 @@ in
         val (names,defs) = collectNormDeps (norm,(names,defs))
 
         val {comments = _, formulas} = problem
-        val formulas = List.foldl (addProblemFormula names) [] formulas
 
-        val (formulas,_) =
-            StringMap.foldl (addDefinitionFormula names) (formulas,0) defs
+        val (formulas,avoid) =
+            List.foldl (addProblemFormula names) ([],StringSet.empty) formulas
+
+        val defNames : string StringMap.map = StringMap.new ()
+        val (formulas,_,defNames) =
+            StringMap.foldl (addDefinitionFormula avoid) (formulas,0,defNames) defs
+
+        val fmNames : string FormulaMap.map = FormulaMap.new ()
+        val (formulas,_,fmNames) =
+            List.foldl (addNormalizationFormula avoid defNames) (formulas,0,fmNames) norm
 
         val problem = {comments = [], formulas = rev formulas}
 
