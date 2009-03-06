@@ -866,10 +866,47 @@ fun negationThm th =
       Thm (fm,prf)
     end;
 
-(***
-val thmProof :
-    (Formula.formula * inference * Formula.formula list) list
-***)
+local
+  fun isProved proved (Thm (fm,_)) = Set.member fm proved;
+
+  fun isUnproved proved th = not (isProved proved th);
+
+  fun thmInf th =
+      let
+        val (fm, Proof (inf,ths)) = destThm th
+      in
+        (fm, inf, map (fst o destThm) ths)
+      end;
+
+  fun prove acc proved ths =
+      case ths of
+        [] => rev acc
+      | th :: ths' =>
+        if isProved proved th then prove acc proved ths'
+        else
+          let
+            val Thm (fm, Proof (_,deps)) = th
+
+            val deps = List.filter (isUnproved proved) deps
+          in
+            if null deps then
+              let
+                val acc = thmInf th :: acc
+
+                val proved = Set.add proved fm
+              in
+                prove acc proved ths'
+              end
+            else
+              let
+                val ths = deps @ ths
+              in
+                prove acc proved ths
+              end
+          end;
+in
+  val proveThms = prove [] empty;
+end;
 
 (* ------------------------------------------------------------------------- *)
 (* Simplifying with definitions.                                             *)

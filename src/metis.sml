@@ -176,31 +176,36 @@ local
     fun display_proof_start filename =
         print ("\nSZS output start CNFRefutation for " ^ filename ^ "\n");
 
-    fun display_proof_body mapping avoid prefix names roles proofs proof =
+    fun display_proof_body problem proofs =
         let
+          fun createProof ((norm,th),acc) = (norm, Proof.proof th) :: acc
+
+          val proofs = List.foldl createProof [] proofs
+
+          val mapping = Tptp.defaultTptpMapping
+
+(***
           val mapping =
               Tptp.addVarSetTptpMapping mapping (Proof.freeVars proof)
+***)
 
           val filename = "-"
         in
           Tptp.writeProof
-            {proof = proof,
+            {problem = problem,
+             proofs = proofs,
              mapping = mapping,
-             filename = filename,
-             avoid = avoid,
-             prefix = prefix,
-             names = names,
-             roles = roles,
-             proofs = proofs}
+             filename = filename}
         end;
 
     fun display_proof_end filename =
         print ("SZS output end CNFRefutation for " ^ filename ^ "\n\n");
   in
-    fun display_proof filename tptp acc =
+    fun display_proof filename problem proofs =
         if notshowing "proof" then ()
         else
           let
+(***
             fun calc_used ((defns,proofs,th),(avoid,used,defs,acc)) =
                 let
                   fun add_line ((t,_),(used,roles)) =
@@ -287,9 +292,10 @@ local
                 in
                   (false, i + 1)
                 end
-
+***)
             val () = display_proof_start filename
 
+(***
             val top =
                 let
                   val noAxioms = null formulas
@@ -306,6 +312,9 @@ local
                 end
 
             val (top,_) = List.foldl (display (length acc)) (top,0) acc
+***)
+
+            val () = display_proof_body problem proofs
 
             val () = display_proof_end filename
           in
@@ -355,7 +364,7 @@ local
         val () =
             let
               val problem =
-                  Tptp.mkCnfProblem
+                  Tptp.mkProblem
                     {comments = ["CNF clauses for " ^ filename],
                      names = Tptp.noClauseNames,
                      roles = Tptp.noClauseRoles,
@@ -407,7 +416,7 @@ local
         end
       | prob :: probs =>
         let
-          val {definitions, roles = _, problem, proofs} = prob
+          val {problem,proofs} = prob
 
           val () = display_problem filename problem
         in
@@ -415,7 +424,7 @@ local
           else
             case refute problem of
               Resolution.Contradiction th =>
-              refuteAll filename tptp probs ((definitions,proofs,th) :: acc)
+              refuteAll filename tptp probs ((proofs,th) :: acc)
             | Resolution.Satisfiable ths =>
               let
                 val status =

@@ -598,36 +598,105 @@ fun clauseFromThm th = clauseFromLiteralSet (Thm.clause th);
 fun ppClause mapping = Print.ppMap clauseToFormula (ppFof mapping);
 
 (* ------------------------------------------------------------------------- *)
+(* TPTP formula bodies.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+datatype formulaBody =
+    CnfFormulaBody of literal list
+  | FofFormulaBody of Formula.formula;
+
+fun destCnfFormulaBody body =
+    case body of
+      CnfFormulaBody x => x
+    | _ => raise Error "destCnfFormulaBody";
+
+val isCnfFormulaBody = can destCnfFormulaBody;
+
+fun destFofFormulaBody body =
+    case body of
+      FofFormulaBody x => x
+    | _ => raise Error "destFofFormulaBody";
+
+val isFofFormulaBody = can destFofFormulaBody;
+
+fun formulaBodyFunctions body =
+    case body of
+      CnfFormulaBody cl => clauseFunctions cl
+    | FofFormulaBody fm => Formula.functions fm;
+
+fun formulaBodyRelations body =
+    case body of
+      CnfFormulaBody cl => clauseRelations cl
+    | FofFormulaBody fm => Formula.relations fm;
+
+fun formulaBodyFreeVars body =
+    case body of
+      CnfFormulaBody cl => clauseFreeVars cl
+    | FofFormulaBody fm => Formula.freeVars fm;
+
+fun ppFormulaBody mapping body =
+    case body of
+      CnfFormulaBody cl => ppClause mapping cl
+    | FofFormulaBody fm => ppFof mapping fm;
+
+(* ------------------------------------------------------------------------- *)
+(* TPTP formula sources.                                                     *)
+(* ------------------------------------------------------------------------- *)
+
+datatype formulaSource =
+    NoFormulaSource
+  | NormalizationFormulaSource of
+      {inference : Normalize.inference,
+       parents : string list}
+  | ProofFormulaSource of Proof.inference;
+
+fun isNoFormulaSource source =
+    case source of
+      NoFormulaSource => true
+    | _ => false;
+
+local
+in
+  fun ppFormulaSource mapping source =
+      case source of
+        NoFormulaSource => Print.skip
+      | NormalizationFormulaSource {inference,parents} =>
+        raise Bug "Tptp.ppFormulaSource"
+      | ProofFormulaSource inf => raise Bug "Tptp.ppFormulaSource";
+end;
+
+(* ------------------------------------------------------------------------- *)
 (* TPTP formulas.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
 datatype formula =
-    CnfFormula of {name : string, role : string, clause : clause}
-  | FofFormula of {name : string, role : string, formula : Formula.formula};
+    Formula of
+      {name : string,
+       role : role,
+       body : formulaBody,
+       source : formulaSource};
 
-fun formulaName formula =
-    case formula of
-      CnfFormula {name,...} => name
-    | FofFormula {name,...} => name;
+fun formulaName (Formula {name,...}) = name;
 
-fun destCnfFormula (CnfFormula x) = x
-  | destCnfFormula _ = raise Error "destCnfFormula";
+fun formulaRole (Formula {role,...}) = role;
+
+fun formulaBody (Formula {body,...}) = body;
+
+fun formulaSource (Formula {source,...}) = source;
+
+fun destCnfFormula fm = destCnfFormulaBody (formulaBody fm);
 
 val isCnfFormula = can destCnfFormula;
 
-fun destFofFormula (FofFormula x) = x
-  | destFofFormula _ = raise Error "destFofFormula";
+fun destFofFormula fm = destFofFormulaBody (formulaBody fm);
 
 val isFofFormula = can destFofFormula;
 
-fun formulaFunctions (CnfFormula {clause,...}) = clauseFunctions clause
-  | formulaFunctions (FofFormula {formula,...}) = Formula.functions formula;
+fun formulaFunctions fm = formulaBodyFunctions (formulaBody fm);
 
-fun formulaRelations (CnfFormula {clause,...}) = clauseRelations clause
-  | formulaRelations (FofFormula {formula,...}) = Formula.relations formula;
+fun formulaRelations fm = formulaBodyRelations (formulaBody fm);
 
-fun formulaFreeVars (CnfFormula {clause,...}) = clauseFreeVars clause
-  | formulaFreeVars (FofFormula {formula,...}) = Formula.freeVars formula;
+fun formulaFreeVars fm = formulaBodyFreeVars (formulaBody fm);
 
 val formulaListFreeVars =
     let
@@ -652,21 +721,29 @@ val formulasRelations =
 
 fun formulaIsCnfConjecture fm =
     case fm of
-      CnfFormula {role,...} => roleIsCnfConjecture role
-    | FofFormula _ => false;
+      Formula {role, body = CnfFormulaBody _, ...} => roleIsCnfConjecture role
+    | _ => false;
 
 fun formulaIsFofConjecture fm =
     case fm of
-      FofFormula {role,...} => roleIsFofConjecture role
-    | CnfFormula _ => false;
+      Formula {role, body = FofFormulaBody _, ...} => roleIsFofConjecture role
+    | _ => false;
 
 fun formulaIsConjecture fm =
-    formulaIsCnfConjecture fm orelse formulaIsFofConjecture fm;
+    formulaIsCnfConjecture fm orelse
+    formulaIsFofConjecture fm;
 
 (* Parsing and pretty-printing *)
 
-local
-  fun ppGen mapping ppX (gen,name,role,x) =
+fun ppFormula mapping fm =
+    let
+      val Formula {name,role,body,source} = fm
+
+      val gen =
+          case body of
+            CnfFormulaBody _ => "cnf"
+          | FofFormulaBody _ => "fof"
+    in
       Print.blockProgram Print.Inconsistent (size gen + 1)
         [Print.addString (gen ^ "(" ^ name ^ ","),
          Print.addBreak 1,
@@ -674,17 +751,16 @@ local
          Print.addBreak 1,
          Print.blockProgram Print.Consistent 1
            [Print.addString "(",
-            ppX mapping x,
+            ppFormulaBody mapping body,
             Print.addString ")"],
-         Print.addString ")."];
-in
-  fun ppFormula mapping fm =
-      case fm of
-        CnfFormula {name,role,clause} =>
-        ppGen mapping ppClause ("cnf",name,role,clause)
-      | FofFormula {name,role,formula} =>
-        ppGen mapping ppFof ("fof",name,role,formula);
-end;
+         (if isNoFormulaSource source then Print.skip
+          else
+            Print.blockProgram Print.Consistent 1
+              [Print.addString "(",
+               ppFormulaSource mapping source,
+               Print.addString ")"]),
+         Print.addString ")."]
+    end;
 
 fun formulaToString mapping = Print.toString (ppFormula mapping);
 
@@ -1125,8 +1201,17 @@ local
 
     fun cnfParser mapping input =
         let
-          fun mk ((),((),(n,((),(r,((),(c,((),())))))))) =
-              CnfFormula {name = n, role = r, clause = c}
+          fun mk ((),((),(name,((),(role,((),(cl,((),())))))))) =
+              let
+                val body = CnfFormulaBody cl
+                val source = NoFormulaSource
+              in
+                Formula
+                  {name = name,
+                   role = role,
+                   body = body,
+                   source = source}
+              end
         in
           (alphaNumParser "cnf" ++ punctParser #"(" ++
            nameParser ++ punctParser #"," ++
@@ -1137,8 +1222,17 @@ local
 
     fun fofParser mapping input =
         let
-          fun mk ((),((),(n,((),(r,((),(f,((),())))))))) =
-              FofFormula {name = n, role = r, formula = f}
+          fun mk ((),((),(name,((),(role,((),(fm,((),())))))))) =
+              let
+                val body = FofFormulaBody fm
+                val source = NoFormulaSource
+              in
+                Formula
+                  {name = name,
+                   role = role,
+                   body = body,
+                   source = source}
+              end
         in
           (alphaNumParser "fof" ++ punctParser #"(" ++
            nameParser ++ punctParser #"," ++
@@ -1229,9 +1323,18 @@ local
 
         val role = Option.getOpt (LiteralSetMap.peek roles cl, defaultRole)
 
-        val clause = clauseFromLiteralSet cl
+        val body = CnfFormulaBody (clauseFromLiteralSet cl)
+
+        val source = NoFormulaSource
+
+        val formula =
+            Formula
+              {name = name,
+               role = role,
+               body = body,
+               source = source}
       in
-        (CnfFormula {name = name, role = role, clause = clause}, (n,avoid))
+        (formula,(n,avoid))
       end;
 in
   fun mkProblem {comments,names,roles,problem} =
@@ -1267,34 +1370,38 @@ datatype problemGoal =
   | FofGoal of (string * Formula.formula) list;
 
 local
-  fun partitionFormula (fm,(cnfAxioms,fofAxioms,cnfGoals,fofGoals)) =
-      case fm of
-        CnfFormula {name,role,clause} =>
-        if roleIsCnfConjecture role then
-          let
-            val cnfGoals = (name,clause) :: cnfGoals
-          in
-            (cnfAxioms,fofAxioms,cnfGoals,fofGoals)
-          end
-        else
-          let
-            val cnfAxioms = (name,clause) :: cnfAxioms
-          in
-            (cnfAxioms,fofAxioms,cnfGoals,fofGoals)
-          end
-      | FofFormula {name,role,formula} =>
-        if roleIsFofConjecture role then
-          let
-            val fofGoals = (name,formula) :: fofGoals
-          in
-            (cnfAxioms,fofAxioms,cnfGoals,fofGoals)
-          end
-        else
-          let
-            val fofAxioms = (name,formula) :: fofAxioms
-          in
-            (cnfAxioms,fofAxioms,cnfGoals,fofGoals)
-          end;
+  fun partitionFormula (formula,(cnfAxioms,fofAxioms,cnfGoals,fofGoals)) =
+      let
+        val Formula {name,role,body,...} = formula
+      in
+        case body of
+          CnfFormulaBody cl =>
+          if roleIsCnfConjecture role then
+            let
+              val cnfGoals = (name,cl) :: cnfGoals
+            in
+              (cnfAxioms,fofAxioms,cnfGoals,fofGoals)
+            end
+          else
+            let
+              val cnfAxioms = (name,cl) :: cnfAxioms
+            in
+              (cnfAxioms,fofAxioms,cnfGoals,fofGoals)
+            end
+        | FofFormulaBody fm =>
+          if roleIsFofConjecture role then
+            let
+              val fofGoals = (name,fm) :: fofGoals
+            in
+              (cnfAxioms,fofAxioms,cnfGoals,fofGoals)
+            end
+          else
+            let
+              val fofAxioms = (name,fm) :: fofAxioms
+            in
+              (cnfAxioms,fofAxioms,cnfGoals,fofGoals)
+            end
+      end;
 
   fun partitionFormulas fms =
       let
@@ -1347,6 +1454,8 @@ local
           (norm,cnf)
         end;
 
+  val addCnfAxiom = addCnf ROLE_AXIOM;
+
   fun addFof role (th,(norm,cnf)) =
       let
         val (clauses,cnf) = Normalize.addCnf th cnf
@@ -1354,6 +1463,9 @@ local
       in
         (norm,cnf)
       end;
+
+  fun addFofAxiom ((name,fm),acc) =
+      addFof ROLE_AXIOM (Normalize.axiomThm fm name, acc);
 
   fun normProblem (norm,_) : normalization =
       let
@@ -1431,8 +1543,8 @@ in
         val {cnfAxioms,fofAxioms,goal} = partitionFormulas formulas
 
         val acc = (initialNormalization, Normalize.initialCnf)
-        val acc = List.foldl (addCnf ROLE_AXIOM) acc cnfAxioms
-        val acc = List.foldl (addFof ROLE_AXIOM) acc fofAxioms
+        val acc = List.foldl addCnfAxiom acc cnfAxioms
+        val acc = List.foldl addFofAxiom acc fofAxioms
       in
         case goal of
           NoGoal => [normProblem acc]
@@ -1533,6 +1645,7 @@ end;
 (* TSTP proofs.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 type axiomProofs = Normalize.proof LiteralSetMap.map;
 
 local
@@ -1713,5 +1826,128 @@ end;
 fun writeProof {proof,mapping,filename,avoid,prefix,names,roles,proofs} =
     Stream.toTextFile {filename = filename}
       (Print.toStream (ppProof mapping avoid prefix names roles proofs) proof);
+***)
+
+local
+  fun newName avoid prefix =
+      let
+        fun bump i =
+            let
+              val name = prefix ^ Int.toString i
+              val i = i + 1
+            in
+              if StringSet.member name avoid then bump i else (name,i)
+            end
+      in
+        bump
+      end;
+
+  fun collectInferenceDeps (inf,(names,defs)) =
+      let
+        val names =
+            case inf of
+              Normalize.Axiom n => StringSet.add names n
+            | Normalize.Conjecture n => StringSet.add names n
+            | _ => names
+
+        val defs =
+            case inf of
+              Normalize.Definition n_d => StringMap.insert defs n_d
+            | _ => defs
+      in
+        (names,defs)
+      end;
+
+  fun collectProofStepDeps norm ((_,inf),names_defs_ths) =
+      case inf of
+        Proof.Axiom cl =>
+        (case LiteralSetMap.peek norm cl of
+           SOME prf =>
+           let
+             val (names,defs,ths) = names_defs_ths
+
+             val Normalize.Proof (inf,ths') = prf
+
+             val (names,defs) = collectInferenceDeps (inf,(names,defs))
+
+             val ths = ths' @ ths
+           in
+             (names,defs,ths)
+           end
+         | NONE => raise Bug "Tptp.writeProof.collectDeps")
+      | _ => names_defs_ths;
+
+  fun collectProofDeps ((norm,proof),names_defs_ths) =
+      List.foldl (collectProofStepDeps norm) names_defs_ths proof;
+
+  fun collectNormInferenceDeps ((_,inf,_),names_defs) =
+      collectInferenceDeps (inf,names_defs);
+
+  fun collectNormDeps (norm,names_defs) =
+      List.foldl collectNormInferenceDeps names_defs norm;
+
+  fun addProblemFormula names (formula,formulas) =
+      let
+        val name = formulaName formula
+
+        val formulas =
+            if not (StringSet.member name names) then formulas
+            else formula :: formulas
+      in
+        formulas
+      end;
+
+  fun addDefinitionFormula avoid (_,def,(formulas,i)) =
+      let
+        val (name,i) = newName avoid "definition_" i
+
+        val role = ROLE_DEFINITION
+
+        val body = FofFormulaBody def
+
+        val source = NoFormulaSource
+
+        val formula =
+            Formula
+              {name = name,
+               role = role,
+               body = body,
+               source = source}
+
+        val formulas = formula :: formulas
+      in
+        (formulas,i)
+      end;
+in
+  fun writeProof {problem,proofs,mapping,filename} =
+      let
+        val names = StringSet.empty
+        and defs : Formula.formula StringMap.map = StringMap.new ()
+        and ths : Normalize.thm list = []
+
+        val (names,defs,ths) =
+            List.foldl collectProofDeps (names,defs,ths) proofs
+
+        val norm = Normalize.proveThms (rev ths)
+
+        val (names,defs) = collectNormDeps (norm,(names,defs))
+
+        val {comments = _, formulas} = problem
+        val formulas = List.foldl (addProblemFormula names) [] formulas
+
+        val (formulas,_) =
+            StringMap.foldl (addDefinitionFormula names) (formulas,0) defs
+
+        val problem = {comments = [], formulas = rev formulas}
+
+        val mapping =
+            addVarSetTptpMapping mapping (formulaListFreeVars formulas)
+      in
+        write
+          {problem = problem,
+           mapping = mapping,
+           filename = filename}
+      end;
+end;
 
 end

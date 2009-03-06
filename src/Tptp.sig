@@ -67,14 +67,42 @@ val literalRelation : literal -> Atom.relation option
 val literalFreeVars : literal -> NameSet.set
 
 (* ------------------------------------------------------------------------- *)
+(* TPTP formula bodies.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+datatype formulaBody =
+    CnfFormulaBody of literal list
+  | FofFormulaBody of Formula.formula
+
+(* ------------------------------------------------------------------------- *)
+(* TPTP formula sources.                                                     *)
+(* ------------------------------------------------------------------------- *)
+
+datatype formulaSource =
+    NoFormulaSource
+  | NormalizationFormulaSource of
+      {inference : Normalize.inference,
+       parents : string list}
+  | ProofFormulaSource of Proof.inference
+
+(* ------------------------------------------------------------------------- *)
 (* TPTP formulas.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
 datatype formula =
-    CnfFormula of {name : string, role : role, clause : literal list}
-  | FofFormula of {name : string, role : role, formula : Formula.formula}
+    Formula of
+      {name : string,
+       role : role,
+       body : formulaBody,
+       source : formulaSource}
 
 val formulaName : formula -> string
+
+val formulaRole : formula -> role
+
+val formulaBody : formula -> formulaBody
+
+val formulaSource : formula -> formulaSource
 
 val formulaFunctions : formula -> NameAritySet.set
 
@@ -130,8 +158,7 @@ val mkProblem :
 
 val normalize :
     problem ->
-    {roles : clauseRoles,
-     problem : Problem.problem,
+    {problem : Problem.problem,
      proofs : clauseProofs} list
 
 val goal : problem -> Formula.formula

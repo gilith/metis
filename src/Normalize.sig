@@ -1,6 +1,6 @@
 (* ========================================================================= *)
 (* NORMALIZING FORMULAS                                                      *)
-(* Copyright (c) 2001-2007 Joe Hurd, distributed under the GNU GPL version 2 *)
+(* Copyright (c) 2001-2009 Joe Hurd, distributed under the GNU GPL version 2 *)
 (* ========================================================================= *)
 
 signature Normalize =
@@ -47,10 +47,8 @@ val conjectureThm : Formula.formula -> string -> thm
 
 val negationThm : thm -> thm
 
-(***
-val thmProof :
+val proveThms :
     thm list -> (Formula.formula * inference * Formula.formula list) list
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Conjunctive normal form.                                                  *)

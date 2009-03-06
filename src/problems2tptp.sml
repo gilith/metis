@@ -60,9 +60,19 @@ fun outputProblem outputDir {name,comments,goal} =
           (if null comment_footer then [] else "" :: comment_footer) @
           [comment_bar]
 
-      val goal = Formula.parse goal
       val formulas =
-          [Tptp.FofFormula {name = "goal", role = "conjecture", formula = goal}]
+          let
+            val name = "goal"
+            val role = Tptp.ROLE_CONJECTURE
+            val body = Tptp.FofFormulaBody (Formula.parse goal)
+            val source = Tptp.NoFormulaSource
+          in
+            [Tptp.Formula
+               {name = name,
+                role = role,
+                body = body,
+                source = source}]
+          end
 
       val problem = {comments = comments, formulas = formulas}
 
