@@ -63,7 +63,7 @@ fun outputProblem outputDir {name,comments,goal} =
       val formulas =
           let
             val name = "goal"
-            val role = Tptp.ROLE_CONJECTURE
+            val role = Tptp.ConjectureRole
             val body = Tptp.FofFormulaBody (Formula.parse goal)
             val source = Tptp.NoFormulaSource
           in

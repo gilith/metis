@@ -1,7 +1,7 @@
 (* ========================================================================= *)
 (* METIS FIRST ORDER PROVER                                                  *)
 (*                                                                           *)
-(* Copyright (c) 2001-2007 Joe Hurd                                          *)
+(* Copyright (c) 2001-2009 Joe Hurd                                          *)
 (*                                                                           *)
 (* Metis is free software; you can redistribute it and/or modify             *)
 (* it under the terms of the GNU General Public License as published by      *)
@@ -183,7 +183,7 @@ local
           val proofs = List.foldl createProof [] proofs
 
           val formulas =
-              Tptp.mkProof
+              Tptp.fromProof
                 {problem = problem,
                  proofs = proofs}
 
@@ -219,7 +219,7 @@ local
                         | SOME set =>
                           let
                             val used = StringSet.union set used
-                            val role = Tptp.ROLE_PLAIN
+                            val role = Tptp.PLAIN_ROLE
                             val roles = LiteralSetMap.insert roles (cl,role)
                           in
                             (used,roles)
@@ -263,7 +263,7 @@ local
 
             fun add_def (name,def,formulas) =
                 let
-                  val role = Tptp.ROLE_DEFINITION
+                  val role = Tptp.DEFINITION_ROLE
                   val formula =
                       Tptp.FofFormula {name = name, role = role, formula = def}
                 in
@@ -358,7 +358,8 @@ local
 
   fun display_status filename status =
       if notshowing "status" then ()
-      else print ("SZS status " ^ status ^ " for " ^ filename ^ "\n");
+      else print ("SZS status " ^ Tptp.toStringStatus status ^
+                  " for " ^ filename ^ "\n");
 
   fun display_problem filename cls =
       let
@@ -406,9 +407,9 @@ local
         [] =>
         let
           val status =
-              if !TEST then Tptp.STATUS_UNKNOWN
-              else if Tptp.hasFofConjecture tptp then Tptp.STATUS_THEOREM
-              else Tptp.STATUS_UNSATISFIABLE
+              if !TEST then Tptp.UnknownStatus
+              else if Tptp.hasFofConjecture tptp then Tptp.TheoremStatus
+              else Tptp.UnsatisfiableStatus
 
           val () = display_status filename status
 
@@ -431,9 +432,9 @@ local
               let
                 val status =
                     if Tptp.hasFofConjecture tptp then
-                      Tptp.STATUS_COUNTER_SATISFIABLE
+                      Tptp.CounterSatisfiableStatus
                     else
-                      Tptp.STATUS_SATISFIABLE
+                      Tptp.SatisfiableStatus
 
                 val () = display_status filename status
                 val () = display_saturation filename ths

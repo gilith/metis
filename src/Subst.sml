@@ -30,17 +30,6 @@ fun insert (Subst m) v_tm = Subst (NameMap.insert m v_tm);
 
 fun singleton v_tm = insert empty v_tm;
 
-local
-  fun compatible (tm1,tm2) =
-      if Term.equal tm1 tm2 then SOME tm1
-      else raise Error "Subst.union: incompatible";
-in
-  fun union (s1 as Subst m1) (s2 as Subst m2) =
-      if NameMap.null m1 then s2
-      else if NameMap.null m2 then s1
-      else Subst (NameMap.union compatible m1 m2);
-end;
-
 fun toList (Subst m) = NameMap.toList m;
 
 fun fromList l = Subst (NameMap.fromList l);
@@ -128,7 +117,22 @@ fun compose (sub1 as Subst m1) sub2 =
     end;
 
 (* ------------------------------------------------------------------------- *)
-(* Substitutions can be inverted iff they are renaming substitutions.        *) 
+(* Creating the union of two compatible substitutions.                       *)
+(* ------------------------------------------------------------------------- *)
+
+local
+  fun compatible (tm1,tm2) =
+      if Term.equal tm1 tm2 then SOME tm1
+      else raise Error "Subst.union: incompatible";
+in
+  fun union (s1 as Subst m1) (s2 as Subst m2) =
+      if NameMap.null m1 then s2
+      else if NameMap.null m2 then s1
+      else Subst (NameMap.union compatible m1 m2);
+end;
+
+(* ------------------------------------------------------------------------- *)
+(* Substitutions can be inverted iff they are renaming substitutions.        *)
 (* ------------------------------------------------------------------------- *)
 
 local
@@ -151,6 +155,42 @@ val freshVars =
       fun add (v,m) = insert m (v, Term.newVar ())
     in
       NameSet.foldl add empty
+    end;
+
+(* ------------------------------------------------------------------------- *)
+(* Free variables.                                                           *)
+(* ------------------------------------------------------------------------- *)
+
+val redexes =
+    let
+      fun add (v,_,s) = NameSet.add s v
+    in
+      foldl add NameSet.empty
+    end;
+
+val residueFreeVars =
+    let
+      fun add (_,t,s) = NameSet.union s (Term.freeVars t)
+    in
+      foldl add NameSet.empty
+    end;
+
+val freeVars =
+    let
+      fun add (v,t,s) = NameSet.union (NameSet.add s v) (Term.freeVars t)
+    in
+      foldl add NameSet.empty
+    end;
+
+(* ------------------------------------------------------------------------- *)
+(* Functions.                                                                *)
+(* ------------------------------------------------------------------------- *)
+
+val functions =
+    let
+      fun add (_,t,s) = NameAritySet.union s (Term.functions t)
+    in
+      foldl add NameAritySet.empty
     end;
 
 (* ------------------------------------------------------------------------- *)

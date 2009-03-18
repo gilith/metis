@@ -25,30 +25,39 @@ val addVarSetTptpMapping : tptpMapping -> NameSet.set -> tptpMapping
 (* TPTP roles.                                                               *)
 (* ------------------------------------------------------------------------- *)
 
-type role = string
+datatype role =
+    AxiomRole
+  | ConjectureRole
+  | DefinitionRole
+  | NegatedConjectureRole
+  | PlainRole
+  | TheoremRole
+  | OtherRole of string;
 
-val ROLE_AXIOM : role
-val ROLE_CONJECTURE : role
-val ROLE_DEFINITION : role
-val ROLE_NEGATED_CONJECTURE : role
-val ROLE_PLAIN : role
-val ROLE_THEOREM : role
+val isCnfConjectureRole : role -> bool
 
-val roleIsCnfConjecture : role -> bool
+val isFofConjectureRole : role -> bool
 
-val roleIsFofConjecture : role -> bool
+val toStringRole : role -> string
+
+val fromStringRole : string -> role
+
+val ppRole : role Print.pp
 
 (* ------------------------------------------------------------------------- *)
-(* SZS Statuses.                                                             *)
+(* SZS statuses.                                                             *)
 (* ------------------------------------------------------------------------- *)
 
-type status = string
+datatype status =
+    CounterSatisfiableStatus
+  | TheoremStatus
+  | SatisfiableStatus
+  | UnknownStatus
+  | UnsatisfiableStatus
 
-val STATUS_COUNTER_SATISFIABLE : status
-val STATUS_THEOREM : status
-val STATUS_SATISFIABLE : status
-val STATUS_UNKNOWN : status
-val STATUS_UNSATISFIABLE : status
+val toStringStatus : status -> string
+
+val ppStatus : status Print.pp
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP literals.                                                            *)
@@ -58,13 +67,13 @@ datatype literal =
     Boolean of bool
   | Literal of Literal.literal
 
-val literalNegate : literal -> literal
+val negateLiteral : literal -> literal
 
-val literalFunctions : literal -> NameAritySet.set
+val functionsLiteral : literal -> NameAritySet.set
 
-val literalRelation : literal -> Atom.relation option
+val relationLiteral : literal -> Atom.relation option
 
-val literalFreeVars : literal -> NameSet.set
+val freeVarsLiteral : literal -> NameSet.set
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP formula bodies.                                                      *)
@@ -98,25 +107,25 @@ datatype formula =
        body : formulaBody,
        source : formulaSource}
 
-val formulaName : formula -> string
+val nameFormula : formula -> string
 
-val formulaRole : formula -> role
+val roleFormula : formula -> role
 
-val formulaBody : formula -> formulaBody
+val bodyFormula : formula -> formulaBody
 
-val formulaSource : formula -> formulaSource
+val sourceFormula : formula -> formulaSource
 
-val formulaFunctions : formula -> NameAritySet.set
+val functionsFormula : formula -> NameAritySet.set
 
-val formulaRelations : formula -> NameAritySet.set
+val relationsFormula : formula -> NameAritySet.set
 
-val formulaFreeVars : formula -> NameSet.set
+val freeVarsFormula : formula -> NameSet.set
 
-val formulaListFreeVars : formula list -> NameSet.set
+val freeVarsListFormula : formula list -> NameSet.set
 
-val formulaIsCnfConjecture : formula -> bool
-val formulaIsFofConjecture : formula -> bool
-val formulaIsConjecture : formula -> bool
+val isCnfConjectureFormula : formula -> bool
+val isFofConjectureFormula : formula -> bool
+val isConjectureFormula : formula -> bool
 
 (* ------------------------------------------------------------------------- *)
 (* Clause information.                                                       *)
@@ -178,7 +187,7 @@ val prove : {filename : string, mapping : tptpMapping} -> bool
 (* TSTP proofs.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-val mkProof :
+val fromProof :
     {problem : problem,
      proofs : (clauseProofs * Proof.proof) list} -> formula list
 

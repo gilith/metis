@@ -28,8 +28,6 @@ val insert : subst -> Term.var * Term.term -> subst
 
 val singleton : Term.var * Term.term -> subst
 
-val union : subst -> subst -> subst
-
 val toList : subst -> (Term.var * Term.term) list
 
 val fromList : (Term.var * Term.term) list -> subst
@@ -71,7 +69,13 @@ val remove : subst -> NameSet.set -> subst
 val compose : subst -> subst -> subst
 
 (* ------------------------------------------------------------------------- *)
-(* Substitutions can be inverted iff they are renaming substitutions.        *) 
+(* Creating the union of two compatible substitutions.                       *)
+(* ------------------------------------------------------------------------- *)
+
+val union : subst -> subst -> subst  (* raises Error *)
+
+(* ------------------------------------------------------------------------- *)
+(* Substitutions can be inverted iff they are renaming substitutions.        *)
 (* ------------------------------------------------------------------------- *)
 
 val invert : subst -> subst  (* raises Error *)
@@ -83,6 +87,22 @@ val isRenaming : subst -> bool
 (* ------------------------------------------------------------------------- *)
 
 val freshVars : NameSet.set -> subst
+
+(* ------------------------------------------------------------------------- *)
+(* Free variables.                                                           *)
+(* ------------------------------------------------------------------------- *)
+
+val redexes : subst -> NameSet.set
+
+val residueFreeVars : subst -> NameSet.set
+
+val freeVars : subst -> NameSet.set
+
+(* ------------------------------------------------------------------------- *)
+(* Functions.                                                                *)
+(* ------------------------------------------------------------------------- *)
+
+val functions : subst -> NameAritySet.set
 
 (* ------------------------------------------------------------------------- *)
 (* Matching for first order logic terms.                                     *)

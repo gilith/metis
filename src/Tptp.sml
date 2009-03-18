@@ -379,30 +379,67 @@ val isComment = can destComment;
 (* TPTP roles.                                                               *)
 (* ------------------------------------------------------------------------- *)
 
-type role = string;
+datatype role =
+    AxiomRole
+  | ConjectureRole
+  | DefinitionRole
+  | NegatedConjectureRole
+  | PlainRole
+  | TheoremRole
+  | OtherRole of string;
 
-val ROLE_AXIOM = "axiom"
-and ROLE_CONJECTURE = "conjecture"
-and ROLE_DEFINITION = "definition"
-and ROLE_NEGATED_CONJECTURE = "negated_conjecture"
-and ROLE_PLAIN = "plain"
-and ROLE_THEOREM = "theorem";
+fun isCnfConjectureRole role =
+    case role of
+      NegatedConjectureRole => true
+    | _ => false;
 
-fun roleIsCnfConjecture role = role = ROLE_NEGATED_CONJECTURE;
+fun isFofConjectureRole role =
+    case role of
+      ConjectureRole => true
+    | _ => false;
 
-fun roleIsFofConjecture role = role = ROLE_CONJECTURE;
+fun toStringRole role =
+    case role of
+      AxiomRole => "axiom"
+    | ConjectureRole => "conjecture"
+    | DefinitionRole => "definition"
+    | NegatedConjectureRole => "negated_conjecture"
+    | PlainRole => "plain"
+    | TheoremRole => "theorem"
+    | OtherRole s => s;
+
+fun fromStringRole s =
+    case s of
+      "axiom" => AxiomRole
+    | "conjecture" => ConjectureRole
+    | "definition" => DefinitionRole
+    | "negated_conjecture" => NegatedConjectureRole
+    | "plain" => PlainRole
+    | "theorem" => TheoremRole
+    | _ => OtherRole s;
+
+val ppRole = Print.ppMap toStringRole Print.ppString;
 
 (* ------------------------------------------------------------------------- *)
-(* SZS Statuses.                                                             *)
+(* SZS statuses.                                                             *)
 (* ------------------------------------------------------------------------- *)
 
-type status = string;
+datatype status =
+    CounterSatisfiableStatus
+  | TheoremStatus
+  | SatisfiableStatus
+  | UnknownStatus
+  | UnsatisfiableStatus;
 
-val STATUS_COUNTER_SATISFIABLE = "CounterSatisfiable"
-and STATUS_THEOREM = "Theorem"
-and STATUS_SATISFIABLE = "Satisfiable"
-and STATUS_UNKNOWN = "Unknown"
-and STATUS_UNSATISFIABLE = "Unsatisfiable";
+fun toStringStatus status =
+    case status of
+      CounterSatisfiableStatus => "CounterSatisfiable"
+    | TheoremStatus => "Theorem"
+    | SatisfiableStatus => "Satisfiable"
+    | UnknownStatus => "Unknown"
+    | UnsatisfiableStatus => "Unsatisfiable";
+
+val ppStatus = Print.ppMap toStringStatus Print.ppString;
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP literals.                                                            *)
@@ -418,14 +455,14 @@ fun destLiteral (Literal l) = l
 fun literalIsBooleanTrue (Boolean true) = true
   | literalIsBooleanTrue _ = false;
 
-fun literalNegate (Boolean b) = (Boolean (not b))
-  | literalNegate (Literal l) = (Literal (Literal.negate l));
+fun negateLiteral (Boolean b) = (Boolean (not b))
+  | negateLiteral (Literal l) = (Literal (Literal.negate l));
 
-fun literalFunctions (Boolean _) = NameAritySet.empty
-  | literalFunctions (Literal lit) = Literal.functions lit;
+fun functionsLiteral (Boolean _) = NameAritySet.empty
+  | functionsLiteral (Literal lit) = Literal.functions lit;
 
-fun literalRelation (Boolean _) = NONE
-  | literalRelation (Literal lit) = SOME (Literal.relation lit);
+fun relationLiteral (Boolean _) = NONE
+  | relationLiteral (Literal lit) = SOME (Literal.relation lit);
 
 fun literalToFormula (Boolean true) = Formula.True
   | literalToFormula (Boolean false) = Formula.False
@@ -435,8 +472,8 @@ fun literalFromFormula Formula.True = Boolean true
   | literalFromFormula Formula.False = Boolean false
   | literalFromFormula fm = Literal (Literal.fromFormula fm);
 
-fun literalFreeVars (Boolean _) = NameSet.empty
-  | literalFreeVars (Literal lit) = Literal.freeVars lit;
+fun freeVarsLiteral (Boolean _) = NameSet.empty
+  | freeVarsLiteral (Literal lit) = Literal.freeVars lit;
 
 fun literalSubst sub lit =
     case lit of
@@ -558,7 +595,7 @@ type clause = literal list;
 
 val clauseFunctions =
     let
-      fun funcs (lit,acc) = NameAritySet.union (literalFunctions lit) acc
+      fun funcs (lit,acc) = NameAritySet.union (functionsLiteral lit) acc
     in
       foldl funcs NameAritySet.empty
     end;
@@ -566,7 +603,7 @@ val clauseFunctions =
 val clauseRelations =
     let
       fun rels (lit,acc) =
-          case literalRelation lit of
+          case relationLiteral lit of
             NONE => acc
           | SOME r => NameAritySet.add acc r
     in
@@ -575,7 +612,7 @@ val clauseRelations =
 
 val clauseFreeVars =
     let
-      fun fvs (lit,acc) = NameSet.union (literalFreeVars lit) acc
+      fun fvs (lit,acc) = NameSet.union (freeVarsLiteral lit) acc
     in
       foldl fvs NameSet.empty
     end;
@@ -654,6 +691,74 @@ fun isNoFormulaSource source =
       NoFormulaSource => true
     | _ => false;
 
+fun functionsFormulaSource source =
+    case source of
+      NoFormulaSource => NameAritySet.empty
+    | NormalizeFormulaSource data =>
+      let
+        val {inference = inf, parents = _} = data
+      in
+        case inf of
+          Normalize.Definition (_,fm) => Formula.functions fm
+        | _ => NameAritySet.empty
+      end
+    | ProofFormulaSource data =>
+      let
+        val {inference = inf, parents = _} = data
+      in
+        case inf of
+          Proof.Axiom cl => LiteralSet.functions cl
+        | Proof.Assume atm => Atom.functions atm
+        | Proof.Subst (sub,_) => Subst.functions sub
+        | Proof.Resolve (atm,_,_) => Atom.functions atm
+        | Proof.Refl tm => Term.functions tm
+        | Proof.Equality (lit,_,tm) =>
+          NameAritySet.union (Literal.functions lit) (Term.functions tm)
+      end;
+
+fun relationsFormulaSource source =
+    case source of
+      NoFormulaSource => NameAritySet.empty
+    | NormalizeFormulaSource data =>
+      let
+        val {inference = inf, parents = _} = data
+      in
+        case inf of
+          Normalize.Definition (_,fm) => Formula.relations fm
+        | _ => NameAritySet.empty
+      end
+    | ProofFormulaSource data =>
+      let
+        val {inference = inf, parents = _} = data
+      in
+        case inf of
+          Proof.Axiom cl => LiteralSet.relations cl
+        | Proof.Assume atm => NameAritySet.singleton (Atom.relation atm)
+        | Proof.Subst _ => NameAritySet.empty
+        | Proof.Resolve (atm,_,_) => NameAritySet.singleton (Atom.relation atm)
+        | Proof.Refl tm => NameAritySet.empty
+        | Proof.Equality (lit,_,_) =>
+          NameAritySet.singleton (Literal.relation lit)
+      end;
+
+fun freeVarsFormulaSource source =
+    case source of
+      NoFormulaSource => NameSet.empty
+    | NormalizeFormulaSource data => NameSet.empty
+    | ProofFormulaSource data =>
+      let
+        val {inference = inf, parents = _} = data
+      in
+        case inf of
+          Proof.Axiom cl => LiteralSet.freeVars cl
+        | Proof.Assume atm => Atom.freeVars atm
+        | Proof.Subst (sub,_) => Subst.freeVars sub
+        | Proof.Resolve (atm,_,_) => Atom.freeVars atm
+        | Proof.Refl tm => Term.freeVars tm
+        | Proof.Equality (lit,_,tm) =>
+          NameSet.union (Literal.freeVars lit) (Term.freeVars tm)
+      end;
+
 local
   val GEN_INFERENCE = "inference";
 
@@ -702,80 +807,80 @@ datatype formula =
        body : formulaBody,
        source : formulaSource};
 
-fun formulaName (Formula {name,...}) = name;
+fun nameFormula (Formula {name,...}) = name;
 
-fun formulaRole (Formula {role,...}) = role;
+fun roleFormula (Formula {role,...}) = role;
 
-fun formulaBody (Formula {body,...}) = body;
+fun bodyFormula (Formula {body,...}) = body;
 
-fun formulaSource (Formula {source,...}) = source;
+fun sourceFormula (Formula {source,...}) = source;
 
-fun destCnfFormula fm = destCnfFormulaBody (formulaBody fm);
+fun destCnfFormula fm = destCnfFormulaBody (bodyFormula fm);
 
 val isCnfFormula = can destCnfFormula;
 
-fun destFofFormula fm = destFofFormulaBody (formulaBody fm);
+fun destFofFormula fm = destFofFormulaBody (bodyFormula fm);
 
 val isFofFormula = can destFofFormula;
 
-fun formulaFunctions fm =
+fun functionsFormula fm =
     let
-      val bodyFns = formulaBodyFunctions (formulaBody fm)
-      and sourceFns = formulaSourceFunctions (formulaSource fm)
+      val bodyFns = formulaBodyFunctions (bodyFormula fm)
+      and sourceFns = functionsFormulaSource (sourceFormula fm)
     in
       NameAritySet.union bodyFns sourceFns
     end;
 
-fun formulaRelations fm =
+fun relationsFormula fm =
     let
-      val bodyRels = formulaBodyRelations (formulaBody fm)
-      and sourceRels = formulaSourceRelations (formulaSource fm)
+      val bodyRels = formulaBodyRelations (bodyFormula fm)
+      and sourceRels = relationsFormulaSource (sourceFormula fm)
     in
       NameAritySet.union bodyRels sourceRels
     end;
 
-fun formulaFreeVars fm =
+fun freeVarsFormula fm =
     let
-      val bodyFvs = formulaBodyFreeVars (formulaBody fm)
-      and sourceFvs = formulaSourceFreeVars (formulaSource fm)
+      val bodyFvs = formulaBodyFreeVars (bodyFormula fm)
+      and sourceFvs = freeVarsFormulaSource (sourceFormula fm)
     in
       NameSet.union bodyFvs sourceFvs
     end;
 
-val formulaListFreeVars =
+val freeVarsListFormula =
     let
-      fun add (fm,vs) = NameSet.union vs (formulaFreeVars fm)
+      fun add (fm,vs) = NameSet.union vs (freeVarsFormula fm)
     in
       List.foldl add NameSet.empty
     end;
 
 val formulasFunctions =
     let
-      fun funcs (fm,acc) = NameAritySet.union (formulaFunctions fm) acc
+      fun funcs (fm,acc) = NameAritySet.union (functionsFormula fm) acc
     in
       foldl funcs NameAritySet.empty
     end;
 
 val formulasRelations =
     let
-      fun rels (fm,acc) = NameAritySet.union (formulaRelations fm) acc
+      fun rels (fm,acc) = NameAritySet.union (relationsFormula fm) acc
     in
       foldl rels NameAritySet.empty
     end;
 
-fun formulaIsCnfConjecture fm =
+fun isCnfConjectureFormula fm =
     case fm of
-      Formula {role, body = CnfFormulaBody _, ...} => roleIsCnfConjecture role
+      Formula {role, body = CnfFormulaBody _, ...} => isCnfConjectureRole role
     | _ => false;
 
-fun formulaIsFofConjecture fm =
+fun isFofConjectureFormula fm =
     case fm of
-      Formula {role, body = FofFormulaBody _, ...} => roleIsFofConjecture role
+      Formula {role, body = FofFormulaBody _, ...} => isFofConjectureRole role
     | _ => false;
 
-fun formulaIsConjecture fm =
-    formulaIsCnfConjecture fm orelse
-    formulaIsFofConjecture fm;
+fun isConjectureFormula fm =
+    isCnfConjectureFormula fm orelse
+    isFofConjectureFormula fm;
 
 (* Parsing and pretty-printing *)
 
@@ -791,7 +896,8 @@ fun ppFormula mapping fm =
       Print.blockProgram Print.Inconsistent (size gen + 1)
         ([Print.addString (gen ^ "(" ^ name ^ ","),
           Print.addBreak 1,
-          Print.addString (role ^ ","),
+          ppRole role,
+          Print.addString ",",
           Print.addBreak 1,
           Print.blockProgram Print.Consistent 1
             [Print.addString "(",
@@ -903,7 +1009,7 @@ local
 
     val nameParser = stringParser || numberParser || quoteParser;
 
-    val roleParser = lowerParser;
+    val roleParser = lowerParser >> fromStringRole;
 
     local
       fun isProposition s = isHdTlString Char.isLower isAlphaNum s;
@@ -1048,7 +1154,7 @@ local
         let
           val negP =
               (punctParser #"~" ++ atomParser mapping) >>
-              (literalNegate o snd)
+              (negateLiteral o snd)
 
           val posP = atomParser mapping
         in
@@ -1072,75 +1178,6 @@ local
         in
           bracketDisjP || disjP
         end input;
-
-(*
-    An exact transcription of the fof_formula syntax from
-
-      TPTP-v3.2.0/Documents/SyntaxBNF,
-
-    fun fofFormulaParser input =
-        (binaryFormulaParser || unitaryFormulaParser) input
-
-    and binaryFormulaParser input =
-        (nonAssocBinaryFormulaParser || assocBinaryFormulaParser) input
-
-    and nonAssocBinaryFormulaParser input =
-        ((unitaryFormulaParser ++ binaryConnectiveParser ++
-          unitaryFormulaParser) >>
-         (fn (f,(c,g)) => c (f,g))) input
-
-    and binaryConnectiveParser input =
-        ((symbolParser "<=>" >> K Formula.Iff) ||
-         (symbolParser "=>" >> K Formula.Imp) ||
-         (symbolParser "<=" >> K (fn (f,g) => Formula.Imp (g,f))) ||
-         (symbolParser "<~>" >> K (Formula.Not o Formula.Iff)) ||
-         (symbolParser "~|" >> K (Formula.Not o Formula.Or)) ||
-         (symbolParser "~&" >> K (Formula.Not o Formula.And))) input
-
-    and assocBinaryFormulaParser input =
-        (orFormulaParser || andFormulaParser) input
-
-    and orFormulaParser input =
-        ((unitaryFormulaParser ++
-          atLeastOne ((punctParser #"|" ++ unitaryFormulaParser) >> snd)) >>
-         (fn (f,fs) => Formula.listMkDisj (f :: fs))) input
-
-    and andFormulaParser input =
-        ((unitaryFormulaParser ++
-          atLeastOne ((punctParser #"&" ++ unitaryFormulaParser) >> snd)) >>
-         (fn (f,fs) => Formula.listMkConj (f :: fs))) input
-
-    and unitaryFormulaParser input =
-        (quantifiedFormulaParser ||
-         unaryFormulaParser ||
-         ((punctParser #"(" ++ fofFormulaParser ++ punctParser #")") >>
-          (fn ((),(f,())) => f)) ||
-         (atomParser >>
-          (fn Boolean b => Formula.mkBoolean b
-            | Literal l => Literal.toFormula l))) input
-
-    and quantifiedFormulaParser input =
-        ((quantifierParser ++ varListParser ++ punctParser #":" ++
-          unitaryFormulaParser) >>
-         (fn (q,(v,((),f))) => q (v,f))) input
-
-    and quantifierParser input =
-        ((punctParser #"!" >> K Formula.listMkForall) ||
-         (punctParser #"?" >> K Formula.listMkExists)) input
-
-    and unaryFormulaParser input =
-        ((unaryConnectiveParser ++ unitaryFormulaParser) >>
-         (fn (c,f) => c f)) input
-
-    and unaryConnectiveParser input =
-        (punctParser #"~" >> K Formula.Not) input;
-*)
-
-(*
-    This version is supposed to be equivalent to the spec version above,
-    but passes around a name mapping and uses closures to avoid reparsing
-    prefixes.
-*)
 
     val binaryConnectiveParser =
         (symbolParser "<=>" >> K Formula.Iff) ||
@@ -1314,7 +1351,7 @@ type 'a clauseInfo = 'a LiteralSetMap.map;
 
 type clauseNames = string clauseInfo;
 
-type clauseRoles = string clauseInfo;
+type clauseRoles = role clauseInfo;
 
 type clauseProofs = Normalize.proof clauseInfo;
 
@@ -1340,15 +1377,15 @@ type comments = string list;
 type problem = {comments : comments, formulas : formula list};
 
 fun hasCnfConjecture ({formulas,...} : problem) =
-    List.exists formulaIsCnfConjecture formulas;
+    List.exists isCnfConjectureFormula formulas;
 
 fun hasFofConjecture ({formulas,...} : problem) =
-    List.exists formulaIsFofConjecture formulas;
+    List.exists isFofConjectureFormula formulas;
 
 fun hasConjecture ({formulas,...} : problem) =
-    List.exists formulaIsConjecture formulas;
+    List.exists isConjectureFormula formulas;
 
-fun freeVars ({formulas,...} : problem) = formulaListFreeVars formulas;
+fun freeVars ({formulas,...} : problem) = freeVarsListFormula formulas;
 
 local
   fun bump n avoid =
@@ -1390,10 +1427,10 @@ in
 
         val n_avoid = (0, allClauseNames names)
 
-        val (axiomFormulas,n_avoid) = maps (fromCl ROLE_AXIOM) axioms n_avoid
+        val (axiomFormulas,n_avoid) = maps (fromCl AxiomRole) axioms n_avoid
 
         val (conjectureFormulas,_) =
-            maps (fromCl ROLE_NEGATED_CONJECTURE) conjecture n_avoid
+            maps (fromCl NegatedConjectureRole) conjecture n_avoid
 
         val formulas = axiomFormulas @ conjectureFormulas
       in
@@ -1421,7 +1458,7 @@ local
       in
         case body of
           CnfFormulaBody cl =>
-          if roleIsCnfConjecture role then
+          if isCnfConjectureRole role then
             let
               val cnfGoals = (name,cl) :: cnfGoals
             in
@@ -1434,7 +1471,7 @@ local
               (cnfAxioms,fofAxioms,cnfGoals,fofGoals)
             end
         | FofFormulaBody fm =>
-          if roleIsFofConjecture role then
+          if isFofConjectureRole role then
             let
               val fofGoals = (name,fm) :: fofGoals
             in
@@ -1475,7 +1512,7 @@ local
 
         val cls = map fst clauses
         val (axioms,conjecture) =
-            if roleIsCnfConjecture role then (axioms, cls @ conjecture)
+            if isCnfConjectureRole role then (axioms, cls @ conjecture)
             else (cls @ axioms, conjecture)
 
         val problem = {axioms = axioms, conjecture = conjecture}
@@ -1499,7 +1536,7 @@ local
           (norm,cnf)
         end;
 
-  val addCnfAxiom = addCnf ROLE_AXIOM;
+  val addCnfAxiom = addCnf AxiomRole;
 
   fun addFof role (th,(norm,cnf)) =
       let
@@ -1510,7 +1547,7 @@ local
       end;
 
   fun addFofAxiom ((name,fm),acc) =
-      addFof ROLE_AXIOM (Normalize.axiomThm fm name, acc);
+      addFof AxiomRole (Normalize.axiomThm fm name, acc);
 
   fun normProblem (norm,_) : normalization =
       let
@@ -1529,7 +1566,7 @@ local
 
               val th = Normalize.negationThm subgoal
 
-              val acc = addFof ROLE_NEGATED_CONJECTURE (th,acc)
+              val acc = addFof NegatedConjectureRole (th,acc)
             in
               normProblem acc
             end
@@ -1595,7 +1632,7 @@ in
           NoGoal => [normProblem acc]
         | CnfGoal cls =>
           let
-            val acc = List.foldl (addCnf ROLE_NEGATED_CONJECTURE) acc cls
+            val acc = List.foldl (addCnf NegatedConjectureRole) acc cls
           in
             [normProblem acc]
           end
@@ -1950,7 +1987,7 @@ local
 
   fun addProblemFormula names (formula,(formulas,avoid)) =
       let
-        val name = formulaName formula
+        val name = nameFormula formula
 
         val formulas =
             if not (StringSet.member name names) then formulas
@@ -1965,7 +2002,7 @@ local
       let
         val (name,i) = newName avoid "definition_" i
 
-        val role = ROLE_DEFINITION
+        val role = DefinitionRole
 
         val body = FofFormulaBody def
 
@@ -2033,7 +2070,7 @@ local
 
         val (name,i) = newName avoid "normalization_" i
 
-        val role = ROLE_PLAIN
+        val role = PlainRole
 
         val body = FofFormulaBody fm
 
@@ -2061,7 +2098,7 @@ local
 
         val (name,i) = newName avoid prefix i
 
-        val role = ROLE_PLAIN
+        val role = PlainRole
 
         val body = CnfFormulaBody (clauseFromLiteralSet cl)
 
@@ -2097,7 +2134,7 @@ local
         (formulas,i)
       end;
 in
-  fun mkProof {problem,proofs} =
+  fun fromProof {problem,proofs} =
       let
         val names = StringSet.empty
         and defs : Formula.formula StringMap.map = StringMap.new ()
