@@ -178,10 +178,8 @@ val prove : {filename : string, mapping : tptpMapping} -> bool
 (* TSTP proofs.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-val writeProof :
+val mkProof :
     {problem : problem,
-     proofs : (clauseProofs * Proof.proof) list,
-     mapping : tptpMapping,
-     filename : string} -> unit
+     proofs : (clauseProofs * Proof.proof) list} -> formula list
 
 end

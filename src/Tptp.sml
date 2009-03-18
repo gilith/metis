@@ -718,11 +718,29 @@ fun destFofFormula fm = destFofFormulaBody (formulaBody fm);
 
 val isFofFormula = can destFofFormula;
 
-fun formulaFunctions fm = formulaBodyFunctions (formulaBody fm);
+fun formulaFunctions fm =
+    let
+      val bodyFns = formulaBodyFunctions (formulaBody fm)
+      and sourceFns = formulaSourceFunctions (formulaSource fm)
+    in
+      NameAritySet.union bodyFns sourceFns
+    end;
 
-fun formulaRelations fm = formulaBodyRelations (formulaBody fm);
+fun formulaRelations fm =
+    let
+      val bodyRels = formulaBodyRelations (formulaBody fm)
+      and sourceRels = formulaSourceRelations (formulaSource fm)
+    in
+      NameAritySet.union bodyRels sourceRels
+    end;
 
-fun formulaFreeVars fm = formulaBodyFreeVars (formulaBody fm);
+fun formulaFreeVars fm =
+    let
+      val bodyFvs = formulaBodyFreeVars (formulaBody fm)
+      and sourceFvs = formulaSourceFreeVars (formulaSource fm)
+    in
+      NameSet.union bodyFvs sourceFvs
+    end;
 
 val formulaListFreeVars =
     let
@@ -2079,7 +2097,7 @@ local
         (formulas,i)
       end;
 in
-  fun writeProof {problem,proofs,mapping,filename} =
+  fun mkProof {problem,proofs} =
       let
         val names = StringSet.empty
         and defs : Formula.formula StringMap.map = StringMap.new ()
@@ -2110,16 +2128,8 @@ in
         val (formulas,_) =
             List.foldl (addRefutationFormulas avoid defNames fmNames)
               (formulas,0) proofs
-
-        val problem = {comments = [], formulas = rev formulas}
-
-        val mapping =
-            addVarSetTptpMapping mapping (formulaListFreeVars formulas)
       in
-        write
-          {problem = problem,
-           mapping = mapping,
-           filename = filename}
+        formulas
       end;
 end;
 

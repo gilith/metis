@@ -182,18 +182,20 @@ local
 
           val proofs = List.foldl createProof [] proofs
 
-          val mapping = Tptp.defaultTptpMapping
+          val formulas =
+              Tptp.mkProof
+                {problem = problem,
+                 proofs = proofs}
 
-(***
-          val mapping =
-              Tptp.addVarSetTptpMapping mapping (Proof.freeVars proof)
-***)
+          val proof = {comments = [], formulas = formulas}
+
+          val mapping = Tptp.defaultTptpMapping
+          val mapping = Tptp.addVarSetTptpMapping mapping (Tptp.freeVars proof)
 
           val filename = "-"
         in
-          Tptp.writeProof
-            {problem = problem,
-             proofs = proofs,
+          Tptp.write
+            {problem = proof,
              mapping = mapping,
              filename = filename}
         end;
