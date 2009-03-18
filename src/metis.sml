@@ -81,9 +81,9 @@ in
       processor = beginOpt endOpt (fn _ => TEST := true)}];
 end;
 
-val VERSION = "2.1";
+val VERSION = "2.2";
 
-val versionString = "Metis "^VERSION^" (release 20090116)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20090318)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -207,117 +207,8 @@ local
         if notshowing "proof" then ()
         else
           let
-(***
-            fun calc_used ((defns,proofs,th),(avoid,used,defs,acc)) =
-                let
-                  fun add_line ((t,_),(used,roles)) =
-                      let
-                        val cl = Thm.clause t
-                      in
-                        case LiteralSetMap.peek proofs cl of
-                          NONE => (used,roles)
-                        | SOME set =>
-                          let
-                            val used = StringSet.union set used
-                            val role = Tptp.PLAIN_ROLE
-                            val roles = LiteralSetMap.insert roles (cl,role)
-                          in
-                            (used,roles)
-                          end
-                      end
-
-                  val proof = Proof.proof th
-                  val roles = Tptp.noClauseRoles
-                  val (used,roles) = List.foldl add_line (used,roles) proof
-
-                  fun add_def ((name,def),(avoid,defs)) =
-                      (StringSet.add avoid name,
-                       if not (StringSet.member name used) then defs
-                       else StringMap.insert defs (name,def))
-
-                  val (avoid,defs) = List.foldl add_def (avoid,defs) defns
-                  val acc = (roles,proofs,proof) :: acc
-                in
-                  (avoid,used,defs,acc)
-                end
-
-            val avoid = StringSet.empty
-            and used = StringSet.empty
-            and defs = StringMap.new ()
-            val (avoid,used,defs,acc) =
-                List.foldl calc_used (avoid,used,defs,[]) acc
-
-            fun get_used (formula,(avoid,formulas)) =
-                let
-                  val name = Tptp.formulaName formula
-                  val avoid = StringSet.add avoid name
-                  val formulas =
-                      if not (StringSet.member name used) then formulas
-                      else formula :: formulas
-                in
-                  (avoid,formulas)
-                end
-
-            val {comments = _, formulas} = tptp
-            val (avoid,formulas) = List.foldl get_used (avoid,[]) formulas
-
-            fun add_def (name,def,formulas) =
-                let
-                  val role = Tptp.DEFINITION_ROLE
-                  val formula =
-                      Tptp.FofFormula {name = name, role = role, formula = def}
-                in
-                  formula :: formulas
-                end
-
-            val formulas = StringMap.foldl add_def formulas defs
-
-            val axioms = {comments = [], formulas = rev formulas}
-
-            val names = Tptp.noClauseNames
-
-            val mapping = Tptp.defaultTptpMapping
-            val mapping =
-                Tptp.addVarSetTptpMapping mapping
-                  (Tptp.formulaListFreeVars formulas)
-
-            fun display n ((roles,proofs,proof),(start,i)) =
-                let
-                  val prefix = if n = 1 then ""
-                               else "subgoal" ^ Int.toString (i + 1) ^ "_"
-
-                  val () = if start then () else print "\n"
-
-                  val () =
-                      display_proof_body mapping avoid
-                        prefix names roles proofs proof
-                in
-                  (false, i + 1)
-                end
-***)
             val () = display_proof_start filename
-
-(***
-            val top =
-                let
-                  val noAxioms = null formulas
-
-                  val () =
-                      if noAxioms then ()
-                      else
-                        Tptp.write
-                          {problem = axioms,
-                           mapping = mapping,
-                           filename = "-"}
-                in
-                  noAxioms
-                end
-
-            val (top,_) = List.foldl (display (length acc)) (top,0) acc
-***)
-
             val () = display_proof_body problem proofs
-
             val () = display_proof_end filename
           in
             ()
@@ -332,7 +223,7 @@ local
           val () =
               let
                 val problem =
-                    Tptp.mkCnfProblem
+                    Tptp.mkProblem
                       {comments = ["Saturation clause set for " ^ filename],
                        names = Tptp.noClauseNames,
                        roles = Tptp.noClauseRoles,

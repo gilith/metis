@@ -1156,15 +1156,14 @@ in
 end;
 
 (*MetisTrace2
-val simplify = fn simp => fn fm_prf =>
+val simplify = fn simp => fn th as Thm (fm,_) =>
     let
-      val (fm,_) = fm_prf
-      val fm_prf' as (fm',_) = simplify simp fm_prf
+      val th' as Thm (fm',_) = simplify simp th
       val () = if compare (fm,fm') = EQUAL then ()
                else (Print.trace pp "Normalize.simplify: fm" fm;
                      Print.trace pp "Normalize.simplify: fm'" fm')
     in
-      fm_prf'
+      th'
     end;
 *)
 
