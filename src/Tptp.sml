@@ -760,9 +760,10 @@ fun freeVarsFormulaSource source =
       end;
 
 local
-  val GEN_INFERENCE = "inference";
+  val GEN_INFERENCE = "inference"
+  and GEN_INTRODUCED = "introduced";
 
-  fun inferenceName inf =
+  fun normalizeInferenceName inf =
       case inf of
         Normalize.Axiom _ => "canonicalize"
       | Normalize.Conjecture _ => "strip"
@@ -774,7 +775,67 @@ local
       | Normalize.Skolemization => "skolemize"
       | Normalize.Clausification => "clausify";
 
-  fun ppInference mapping inf = Print.skip;
+  fun ppNormalizeInference mapping inf = Print.skip;
+
+  local
+    fun ppTermInf mapping = ppTerm mapping;
+
+    fun ppAtomInf mapping atm =
+        case total Atom.destEq atm of
+          SOME (a,b) => ppAtom mapping (Name.fromString "$equal", [a,b])
+        | NONE => ppAtom mapping atm;
+
+    fun ppLiteralInf mapping (pol,atm) =
+        Print.sequence
+          (if pol then Print.skip else Print.addString "~ ")
+          (ppAtomInf mapping atm);
+  in
+    fun ppProofInferenceTerm mapping =
+        Print.ppBracket "$fot(" ")" (ppTermInf mapping);
+
+    fun ppProofInferenceAtom mapping =
+        Print.ppBracket "$cnf(" ")" (ppAtomInf mapping);
+
+    fun ppProofInferenceLiteral mapping =
+        Print.ppBracket "$cnf(" ")" (ppLiteralInf mapping);
+  end;
+
+  val ppProofInferenceVar = ppVar;
+
+  val ppProofInferencePath = Term.ppPath;
+
+  fun ppProofInference mapping inf =
+      Print.blockProgram Print.Inconsistent 1
+        [Print.addString "[",
+         (case inf of
+            Proof.Axiom _ => raise Bug "Tptp.ppProofInference"
+          | Proof.Assume atm => ppProofInferenceAtom mapping atm
+          | Proof.Subst _ => Print.skip
+          | Proof.Resolve (atm,_,_) => ppProofInferenceAtom mapping atm
+          | Proof.Refl tm => ppProofInferenceTerm mapping tm
+          | Proof.Equality (lit,path,tm) =>
+            Print.program
+              [ppProofInferenceLiteral mapping lit,
+               Print.addString ",",
+               Print.addBreak 1,
+               ppProofInferencePath path,
+               Print.addString ",",
+               Print.addBreak 1,
+               ppProofInferenceTerm mapping tm]),
+         Print.addString "]"];
+
+  val ppParent = Print.ppString;
+
+  fun ppProofInferenceSubst mapping =
+      Print.ppMap Subst.toList
+        (Print.ppList
+           (Print.ppBracket "bind(" ")"
+              (Print.ppOp2 "," (ppProofInferenceVar mapping)
+                 (ppProofInferenceTerm mapping))));
+
+  fun ppProofInferenceParent mapping (p,s) =
+      if Subst.null s then ppParent p
+      else Print.ppOp2 " :" ppParent (ppProofInferenceSubst mapping) (p,s);
 in
   fun ppFormulaSource mapping source =
       case source of
@@ -783,17 +844,61 @@ in
         let
           val gen = GEN_INFERENCE
 
-          val name = inferenceName inference
+          val name = normalizeInferenceName inference
         in
           Print.blockProgram Print.Inconsistent (size gen + 1)
-            [Print.addString (gen ^ "(" ^ name ^ ","),
-             Print.addBreak 1,
-             Print.ppBracket "[" "]" (ppInference mapping) inference,
+            [Print.addString gen,
+             Print.addString "(",
+             Print.addString name,
              Print.addString ",",
              Print.addBreak 1,
-             Print.ppList Print.ppString parents]
+             Print.ppBracket "[" "]" (ppNormalizeInference mapping) inference,
+             Print.addString ",",
+             Print.addBreak 1,
+             Print.ppList ppParent parents]
         end
-      | ProofFormulaSource inf => raise Bug "Tptp.ppFormulaSource";
+      | ProofFormulaSource {inference,parents} =>
+        let
+          val isTaut = null parents
+
+          val gen = if isTaut then GEN_INTRODUCED else GEN_INFERENCE
+
+          val name = Thm.inferenceTypeToString (Proof.inferenceType inference)
+          val name = String.map Char.toLower name
+
+          val parents =
+              let
+                val sub =
+                    case inference of
+                      Proof.Subst (s,_) => s
+                    | _ => Subst.empty
+              in
+                map (fn parent => (parent,sub)) parents
+              end
+        in
+          Print.blockProgram Print.Inconsistent (size gen + 1)
+            ([Print.addString gen,
+              Print.addString "("] @
+             (if isTaut then
+                [Print.addString "tautology",
+                 Print.addString ",",
+                 Print.addBreak 1,
+                 Print.blockProgram Print.Inconsistent 1
+                   [Print.addString "[",
+                    Print.addString name,
+                    Print.addString ",",
+                    Print.addBreak 1,
+                    ppProofInference mapping inference]]
+              else
+                [Print.addString name,
+                 Print.addString ",",
+                 Print.addBreak 1,
+                 ppProofInference mapping inference,
+                 Print.addString ",",
+                 Print.addBreak 1,
+                 Print.ppList (ppProofInferenceParent mapping) parents]) @
+             [Print.addString ")"])
+        end
 end;
 
 (* ------------------------------------------------------------------------- *)
@@ -2166,7 +2271,7 @@ in
             List.foldl (addRefutationFormulas avoid defNames fmNames)
               (formulas,0) proofs
       in
-        formulas
+        rev formulas
       end;
 end;
 
