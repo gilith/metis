@@ -853,6 +853,15 @@ fun mkThm (fm,prf) = Thm (fromFormula fm, prf);
 
 fun destThm (Thm (fm,prf)) = (toFormula fm, prf);
 
+fun formulaThm th =
+    let
+      val (fm,_) = destThm th
+    in
+      fm
+    end;
+
+fun proofThm (Thm (_,prf)) = prf;
+
 fun axiomThm fm n = mkThm (fm, axiomProof n);
 
 fun conjectureThm fm n = mkThm (fm, conjectureProof n);

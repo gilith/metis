@@ -58,7 +58,7 @@ datatype literal =
     Boolean of bool
   | Literal of Literal.literal
 
-val negate : literal -> literal
+val literalNegate : literal -> literal
 
 val literalFunctions : literal -> NameAritySet.set
 
@@ -83,7 +83,9 @@ datatype formulaSource =
   | NormalizeFormulaSource of
       {inference : Normalize.inference,
        parents : string list}
-  | ProofFormulaSource of Proof.inference
+  | ProofFormulaSource of
+      {inference : Proof.inference,
+       parents : string list}
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP formulas.                                                            *)

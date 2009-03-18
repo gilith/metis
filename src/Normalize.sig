@@ -41,6 +41,10 @@ val mkThm : Formula.formula * proof -> thm
 
 val destThm : thm -> Formula.formula * proof
 
+val formulaThm : thm -> Formula.formula
+
+val proofThm : thm -> proof
+
 val axiomThm : Formula.formula -> string -> thm
 
 val conjectureThm : Formula.formula -> string -> thm

@@ -412,8 +412,14 @@ datatype literal =
     Boolean of bool
   | Literal of Literal.literal;
 
-fun negate (Boolean b) = (Boolean (not b))
-  | negate (Literal l) = (Literal (Literal.negate l));
+fun destLiteral (Literal l) = l
+  | destLiteral _ = raise Error "destLiteral";
+
+fun literalIsBooleanTrue (Boolean true) = true
+  | literalIsBooleanTrue _ = false;
+
+fun literalNegate (Boolean b) = (Boolean (not b))
+  | literalNegate (Literal l) = (Literal (Literal.negate l));
 
 fun literalFunctions (Boolean _) = NameAritySet.empty
   | literalFunctions (Literal lit) = Literal.functions lit;
@@ -424,9 +430,6 @@ fun literalRelation (Boolean _) = NONE
 fun literalToFormula (Boolean true) = Formula.True
   | literalToFormula (Boolean false) = Formula.False
   | literalToFormula (Literal lit) = Literal.toFormula lit;
-
-fun literalListToFormula lits =
-    Formula.listMkDisj (map literalToFormula lits);
 
 fun literalFromFormula Formula.True = Boolean true
   | literalFromFormula Formula.False = Boolean false
@@ -439,12 +442,6 @@ fun literalSubst sub lit =
     case lit of
       Boolean _ => lit
     | Literal l => Literal (Literal.subst sub l);
-
-fun destLiteral (Literal l) = l
-  | destLiteral _ = raise Error "destLiteral";
-
-fun literalIsBooleanTrue (Boolean true) = true
-  | literalIsBooleanTrue _ = false;
 
 (* ------------------------------------------------------------------------- *)
 (* Printing formulas using TPTP syntax.                                      *)
@@ -648,7 +645,9 @@ datatype formulaSource =
   | NormalizeFormulaSource of
       {inference : Normalize.inference,
        parents : string list}
-  | ProofFormulaSource of Proof.inference;
+  | ProofFormulaSource of
+      {inference : Proof.inference,
+       parents : string list};
 
 fun isNoFormulaSource source =
     case source of
@@ -661,7 +660,7 @@ local
   fun inferenceName inf =
       case inf of
         Normalize.Axiom _ => "canonicalize"
-      | Normalize.Conjecture _ => "canonicalize"
+      | Normalize.Conjecture _ => "strip"
       | Normalize.Definition _ => "canonicalize"
       | Normalize.Negation => "negate"
       | Normalize.Simplification => "simplify"
@@ -1029,7 +1028,9 @@ local
 
     fun literalParser mapping input =
         let
-          val negP = (punctParser #"~" ++ atomParser mapping) >> (negate o snd)
+          val negP =
+              (punctParser #"~" ++ atomParser mapping) >>
+              (literalNegate o snd)
 
           val posP = atomParser mapping
         in
@@ -1531,7 +1532,7 @@ local
 
   fun clausesToGoal cls =
       let
-        val cls = map (Formula.generalize o literalListToFormula o snd) cls
+        val cls = map (Formula.generalize o clauseToFormula o snd) cls
       in
         Formula.listMkConj cls
       end;
@@ -1868,6 +1869,26 @@ local
         bump
       end;
 
+  fun lookupClauseProof norm cl =
+      case LiteralSetMap.peek norm cl of
+        SOME prf => prf
+      | NONE => raise Bug "Tptp.lookupClauseProof";
+
+  fun lookupDefName defNames defName =
+      case StringMap.peek defNames defName of
+        SOME name => name
+      | NONE => raise Bug "Tptp.lookupDefName";
+
+  fun lookupFmName fmNames fm =
+      case FormulaMap.peek fmNames fm of
+        SOME name => name
+      | NONE => raise Bug "Tptp.lookupFmName";
+
+  fun lookupClName clNames cl =
+      case LiteralSetMap.peek clNames cl of
+        SOME name => name
+      | NONE => raise Bug "Tptp.lookupClName";
+
   fun collectInferenceDeps (inf,(names,defs)) =
       let
         val names =
@@ -1887,20 +1908,17 @@ local
   fun collectProofStepDeps norm ((_,inf),names_defs_ths) =
       case inf of
         Proof.Axiom cl =>
-        (case LiteralSetMap.peek norm cl of
-           SOME prf =>
-           let
-             val (names,defs,ths) = names_defs_ths
+        let
+          val (names,defs,ths) = names_defs_ths
 
-             val Normalize.Proof (inf,ths') = prf
+          val Normalize.Proof (inf,ths') = lookupClauseProof norm cl
 
-             val (names,defs) = collectInferenceDeps (inf,(names,defs))
+          val (names,defs) = collectInferenceDeps (inf,(names,defs))
 
-             val ths = ths' @ ths
-           in
-             (names,defs,ths)
-           end
-         | NONE => raise Bug "Tptp.writeProof.collectDeps")
+          val ths = ths' @ ths
+        in
+          (names,defs,ths)
+        end
       | _ => names_defs_ths;
 
   fun collectProofDeps ((norm,proof),names_defs_ths) =
@@ -1949,16 +1967,6 @@ local
         (formulas,i,defNames)
       end;
 
-  fun lookupDefName defNames defName =
-      case StringMap.peek defNames defName of
-        SOME name => name
-      | NONE => raise Bug "Tptp.lookupDefName";
-
-  fun lookupFmName fmNames fm =
-      case FormulaMap.peek fmNames fm of
-        SOME name => name
-      | NONE => raise Bug "Tptp.lookupFmName";
-
   fun mkNormalizeFormulaSource defNames fmNames inference fms =
       let
         val parents = map (lookupFmName fmNames) fms
@@ -1979,6 +1987,27 @@ local
           {inference = inference,
            parents = parents}
       end;
+
+  fun mkProofFormulaSource norm defNames fmNames clNames inference =
+      case inference of
+        Proof.Axiom cl =>
+        let
+          val Normalize.Proof (inf,ths) = lookupClauseProof norm cl
+
+          val fms = map Normalize.formulaThm ths
+        in
+          mkNormalizeFormulaSource defNames fmNames inf fms
+        end
+      | _ =>
+        let
+          val cls = map Thm.clause (Proof.parents inference)
+
+          val parents = map (lookupClName clNames) cls
+        in
+          ProofFormulaSource
+            {inference = inference,
+             parents = parents}
+        end;
 
   fun addNormalizationFormula avoid defNames ((fm,inf,fms),acc) =
       let
@@ -2005,6 +2034,50 @@ local
       in
         (formulas,i,fmNames)
       end;
+
+  fun addRefutationFormula avoid norm defNames fmNames prefix ((th,inf),acc) =
+      let
+        val (formulas,i,clNames) = acc
+
+        val cl = Thm.clause th
+
+        val (name,i) = newName avoid prefix i
+
+        val role = ROLE_PLAIN
+
+        val body = CnfFormulaBody (clauseFromLiteralSet cl)
+
+        val source = mkProofFormulaSource norm defNames fmNames clNames inf
+
+        val formula =
+            Formula
+              {name = name,
+               role = role,
+               body = body,
+               source = source}
+
+        val formulas = formula :: formulas
+
+        val clNames = LiteralSetMap.insert clNames (cl,name)
+      in
+        (formulas,i,clNames)
+      end;
+
+  fun addRefutationFormulas avoid defNames fmNames ((norm,proof),acc) =
+      let
+        val (formulas,i) = acc
+
+        val prefix = "refutation_" ^ Int.toString i ^ "_"
+
+        val clNames : string LiteralSetMap.map = LiteralSetMap.new ()
+        val (formulas,_,_) =
+            List.foldl (addRefutationFormula avoid norm defNames fmNames prefix)
+              (formulas,0,clNames) proof
+
+        val i = i + 1
+      in
+        (formulas,i)
+      end;
 in
   fun writeProof {problem,proofs,mapping,filename} =
       let
@@ -2026,11 +2099,17 @@ in
 
         val defNames : string StringMap.map = StringMap.new ()
         val (formulas,_,defNames) =
-            StringMap.foldl (addDefinitionFormula avoid) (formulas,0,defNames) defs
+            StringMap.foldl (addDefinitionFormula avoid)
+              (formulas,0,defNames) defs
 
         val fmNames : string FormulaMap.map = FormulaMap.new ()
         val (formulas,_,fmNames) =
-            List.foldl (addNormalizationFormula avoid defNames) (formulas,0,fmNames) norm
+            List.foldl (addNormalizationFormula avoid defNames)
+              (formulas,0,fmNames) norm
+
+        val (formulas,_) =
+            List.foldl (addRefutationFormulas avoid defNames fmNames)
+              (formulas,0) proofs
 
         val problem = {comments = [], formulas = rev formulas}
 
