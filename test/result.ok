@@ -456,6 +456,18 @@ parsing MIXED_PROBLEM.tptp... ok
 (!X. hates agatha X ==> hates butler X) /\ (!X. ?Y. ~hates X Y) /\
 ~(agatha = butler) ==> killed agatha agatha
 
+parsing BLOCK_COMMENTS.tptp... ok
+(!X Y. ~killed X Y \/ hates X Y) ==>
+(?X. lives X /\ killed X agatha) /\
+(lives agatha /\ lives butler /\ lives charles) /\
+(!X. lives X ==> X = agatha \/ X = butler \/ X = charles) /\
+(!X Y. killed X Y ==> ~richer X Y) /\
+(!X. hates agatha X ==> ~hates charles X) /\
+(!X. ~(X = butler) ==> hates agatha X) /\
+(!X. ~richer X agatha ==> hates butler X) /\
+(!X. hates agatha X ==> hates butler X) /\ (!X. ?Y. ~hates X Y) /\
+~(agatha = butler) ==> killed agatha agatha
+
 --------------------------------------------------------------------------
 Clauses
 

@@ -1765,7 +1765,17 @@ local
         OutsideBlockComment =>
         if c = #"/" then (Stream.Nil, EnteringBlockComment)
         else (Stream.singleton c, OutsideBlockComment)
-      | 
+      | EnteringBlockComment =>
+        if c = #"*" then (Stream.Nil, InsideBlockComment)
+        else if c = #"/" then (Stream.singleton #"/", EnteringBlockComment)
+        else (Stream.fromList [#"/",c], OutsideBlockComment)
+      | InsideBlockComment =>
+        if c = #"*" then (Stream.Nil, LeavingBlockComment)
+        else (Stream.Nil, InsideBlockComment)
+      | LeavingBlockComment =>
+        if c = #"/" then (Stream.Nil, OutsideBlockComment)
+        else if c = #"*" then (Stream.Nil, LeavingBlockComment)
+        else (Stream.Nil, InsideBlockComment);
 
   fun eofBlockComment state =
       case state of
