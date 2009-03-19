@@ -363,17 +363,17 @@ val defaultTptpMapping =
 (* Comments.                                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-fun mkComment "" = "%"
-  | mkComment line = "% " ^ line;
+fun mkLineComment "" = "%"
+  | mkLineComment line = "% " ^ line;
 
-fun destComment cs =
+fun destLineComment cs =
     case cs of
       [] => ""
     | #"%" :: #" " :: rest => implode rest
     | #"%" :: rest => implode rest
-    | _ => raise Error "Tptp.destComment";
+    | _ => raise Error "Tptp.destLineComment";
 
-val isComment = can destComment;
+val isLineComment = can destLineComment;
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP roles.                                                               *)
@@ -1746,13 +1746,36 @@ in
 end;
 
 local
-  fun stripComments acc strm =
+  datatype blockComment =
+      OutsideBlockComment
+    | EnteringBlockComment
+    | InsideBlockComment
+    | LeavingBlockComment;
+
+  fun stripLineComments acc strm =
       case strm of
         Stream.Nil => (rev acc, Stream.Nil)
       | Stream.Cons (line,rest) =>
-        case total destComment line of
-          SOME s => stripComments (s :: acc) (rest ())
-        | NONE => (rev acc, Stream.filter (not o isComment) strm);
+        case total destLineComment line of
+          SOME s => stripLineComments (s :: acc) (rest ())
+        | NONE => (rev acc, Stream.filter (not o isLineComment) strm);
+
+  fun advanceBlockComment c state =
+      case state of
+        OutsideBlockComment =>
+        if c = #"/" then (Stream.Nil, EnteringBlockComment)
+        else (Stream.singleton c, OutsideBlockComment)
+      | 
+
+  fun eofBlockComment state =
+      case state of
+        OutsideBlockComment => Stream.Nil
+      | EnteringBlockComment => Stream.singleton #"/"
+      | _ => raise Error "EOF inside a block comment";
+
+  val stripBlockComments =
+      Stream.mapsConcat advanceBlockComment eofBlockComment
+        OutsideBlockComment;
 in
   fun read {mapping,filename} =
       let
@@ -1765,9 +1788,11 @@ in
         (let
            (* The character stream *)
 
-           val (comments,chars) = stripComments [] chars
+           val (comments,chars) = stripLineComments [] chars
 
            val chars = Parse.everything Parse.any chars
+
+           val chars = stripBlockComments chars
 
            (* The formula stream *)
 
@@ -1783,7 +1808,7 @@ in
 end;
 
 local
-  fun mkCommentLine comment = mkComment comment ^ "\n";
+  fun mkComment comment = mkLineComment comment ^ "\n";
 
   fun formulaStream _ _ [] () = Stream.Nil
     | formulaStream mapping start (h :: t) () =
@@ -1801,7 +1826,7 @@ in
         Stream.toTextFile
           {filename = filename}
           (Stream.append
-             (Stream.map mkCommentLine (Stream.fromList comments))
+             (Stream.map mkComment (Stream.fromList comments))
              (formulaStream mapping (null comments) formulas))
       end;
 end;
