@@ -462,6 +462,8 @@ fun ForallList (vs,f) = List.foldl Forall1 f vs;
 
 fun ForallSet (n,f) = NameSet.foldl Forall1 f n;
 
+fun generalize f = ForallSet (freeVars f, f);
+
 local
   fun subst_fv fvSub =
       let
@@ -825,13 +827,14 @@ in
 end;
 
 (* ------------------------------------------------------------------------- *)
-(* Normalization proofs.                                                     *)
+(* Normalization derivations.                                                *)
 (* ------------------------------------------------------------------------- *)
 
-datatype inference =
+datatype derivationStep =
     Axiom of string
   | Conjecture of string
   | Definition of string * Formula.formula
+  | Generalization
   | Negation
   | Simplification
   | Conjunct
@@ -839,52 +842,32 @@ datatype inference =
   | Skolemization
   | Clausification;
 
-datatype thm = Thm of formula * proof
+datatype derivedFormula = DerivedFormula of formula * derivation
 
-and proof = Proof of inference * thm list;
+and derivation = Derivation of derivationStep * derivedFormula list
 
-fun axiomProof n = Proof (Axiom n, []);
+fun axiomDerivation n = Derivation (Axiom n, []);
 
-fun conjectureProof n = Proof (Conjecture n, []);
+fun conjectureDerivation n = Derivation (Conjecture n, []);
 
-fun negationProof th = Proof (Negation,[th]);
+fun generalizationDerivation th = Derivation (Generalization,[th]);
 
-fun mkThm (fm,prf) = Thm (fromFormula fm, prf);
+fun negationDerivation th = Derivation (Negation,[th]);
 
-fun destThm (Thm (fm,prf)) = (toFormula fm, prf);
+fun mkDerivedFormula (fm,deriv) = DerivedFormula (fromFormula fm, deriv);
 
-fun formulaThm th =
-    let
-      val (fm,_) = destThm th
-    in
-      fm
-    end;
-
-fun proofThm (Thm (_,prf)) = prf;
-
-fun axiomThm fm n = mkThm (fm, axiomProof n);
-
-fun conjectureThm fm n = mkThm (fm, conjectureProof n);
-
-fun negationThm th =
-    let
-      val Thm (fm,_) = th
-      val fm = negate fm
-      val prf = negationProof th
-    in
-      Thm (fm,prf)
-    end;
+fun destDerivedFormula (DerivedFormula (fm,deriv)) = (toFormula fm, deriv);
 
 local
-  fun isProved proved (Thm (fm,_)) = Set.member fm proved;
+  fun isProved proved (DerivedFormula (fm,_)) = Set.member fm proved;
 
   fun isUnproved proved th = not (isProved proved th);
 
-  fun thmInf th =
+  fun derivedFormulaInf th =
       let
-        val (fm, Proof (inf,ths)) = destThm th
+        val (fm, Derivation (inf,ths)) = destDerivedFormula th
       in
-        (fm, inf, map (fst o destThm) ths)
+        (fm, inf, map (fst o destDerivedFormula) ths)
       end;
 
   fun prove acc proved ths =
@@ -894,13 +877,13 @@ local
         if isProved proved th then prove acc proved ths'
         else
           let
-            val Thm (fm, Proof (_,deps)) = th
+            val DerivedFormula (fm, Derivation (_,deps)) = th
 
             val deps = List.filter (isUnproved proved) deps
           in
             if null deps then
               let
-                val acc = thmInf th :: acc
+                val acc = derivedFormulaInf th :: acc
 
                 val proved = Set.add proved fm
               in
@@ -914,8 +897,34 @@ local
               end
           end;
 in
-  val proveThms = prove [] empty;
+  val deriveFormulas = prove [] empty;
 end;
+
+(* ------------------------------------------------------------------------- *)
+(* Normalization formula derivation rules.                                   *)
+(* ------------------------------------------------------------------------- *)
+
+fun deriveAxiom fm n = mkDerivedFormula (fm, axiomDerivation n);
+
+fun deriveConjecture fm n = mkDerivedFormula (fm, conjectureDerivation n);
+
+fun deriveGeneralization th =
+    let
+      val DerivedFormula (fm,_) = th
+      val fm = generalize fm
+      val deriv = generalizationDerivation th
+    in
+      DerivedFormula (fm,deriv)
+    end;
+
+fun deriveNegation th =
+    let
+      val DerivedFormula (fm,_) = th
+      val fm = negate fm
+      val deriv = negationDerivation th
+    in
+      DerivedFormula (fm,deriv)
+    end;
 
 (* ------------------------------------------------------------------------- *)
 (* Simplifying with definitions.                                             *)
@@ -923,10 +932,10 @@ end;
 
 datatype simplify =
     Simplify of
-      {formula : (formula, formula * thm) Map.map,
-       andSet : (formula Set.set * formula * thm) list,
-       orSet : (formula Set.set * formula * thm) list,
-       xorSet : (formula Set.set * formula * thm) list};
+      {formula : (formula, formula * derivedFormula) Map.map,
+       andSet : (formula Set.set * formula * derivedFormula) list,
+       orSet : (formula Set.set * formula * derivedFormula) list,
+       xorSet : (formula Set.set * formula * derivedFormula) list};
 
 val simplifyEmpty =
     Simplify
@@ -1035,7 +1044,7 @@ local
              xorSet = xorSet}
         end;
 in
-  fun simplifyAdd simp (th as Thm (fm,_)) = add simp (fm,True,th);
+  fun simplifyAdd simp (th as DerivedFormula (fm,_)) = add simp (fm,True,th);
 end;
 
 local
@@ -1055,17 +1064,17 @@ local
 in
   fun simplify (Simplify {formula,andSet,orSet,xorSet}) =
       let
-        fun simp fm prf =
-            case simp_sub fm prf of
-              NONE => simp_top fm prf
-            | SOME (fm,prf) => try_simp_top fm prf
+        fun simp fm deriv =
+            case simp_sub fm deriv of
+              NONE => simp_top fm deriv
+            | SOME (fm,deriv) => try_simp_top fm deriv
 
-        and try_simp_top fm prf =
-            case simp_top fm prf of
-              NONE => SOME (fm,prf)
+        and try_simp_top fm deriv =
+            case simp_top fm deriv of
+              NONE => SOME (fm,deriv)
             | x => x
 
-        and simp_top fm prf =
+        and simp_top fm deriv =
             case fm of
               And (_,_,s) =>
               (case simplifySet andSet s of
@@ -1073,9 +1082,9 @@ in
                | SOME (s,th) =>
                  let
                    val fm = AndSet s
-                   val prf = th :: prf
+                   val deriv = th :: deriv
                  in
-                   try_simp_top fm prf
+                   try_simp_top fm deriv
                  end)
             | Or (_,_,s) =>
               (case simplifySet orSet s of
@@ -1083,9 +1092,9 @@ in
                | SOME (s,th) =>
                  let
                    val fm = OrSet s
-                   val prf = th :: prf
+                   val deriv = th :: deriv
                  in
-                   try_simp_top fm prf
+                   try_simp_top fm deriv
                  end)
             | Xor (_,_,p,s) =>
               (case simplifySet xorSet s of
@@ -1093,72 +1102,72 @@ in
                | SOME (s,th) =>
                  let
                    val fm = XorPolaritySet (p,s)
-                   val prf = th :: prf
+                   val deriv = th :: deriv
                  in
-                   try_simp_top fm prf
+                   try_simp_top fm deriv
                  end)
             | _ =>
               (case Map.peek formula fm of
                  NONE => NONE
                | SOME (fm,th) =>
                  let
-                   val prf = th :: prf
+                   val deriv = th :: deriv
                  in
-                   try_simp_top fm prf
+                   try_simp_top fm deriv
                  end)
 
-        and simp_sub fm prf =
+        and simp_sub fm deriv =
             case fm of
               And (_,_,s) =>
-              (case simp_set s prf of
+              (case simp_set s deriv of
                  NONE => NONE
-               | SOME (l,prf) => SOME (AndList l, prf))
+               | SOME (l,deriv) => SOME (AndList l, deriv))
             | Or (_,_,s) =>
-              (case simp_set s prf of
+              (case simp_set s deriv of
                  NONE => NONE
-               | SOME (l,prf) => SOME (OrList l, prf))
+               | SOME (l,deriv) => SOME (OrList l, deriv))
             | Xor (_,_,p,s) =>
-              (case simp_set s prf of
+              (case simp_set s deriv of
                  NONE => NONE
-               | SOME (l,prf) => SOME (XorPolarityList (p,l), prf))
+               | SOME (l,deriv) => SOME (XorPolarityList (p,l), deriv))
             | Exists (_,_,n,f) =>
-              (case simp f prf of
+              (case simp f deriv of
                  NONE => NONE
-               | SOME (f,prf) => SOME (ExistsSet (n,f), prf))
+               | SOME (f,deriv) => SOME (ExistsSet (n,f), deriv))
             | Forall (_,_,n,f) =>
-              (case simp f prf of
+              (case simp f deriv of
                  NONE => NONE
-               | SOME (f,prf) => SOME (ForallSet (n,f), prf))
+               | SOME (f,deriv) => SOME (ForallSet (n,f), deriv))
             | _ => NONE
 
-        and simp_set s prf =
+        and simp_set s deriv =
             let
-              val (changed,l,prf) = Set.foldr simp_set_elt (false,[],prf) s
+              val (changed,l,deriv) = Set.foldr simp_set_elt (false,[],deriv) s
             in
-              if changed then SOME (l,prf) else NONE
+              if changed then SOME (l,deriv) else NONE
             end
 
-        and simp_set_elt (fm,(changed,l,prf)) =
-            case simp fm prf of
-              NONE => (changed, fm :: l, prf)
-            | SOME (fm,prf) => (true, fm :: l, prf)
+        and simp_set_elt (fm,(changed,l,deriv)) =
+            case simp fm deriv of
+              NONE => (changed, fm :: l, deriv)
+            | SOME (fm,deriv) => (true, fm :: l, deriv)
       in
-        fn th as Thm (fm,_) =>
+        fn th as DerivedFormula (fm,_) =>
            case simp fm [] of
              SOME (fm,ths) =>
              let
-               val prf = Proof (Simplification, th :: ths)
+               val deriv = Derivation (Simplification, th :: ths)
              in
-               Thm (fm,prf)
+               DerivedFormula (fm,deriv)
              end
            | NONE => th
       end;
 end;
 
 (*MetisTrace2
-val simplify = fn simp => fn th as Thm (fm,_) =>
+val simplify = fn simp => fn th as DerivedFormula (fm,_) =>
     let
-      val th' as Thm (fm',_) = simplify simp th
+      val th' as DerivedFormula (fm',_) = simplify simp th
       val () = if compare (fm,fm') = EQUAL then ()
                else (Print.trace pp "Normalize.simplify: fm" fm;
                      Print.trace pp "Normalize.simplify: fm'" fm')
@@ -1191,11 +1200,11 @@ fun newDefinition def =
       val atm = (Name.fromString rel, NameSet.transform Term.Var fv)
       val fm = Formula.Iff (Formula.Atom atm, toFormula def)
       val fm = Formula.setMkForall (fv,fm)
-      val prf = Proof (Definition (rel,fm), [])
+      val deriv = Derivation (Definition (rel,fm), [])
       val lit = Literal (fv,(false,atm))
       val fm = Xor2 (lit,def)
     in
-      Thm (fm,prf)
+      DerivedFormula (fm,deriv)
     end;
 
 (* ------------------------------------------------------------------------- *)
@@ -1211,7 +1220,7 @@ val initialCnf = ConsistentCnf simplifyEmpty;
 local
   fun def_cnf_inconsistent th =
       let
-        val cls = [(LiteralSet.empty, Proof (Clausification, [th]))]
+        val cls = [(LiteralSet.empty, Derivation (Clausification, [th]))]
       in
         (cls,InconsistentCnf)
       end;
@@ -1221,25 +1230,25 @@ local
         [] => (cls, ConsistentCnf simp)
       | th :: ths => def_cnf_formula cls simp (simplify simp th) ths
 
-  and def_cnf_formula cls simp (th as Thm (fm,_)) ths =
+  and def_cnf_formula cls simp (th as DerivedFormula (fm,_)) ths =
       case fm of
         True => def_cnf cls simp ths
       | False => def_cnf_inconsistent th
       | And (_,_,s) =>
         let
-          fun add (f,z) = Thm (f, Proof (Conjunct, [th])) :: z
+          fun add (f,z) = DerivedFormula (f, Derivation (Conjunct, [th])) :: z
         in
           def_cnf cls simp (Set.foldr add ths s)
         end
       | Exists (fv,_,n,f) =>
         let
-          val th = Thm (skolemize fv n f, Proof (Skolemization, [th]))
+          val th = DerivedFormula (skolemize fv n f, Derivation (Skolemization, [th]))
         in
           def_cnf_formula cls simp th ths
         end
       | Forall (_,_,_,f) =>
         let
-          val th = Thm (f, Proof (Specialization, [th]))
+          val th = DerivedFormula (f, Derivation (Specialization, [th]))
         in
           def_cnf_formula cls simp th ths
         end
@@ -1257,7 +1266,7 @@ local
             val simp = simplifyAdd simp th
 
             fun add (f,l) =
-                (toClause f, Proof (Clausification, [th])) :: l
+                (toClause f, Derivation (Clausification, [th])) :: l
 (*MetisDebug
                 handle Error err =>
                   (Print.trace pp "Normalize.addCnf.def_cnf_formula: f" f;
@@ -1285,7 +1294,7 @@ local
         (cls' @ cls, cnf)
       end;
 in
-  fun thmCnf ths =
+  fun derivedCnf ths =
       let
         val (cls,_) = List.foldl add ([],initialCnf) ths
       in
@@ -1295,7 +1304,7 @@ end;
 
 fun cnf fm =
     let
-      val cls = thmCnf [axiomThm fm ""]
+      val cls = derivedCnf [deriveAxiom fm ""]
     in
       map fst cls
     end;

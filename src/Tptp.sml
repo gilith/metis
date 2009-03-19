@@ -680,7 +680,7 @@ fun ppFormulaBody mapping body =
 datatype formulaSource =
     NoFormulaSource
   | NormalizeFormulaSource of
-      {inference : Normalize.inference,
+      {step : Normalize.derivationStep,
        parents : string list}
   | ProofFormulaSource of
       {inference : Proof.inference,
@@ -696,9 +696,9 @@ fun functionsFormulaSource source =
       NoFormulaSource => NameAritySet.empty
     | NormalizeFormulaSource data =>
       let
-        val {inference = inf, parents = _} = data
+        val {step, parents = _} = data
       in
-        case inf of
+        case step of
           Normalize.Definition (_,fm) => Formula.functions fm
         | _ => NameAritySet.empty
       end
@@ -721,9 +721,9 @@ fun relationsFormulaSource source =
       NoFormulaSource => NameAritySet.empty
     | NormalizeFormulaSource data =>
       let
-        val {inference = inf, parents = _} = data
+        val {step, parents = _} = data
       in
-        case inf of
+        case step of
           Normalize.Definition (_,fm) => Formula.relations fm
         | _ => NameAritySet.empty
       end
@@ -763,11 +763,12 @@ local
   val GEN_INFERENCE = "inference"
   and GEN_INTRODUCED = "introduced";
 
-  fun normalizeInferenceName inf =
+  fun normalizeName inf =
       case inf of
         Normalize.Axiom _ => "canonicalize"
       | Normalize.Conjecture _ => "strip"
       | Normalize.Definition _ => "canonicalize"
+      | Normalize.Generalization => "generalize"
       | Normalize.Negation => "negate"
       | Normalize.Simplification => "simplify"
       | Normalize.Conjunct => "conjunct"
@@ -775,7 +776,7 @@ local
       | Normalize.Skolemization => "skolemize"
       | Normalize.Clausification => "clausify";
 
-  fun ppNormalizeInference mapping inf = Print.skip;
+  fun ppNormalize mapping inf = Print.skip;
 
   local
     fun ppTermInf mapping = ppTerm mapping;
@@ -790,61 +791,61 @@ local
           (if pol then Print.skip else Print.addString "~ ")
           (ppAtomInf mapping atm);
   in
-    fun ppProofInferenceTerm mapping =
+    fun ppProofTerm mapping =
         Print.ppBracket "$fot(" ")" (ppTermInf mapping);
 
-    fun ppProofInferenceAtom mapping =
+    fun ppProofAtom mapping =
         Print.ppBracket "$cnf(" ")" (ppAtomInf mapping);
 
-    fun ppProofInferenceLiteral mapping =
+    fun ppProofLiteral mapping =
         Print.ppBracket "$cnf(" ")" (ppLiteralInf mapping);
   end;
 
-  val ppProofInferenceVar = ppVar;
+  val ppProofVar = ppVar;
 
-  val ppProofInferencePath = Term.ppPath;
+  val ppProofPath = Term.ppPath;
 
-  fun ppProofInference mapping inf =
+  fun ppProof mapping inf =
       Print.blockProgram Print.Inconsistent 1
         [Print.addString "[",
          (case inf of
-            Proof.Axiom _ => raise Bug "Tptp.ppProofInference"
-          | Proof.Assume atm => ppProofInferenceAtom mapping atm
+            Proof.Axiom _ => raise Bug "Tptp.ppProof"
+          | Proof.Assume atm => ppProofAtom mapping atm
           | Proof.Subst _ => Print.skip
-          | Proof.Resolve (atm,_,_) => ppProofInferenceAtom mapping atm
-          | Proof.Refl tm => ppProofInferenceTerm mapping tm
+          | Proof.Resolve (atm,_,_) => ppProofAtom mapping atm
+          | Proof.Refl tm => ppProofTerm mapping tm
           | Proof.Equality (lit,path,tm) =>
             Print.program
-              [ppProofInferenceLiteral mapping lit,
+              [ppProofLiteral mapping lit,
                Print.addString ",",
                Print.addBreak 1,
-               ppProofInferencePath path,
+               ppProofPath path,
                Print.addString ",",
                Print.addBreak 1,
-               ppProofInferenceTerm mapping tm]),
+               ppProofTerm mapping tm]),
          Print.addString "]"];
 
   val ppParent = Print.ppString;
 
-  fun ppProofInferenceSubst mapping =
+  fun ppProofSubst mapping =
       Print.ppMap Subst.toList
         (Print.ppList
            (Print.ppBracket "bind(" ")"
-              (Print.ppOp2 "," (ppProofInferenceVar mapping)
-                 (ppProofInferenceTerm mapping))));
+              (Print.ppOp2 "," (ppProofVar mapping)
+                 (ppProofTerm mapping))));
 
-  fun ppProofInferenceParent mapping (p,s) =
+  fun ppProofParent mapping (p,s) =
       if Subst.null s then ppParent p
-      else Print.ppOp2 " :" ppParent (ppProofInferenceSubst mapping) (p,s);
+      else Print.ppOp2 " :" ppParent (ppProofSubst mapping) (p,s);
 in
   fun ppFormulaSource mapping source =
       case source of
         NoFormulaSource => Print.skip
-      | NormalizeFormulaSource {inference,parents} =>
+      | NormalizeFormulaSource {step,parents} =>
         let
           val gen = GEN_INFERENCE
 
-          val name = normalizeInferenceName inference
+          val name = normalizeName step
         in
           Print.blockProgram Print.Inconsistent (size gen + 1)
             [Print.addString gen,
@@ -852,7 +853,7 @@ in
              Print.addString name,
              Print.addString ",",
              Print.addBreak 1,
-             Print.ppBracket "[" "]" (ppNormalizeInference mapping) inference,
+             Print.ppBracket "[" "]" (ppNormalize mapping) step,
              Print.addString ",",
              Print.addBreak 1,
              Print.ppList ppParent parents]
@@ -888,15 +889,15 @@ in
                     Print.addString name,
                     Print.addString ",",
                     Print.addBreak 1,
-                    ppProofInference mapping inference]]
+                    ppProof mapping inference]]
               else
                 [Print.addString name,
                  Print.addString ",",
                  Print.addBreak 1,
-                 ppProofInference mapping inference,
+                 ppProof mapping inference,
                  Print.addString ",",
                  Print.addBreak 1,
-                 Print.ppList (ppProofInferenceParent mapping) parents]) @
+                 Print.ppList (ppProofParent mapping) parents]) @
              [Print.addString ")"])
         end
 end;
@@ -1458,7 +1459,7 @@ type clauseNames = string clauseInfo;
 
 type clauseRoles = role clauseInfo;
 
-type clauseProofs = Normalize.proof clauseInfo;
+type clauseDerivations = Normalize.derivation clauseInfo;
 
 val noClauseNames : clauseNames = LiteralSetMap.new ();
 
@@ -1471,7 +1472,7 @@ val allClauseNames : clauseNames -> StringSet.set =
 
 val noClauseRoles : clauseRoles = LiteralSetMap.new ();
 
-val noClauseProofs : clauseProofs = LiteralSetMap.new ();
+val noClauseDerivations : clauseDerivations = LiteralSetMap.new ();
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP problems.                                                            *)
@@ -1545,11 +1546,11 @@ end;
 
 type normalization =
      {problem : Problem.problem,
-      proofs : clauseProofs};
+      derivations : clauseDerivations};
 
 val initialNormalization : normalization =
     {problem = {axioms = [], conjecture = []},
-     proofs = LiteralSetMap.new ()};
+     derivations = LiteralSetMap.new ()};
 
 datatype problemGoal =
     NoGoal
@@ -1610,9 +1611,10 @@ local
 
   fun addClauses role clauses acc : normalization =
       let
-        fun addClause (cl_prf,proofs) = LiteralSetMap.insert proofs cl_prf
+        fun addClause (cl_deriv,derivations) =
+            LiteralSetMap.insert derivations cl_deriv
 
-        val {problem,proofs} : normalization = acc
+        val {problem,derivations} : normalization = acc
         val {axioms,conjecture} = problem
 
         val cls = map fst clauses
@@ -1621,10 +1623,10 @@ local
             else (cls @ axioms, conjecture)
 
         val problem = {axioms = axioms, conjecture = conjecture}
-        and proofs = List.foldl addClause proofs clauses
+        and derivations = List.foldl addClause derivations clauses
       in
         {problem = problem,
-         proofs = proofs}
+         derivations = derivations}
       end;
 
   fun addCnf role ((name,clause),(norm,cnf)) =
@@ -1634,9 +1636,9 @@ local
           val cl = List.mapPartial (total destLiteral) clause
           val cl = LiteralSet.fromList cl
 
-          val prf = Normalize.axiomProof name
+          val deriv = Normalize.axiomDerivation name
 
-          val norm = addClauses role [(cl,prf)] norm
+          val norm = addClauses role [(cl,deriv)] norm
         in
           (norm,cnf)
         end;
@@ -1652,26 +1654,28 @@ local
       end;
 
   fun addFofAxiom ((name,fm),acc) =
-      addFof AxiomRole (Normalize.axiomThm fm name, acc);
+      addFof AxiomRole (Normalize.deriveAxiom fm name, acc);
 
   fun normProblem (norm,_) : normalization =
       let
-        val {problem,proofs} = norm
+        val {problem,derivations} = norm
         val {axioms,conjecture} = problem
       in
         {problem = {axioms = rev axioms, conjecture = rev conjecture},
-         proofs = proofs}
+         derivations = derivations}
       end;
 
   fun splitProblem acc =
       let
-        fun mk prf subgoal =
+        fun mk deriv subgoal =
             let
-              val subgoal = Normalize.mkThm (Formula.generalize subgoal, prf)
+              val subgoal = Normalize.mkDerivedFormula (subgoal,deriv)
 
-              val th = Normalize.negationThm subgoal
+              val subgoal = Normalize.deriveGeneralization subgoal
 
-              val acc = addFof NegatedConjectureRole (th,acc)
+              val subgoal = Normalize.deriveNegation subgoal
+
+              val acc = addFof NegatedConjectureRole (subgoal,acc)
             in
               normProblem acc
             end
@@ -1682,9 +1686,9 @@ local
               val subgoals =
                   if null subgoals then [Formula.True] else subgoals
 
-              val prf = Normalize.conjectureProof name
+              val deriv = Normalize.conjectureDerivation name
             in
-              map (mk prf) subgoals
+              map (mk deriv) subgoals
             end
       in
         fn goals => List.concat (map split goals)
@@ -1881,10 +1885,10 @@ local
         bump
       end;
 
-  fun lookupClauseProof norm cl =
+  fun lookupClauseDerivation norm cl =
       case LiteralSetMap.peek norm cl of
-        SOME prf => prf
-      | NONE => raise Bug "Tptp.lookupClauseProof";
+        SOME deriv => deriv
+      | NONE => raise Bug "Tptp.lookupClauseDerivation";
 
   fun lookupDefName defNames defName =
       case StringMap.peek defNames defName of
@@ -1923,9 +1927,9 @@ local
         let
           val (names,defs,ths) = names_defs_ths
 
-          val Normalize.Proof (inf,ths') = lookupClauseProof norm cl
+          val Normalize.Derivation (step,ths') = lookupClauseDerivation norm cl
 
-          val (names,defs) = collectInferenceDeps (inf,(names,defs))
+          val (names,defs) = collectInferenceDeps (step,(names,defs))
 
           val ths = ths' @ ths
         in
@@ -1979,12 +1983,12 @@ local
         (formulas,i,defNames)
       end;
 
-  fun mkNormalizeFormulaSource defNames fmNames inference fms =
+  fun mkNormalizeFormulaSource defNames fmNames step fms =
       let
         val parents = map (lookupFmName fmNames) fms
 
         val parents =
-            case inference of
+            case step of
               Normalize.Axiom name => name :: parents
             | Normalize.Conjecture name => name :: parents
             | Normalize.Definition (defName,_) =>
@@ -1996,7 +2000,7 @@ local
             | _ => parents
       in
         NormalizeFormulaSource
-          {inference = inference,
+          {step = step,
            parents = parents}
       end;
 
@@ -2004,11 +2008,11 @@ local
       case inference of
         Proof.Axiom cl =>
         let
-          val Normalize.Proof (inf,ths) = lookupClauseProof norm cl
+          val Normalize.Derivation (step,ths) = lookupClauseDerivation norm cl
 
-          val fms = map Normalize.formulaThm ths
+          val fms = map (fst o Normalize.destDerivedFormula) ths
         in
-          mkNormalizeFormulaSource defNames fmNames inf fms
+          mkNormalizeFormulaSource defNames fmNames step fms
         end
       | _ =>
         let
@@ -2095,12 +2099,12 @@ in
       let
         val names = StringSet.empty
         and defs : Formula.formula StringMap.map = StringMap.new ()
-        and ths : Normalize.thm list = []
+        and ths : Normalize.derivedFormula list = []
 
         val (names,defs,ths) =
             List.foldl collectProofDeps (names,defs,ths) proofs
 
-        val norm = Normalize.proveThms (rev ths)
+        val norm = Normalize.deriveFormulas (rev ths)
 
         val (names,defs) = collectNormDeps (norm,(names,defs))
 

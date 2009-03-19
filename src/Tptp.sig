@@ -90,7 +90,7 @@ datatype formulaBody =
 datatype formulaSource =
     NoFormulaSource
   | NormalizeFormulaSource of
-      {inference : Normalize.inference,
+      {step : Normalize.derivationStep,
        parents : string list}
   | ProofFormulaSource of
       {inference : Proof.inference,
@@ -137,7 +137,7 @@ type clauseNames = string clauseInfo
 
 type clauseRoles = role clauseInfo
 
-type clauseProofs = Normalize.proof clauseInfo
+type clauseDerivations = Normalize.derivation clauseInfo
 
 val noClauseNames : clauseNames
 
@@ -145,7 +145,7 @@ val allClauseNames : clauseNames -> StringSet.set
 
 val noClauseRoles : clauseRoles
 
-val noClauseProofs : clauseProofs
+val noClauseDerivations : clauseDerivations
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP problems.                                                            *)
@@ -170,7 +170,7 @@ val mkProblem :
 val normalize :
     problem ->
     {problem : Problem.problem,
-     proofs : clauseProofs} list
+     derivations : clauseDerivations} list
 
 val goal : problem -> Formula.formula
 
@@ -189,6 +189,6 @@ val prove : {filename : string, mapping : tptpMapping} -> bool
 
 val fromProof :
     {problem : problem,
-     proofs : (clauseProofs * Proof.proof) list} -> formula list
+     proofs : (clauseDerivations * Proof.proof) list} -> formula list
 
 end

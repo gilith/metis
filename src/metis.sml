@@ -83,7 +83,7 @@ end;
 
 val VERSION = "2.2";
 
-val versionString = "Metis "^VERSION^" (release 20090318)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20090319)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -310,7 +310,7 @@ local
         end
       | prob :: probs =>
         let
-          val {problem,proofs} = prob
+          val {problem,derivations} = prob
 
           val () = display_problem filename problem
         in
@@ -318,7 +318,7 @@ local
           else
             case refute problem of
               Resolution.Contradiction th =>
-              refuteAll filename tptp probs ((proofs,th) :: acc)
+              refuteAll filename tptp probs ((derivations,th) :: acc)
             | Resolution.Satisfiable ths =>
               let
                 val status =
