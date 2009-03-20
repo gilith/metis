@@ -93,13 +93,13 @@ fun freeVars (Thm (cl,_)) = LiteralSet.freeVars cl;
 (* Pretty-printing.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
-fun inferenceTypeToString Axiom = "Axiom"
-  | inferenceTypeToString Assume = "Assume"
-  | inferenceTypeToString Subst = "Subst"
-  | inferenceTypeToString Factor = "Factor"
-  | inferenceTypeToString Resolve = "Resolve"
-  | inferenceTypeToString Refl = "Refl"
-  | inferenceTypeToString Equality = "Equality";
+fun inferenceTypeToString Axiom = "axiom"
+  | inferenceTypeToString Assume = "assume"
+  | inferenceTypeToString Subst = "subst"
+  | inferenceTypeToString Factor = "factor"
+  | inferenceTypeToString Resolve = "resolve"
+  | inferenceTypeToString Refl = "refl"
+  | inferenceTypeToString Equality = "equality";
 
 fun ppInferenceType inf =
     Print.ppString (inferenceTypeToString inf);

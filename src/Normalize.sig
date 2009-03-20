@@ -13,52 +13,30 @@ sig
 val nnf : Formula.formula -> Formula.formula
 
 (* ------------------------------------------------------------------------- *)
-(* Normalization derivations.                                                *)
+(* Conjunctive normal form derivations.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-datatype derivationStep =
-    Axiom of string
-  | Conjecture of string
+type thm
+
+datatype inference =
+    Axiom of Formula.formula
   | Definition of string * Formula.formula
-  | Generalization
-  | Negation
-  | Simplification
-  | Conjunct
-  | Specialization
-  | Skolemization
-  | Clausification
+  | Simplify of thm * thm list
+  | Conjunct of thm
+  | Specialize of thm
+  | Skolemize of thm
+  | Clausify of thm
 
-type derivedFormula
+val mkAxiom : Formula.formula -> thm
 
-datatype derivation = Derivation of derivationStep * derivedFormula list
+val destThm : thm -> Formula.formula * inference
 
-val axiomDerivation : string -> derivation
+val proveThms :
+    thm list -> (Formula.formula * inference * Formula.formula list) list
 
-val conjectureDerivation : string -> derivation
+val toStringInference : inference -> string
 
-val generalizationDerivation : derivedFormula -> derivation
-
-val negationDerivation : derivedFormula -> derivation
-
-val mkDerivedFormula : Formula.formula * derivation -> derivedFormula
-
-val destDerivedFormula : derivedFormula -> Formula.formula * derivation
-
-val deriveFormulas :
-    derivedFormula list ->
-    (Formula.formula * derivationStep * Formula.formula list) list
-
-(* ------------------------------------------------------------------------- *)
-(* Normalization formula derivation rules.                                   *)
-(* ------------------------------------------------------------------------- *)
-
-val deriveAxiom : Formula.formula -> string -> derivedFormula
-
-val deriveConjecture : Formula.formula -> string -> derivedFormula
-
-val deriveGeneralization : derivedFormula -> derivedFormula
-
-val deriveNegation : derivedFormula -> derivedFormula
+val ppInference : inference Print.pp
 
 (* ------------------------------------------------------------------------- *)
 (* Conjunctive normal form.                                                  *)
@@ -68,9 +46,9 @@ type cnf
 
 val initialCnf : cnf
 
-val addCnf : derivedFormula -> cnf -> (Thm.clause * derivation) list * cnf
+val addCnf : thm -> cnf -> (Thm.clause * inference) list * cnf
 
-val derivedCnf : derivedFormula list -> (Thm.clause * derivation) list
+val proveCnf : thm list -> (Thm.clause * inference) list
 
 val cnf : Formula.formula -> Thm.clause list
 

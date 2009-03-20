@@ -679,8 +679,11 @@ fun ppFormulaBody mapping body =
 
 datatype formulaSource =
     NoFormulaSource
+  | StripFormulaSource of
+      {inference : string,
+       parents : string list}
   | NormalizeFormulaSource of
-      {step : Normalize.derivationStep,
+      {inference : Normalize.inference,
        parents : string list}
   | ProofFormulaSource of
       {inference : Proof.inference,
@@ -696,10 +699,11 @@ fun functionsFormulaSource source =
       NoFormulaSource => NameAritySet.empty
     | NormalizeFormulaSource data =>
       let
-        val {step, parents = _} = data
+        val {inference = inf, parents = _} = data
       in
-        case step of
-          Normalize.Definition (_,fm) => Formula.functions fm
+        case inf of
+          Normalize.Axiom fm => Formula.functions fm
+        | Normalize.Definition (_,fm) => Formula.functions fm
         | _ => NameAritySet.empty
       end
     | ProofFormulaSource data =>
@@ -721,10 +725,11 @@ fun relationsFormulaSource source =
       NoFormulaSource => NameAritySet.empty
     | NormalizeFormulaSource data =>
       let
-        val {step, parents = _} = data
+        val {inference = inf, parents = _} = data
       in
-        case step of
-          Normalize.Definition (_,fm) => Formula.relations fm
+        case inf of
+          Normalize.Axiom fm => Formula.relations fm
+        | Normalize.Definition (_,fm) => Formula.relations fm
         | _ => NameAritySet.empty
       end
     | ProofFormulaSource data =>
@@ -762,19 +767,6 @@ fun freeVarsFormulaSource source =
 local
   val GEN_INFERENCE = "inference"
   and GEN_INTRODUCED = "introduced";
-
-  fun normalizeName inf =
-      case inf of
-        Normalize.Axiom _ => "canonicalize"
-      | Normalize.Conjecture _ => "strip"
-      | Normalize.Definition _ => "canonicalize"
-      | Normalize.Generalization => "generalize"
-      | Normalize.Negation => "negate"
-      | Normalize.Simplification => "simplify"
-      | Normalize.Conjunct => "conjunct"
-      | Normalize.Specialization => "specialize"
-      | Normalize.Skolemization => "skolemize"
-      | Normalize.Clausification => "clausify";
 
   fun ppNormalize mapping inf = Print.skip;
 
@@ -841,11 +833,11 @@ in
   fun ppFormulaSource mapping source =
       case source of
         NoFormulaSource => Print.skip
-      | NormalizeFormulaSource {step,parents} =>
+      | NormalizeFormulaSource {inference,parents} =>
         let
           val gen = GEN_INFERENCE
 
-          val name = normalizeName step
+          val name = Normalize.toStringInference inference
         in
           Print.blockProgram Print.Inconsistent (size gen + 1)
             [Print.addString gen,
@@ -853,7 +845,7 @@ in
              Print.addString name,
              Print.addString ",",
              Print.addBreak 1,
-             Print.ppBracket "[" "]" (ppNormalize mapping) step,
+             Print.ppBracket "[" "]" (ppNormalize mapping) inference,
              Print.addString ",",
              Print.addBreak 1,
              Print.ppList ppParent parents]
@@ -865,7 +857,6 @@ in
           val gen = if isTaut then GEN_INTRODUCED else GEN_INFERENCE
 
           val name = Thm.inferenceTypeToString (Proof.inferenceType inference)
-          val name = String.map Char.toLower name
 
           val parents =
               let
@@ -1453,13 +1444,17 @@ end;
 (* Clause information.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
+datatype clauseSource =
+    CnfClauseSource of string
+  | FofClauseSource of Normalize.inference;
+
 type 'a clauseInfo = 'a LiteralSetMap.map;
 
 type clauseNames = string clauseInfo;
 
 type clauseRoles = role clauseInfo;
 
-type clauseDerivations = Normalize.derivation clauseInfo;
+type clauseSources = clauseSource clauseInfo;
 
 val noClauseNames : clauseNames = LiteralSetMap.new ();
 
@@ -1472,7 +1467,7 @@ val allClauseNames : clauseNames -> StringSet.set =
 
 val noClauseRoles : clauseRoles = LiteralSetMap.new ();
 
-val noClauseDerivations : clauseDerivations = LiteralSetMap.new ();
+val noClauseSources : clauseSources = LiteralSetMap.new ();
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP problems.                                                            *)
@@ -1546,11 +1541,11 @@ end;
 
 type normalization =
      {problem : Problem.problem,
-      derivations : clauseDerivations};
+      sources : clauseSources};
 
 val initialNormalization : normalization =
     {problem = {axioms = [], conjecture = []},
-     derivations = LiteralSetMap.new ()};
+     sources = noClauseSources};
 
 datatype problemGoal =
     NoGoal
@@ -1611,10 +1606,10 @@ local
 
   fun addClauses role clauses acc : normalization =
       let
-        fun addClause (cl_deriv,derivations) =
-            LiteralSetMap.insert derivations cl_deriv
+        fun addClause (cl_src,sources) =
+            LiteralSetMap.insert sources cl_src
 
-        val {problem,derivations} : normalization = acc
+        val {problem,sources} : normalization = acc
         val {axioms,conjecture} = problem
 
         val cls = map fst clauses
@@ -1623,10 +1618,10 @@ local
             else (cls @ axioms, conjecture)
 
         val problem = {axioms = axioms, conjecture = conjecture}
-        and derivations = List.foldl addClause derivations clauses
+        and sources = List.foldl addClause sources clauses
       in
         {problem = problem,
-         derivations = derivations}
+         sources = sources}
       end;
 
   fun addCnf role ((name,clause),(norm,cnf)) =
@@ -1636,48 +1631,55 @@ local
           val cl = List.mapPartial (total destLiteral) clause
           val cl = LiteralSet.fromList cl
 
-          val deriv = Normalize.axiomDerivation name
+          val src = CnfClauseSource name
 
-          val norm = addClauses role [(cl,deriv)] norm
+          val norm = addClauses role [(cl,src)] norm
         in
           (norm,cnf)
         end;
 
   val addCnfAxiom = addCnf AxiomRole;
 
+  val addCnfGoal = addCnf NegatedConjectureRole;
+
   fun addFof role (th,(norm,cnf)) =
       let
+        fun sourcify (cl,inf) = (cl, FofClauseSource inf)
+
         val (clauses,cnf) = Normalize.addCnf th cnf
+        val clauses = map sourcify clauses
         val norm = addClauses role clauses norm
       in
         (norm,cnf)
       end;
 
-  fun addFofAxiom ((name,fm),acc) =
-      addFof AxiomRole (Normalize.deriveAxiom fm name, acc);
+  fun addFofAxiom ((_,fm),acc) =
+      addFof AxiomRole (Normalize.mkAxiom fm, acc);
 
-  fun normProblem (norm,_) : normalization =
+  fun normProblem subgoal (norm,_) =
       let
-        val {problem,derivations} = norm
+        val {problem,sources} = norm
         val {axioms,conjecture} = problem
+        val problem = {axioms = rev axioms, conjecture = rev conjecture}
       in
-        {problem = {axioms = rev axioms, conjecture = rev conjecture},
-         derivations = derivations}
+        {subgoal = subgoal,
+         problem = problem,
+         sources = sources}
       end;
+
+  val normProblemFalse = normProblem (Formula.False,[]);
 
   fun splitProblem acc =
       let
-        fun mk deriv subgoal =
+        fun mk parents subgoal =
             let
-              val subgoal = Normalize.mkDerivedFormula (subgoal,deriv)
+              val subgoal = Formula.generalize subgoal
 
-              val subgoal = Normalize.deriveGeneralization subgoal
+              val th = Normalize.mkAxiom (Formula.Not subgoal)
 
-              val subgoal = Normalize.deriveNegation subgoal
-
-              val acc = addFof NegatedConjectureRole (subgoal,acc)
+              val acc = addFof NegatedConjectureRole (th,acc)
             in
-              normProblem acc
+              normProblem (subgoal,parents) acc
             end
 
         fun split (name,goal) =
@@ -1686,9 +1688,9 @@ local
               val subgoals =
                   if null subgoals then [Formula.True] else subgoals
 
-              val deriv = Normalize.conjectureDerivation name
+              val parents = [name]
             in
-              map (mk deriv) subgoals
+              map (mk parents) subgoals
             end
       in
         fn goals => List.concat (map split goals)
@@ -1729,7 +1731,7 @@ in
         fm
       end;
 
-  fun normalize ({formulas,...} : problem) : normalization list =
+  fun normalize ({formulas,...} : problem) =
       let
         val {cnfAxioms,fofAxioms,goal} = partitionFormulas formulas
 
@@ -1738,13 +1740,8 @@ in
         val acc = List.foldl addFofAxiom acc fofAxioms
       in
         case goal of
-          NoGoal => [normProblem acc]
-        | CnfGoal cls =>
-          let
-            val acc = List.foldl (addCnf NegatedConjectureRole) acc cls
-          in
-            [normProblem acc]
-          end
+          NoGoal => [normProblemFalse acc]
+        | CnfGoal cls => [normProblemFalse (List.foldl addCnfGoal acc cls)]
         | FofGoal goals => splitProblem acc goals
       end;
 end;

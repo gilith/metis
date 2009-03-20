@@ -89,8 +89,11 @@ datatype formulaBody =
 
 datatype formulaSource =
     NoFormulaSource
+  | StripFormulaSource of
+      {inference : string,
+       parents : string list}
   | NormalizeFormulaSource of
-      {step : Normalize.derivationStep,
+      {inference : Normalize.inference,
        parents : string list}
   | ProofFormulaSource of
       {inference : Proof.inference,
@@ -131,13 +134,17 @@ val isConjectureFormula : formula -> bool
 (* Clause information.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
+datatype clauseSource =
+    CnfClauseSource of string
+  | FofClauseSource of Normalize.thm
+
 type 'a clauseInfo = 'a LiteralSetMap.map
 
 type clauseNames = string clauseInfo
 
 type clauseRoles = role clauseInfo
 
-type clauseDerivations = Normalize.derivation clauseInfo
+type clauseSources = clauseSource clauseInfo
 
 val noClauseNames : clauseNames
 
@@ -145,7 +152,7 @@ val allClauseNames : clauseNames -> StringSet.set
 
 val noClauseRoles : clauseRoles
 
-val noClauseDerivations : clauseDerivations
+val noClauseSources : clauseSources
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP problems.                                                            *)
@@ -169,8 +176,9 @@ val mkProblem :
 
 val normalize :
     problem ->
-    {problem : Problem.problem,
-     derivations : clauseDerivations} list
+    {subgoal : Formula.formula * string list,
+     problem : Problem.problem,
+     sources : clauseSources} list
 
 val goal : problem -> Formula.formula
 
@@ -189,6 +197,8 @@ val prove : {filename : string, mapping : tptpMapping} -> bool
 
 val fromProof :
     {problem : problem,
-     proofs : (clauseDerivations * Proof.proof) list} -> formula list
+     proofs : {subgoal : Formula.formula * string list,
+               sources : clauseSources,
+               proof : Proof.proof} list} -> formula list
 
 end
