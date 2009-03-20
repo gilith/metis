@@ -83,7 +83,7 @@ end;
 
 val VERSION = "2.2";
 
-val versionString = "Metis "^VERSION^" (release 20090319)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20090320)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -178,10 +178,6 @@ local
 
     fun display_proof_body problem proofs =
         let
-          fun createProof ((norm,th),acc) = (norm, Proof.proof th) :: acc
-
-          val proofs = List.foldl createProof [] proofs
-
           val formulas =
               Tptp.fromProof
                 {problem = problem,
@@ -304,13 +300,15 @@ local
 
           val () = display_status filename status
 
-          val () = if !TEST then () else display_proof filename tptp acc
+          val () =
+              if !TEST then ()
+              else display_proof filename tptp (rev acc)
         in
           true
         end
       | prob :: probs =>
         let
-          val {problem,derivations} = prob
+          val {subgoal,problem,sources} = prob
 
           val () = display_problem filename problem
         in
@@ -318,7 +316,16 @@ local
           else
             case refute problem of
               Resolution.Contradiction th =>
-              refuteAll filename tptp probs ((derivations,th) :: acc)
+              let
+                val subgoalProof =
+                    {subgoal = subgoal,
+                     sources = sources,
+                     refutation = th}
+
+                val acc = subgoalProof :: acc
+              in
+                refuteAll filename tptp probs acc
+              end
             | Resolution.Satisfiable ths =>
               let
                 val status =

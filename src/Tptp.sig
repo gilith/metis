@@ -199,6 +199,6 @@ val fromProof :
     {problem : problem,
      proofs : {subgoal : Formula.formula * string list,
                sources : clauseSources,
-               proof : Proof.proof} list} -> formula list
+               refutation : Thm.thm} list} -> formula list
 
 end

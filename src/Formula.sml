@@ -39,6 +39,16 @@ fun destBoolean True = true
 
 val isBoolean = can destBoolean;
 
+fun isTrue fm =
+    case fm of
+      True => true
+    | _ => false;
+
+fun isFalse fm =
+    case fm of
+      False => true
+    | _ => false;
+
 (* Functions *)
 
 local

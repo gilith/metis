@@ -34,6 +34,10 @@ val destBoolean : formula -> bool
 
 val isBoolean : formula -> bool
 
+val isTrue : formula -> bool
+
+val isFalse : formula -> bool
+
 (* Functions *)
 
 val functions : formula -> NameAritySet.set

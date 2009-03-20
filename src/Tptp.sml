@@ -697,6 +697,7 @@ fun isNoFormulaSource source =
 fun functionsFormulaSource source =
     case source of
       NoFormulaSource => NameAritySet.empty
+    | StripFormulaSource _ => NameAritySet.empty
     | NormalizeFormulaSource data =>
       let
         val {inference = inf, parents = _} = data
@@ -723,6 +724,7 @@ fun functionsFormulaSource source =
 fun relationsFormulaSource source =
     case source of
       NoFormulaSource => NameAritySet.empty
+    | StripFormulaSource _ => NameAritySet.empty
     | NormalizeFormulaSource data =>
       let
         val {inference = inf, parents = _} = data
@@ -749,6 +751,7 @@ fun relationsFormulaSource source =
 fun freeVarsFormulaSource source =
     case source of
       NoFormulaSource => NameSet.empty
+    | StripFormulaSource _ => NameSet.empty
     | NormalizeFormulaSource data => NameSet.empty
     | ProofFormulaSource data =>
       let
@@ -768,7 +771,30 @@ local
   val GEN_INFERENCE = "inference"
   and GEN_INTRODUCED = "introduced";
 
+  fun nameStrip inf = inf;
+
+  fun ppStrip mapping inf = Print.skip;
+
+  fun nameNormalize inf =
+      case inf of
+        Normalize.Axiom _ => "canonicalize"
+      | Normalize.Definition _ => "canonicalize"
+      | Normalize.Simplify _ => "simplify"
+      | Normalize.Conjunct _ => "conjunct"
+      | Normalize.Specialize _ => "specialize"
+      | Normalize.Skolemize _ => "skolemize"
+      | Normalize.Clausify _ => "clausify";
+
   fun ppNormalize mapping inf = Print.skip;
+
+  fun nameProof inf =
+      case inf of
+        Proof.Axiom _ => "canonicalize"
+      | Proof.Assume _ => "assume"
+      | Proof.Subst _ => "subst"
+      | Proof.Resolve _ => "resolve"
+      | Proof.Refl _ => "refl"
+      | Proof.Equality _ => "equality";
 
   local
     fun ppTermInf mapping = ppTerm mapping;
@@ -801,7 +827,7 @@ local
       Print.blockProgram Print.Inconsistent 1
         [Print.addString "[",
          (case inf of
-            Proof.Axiom _ => raise Bug "Tptp.ppProof"
+            Proof.Axiom _ => Print.skip
           | Proof.Assume atm => ppProofAtom mapping atm
           | Proof.Subst _ => Print.skip
           | Proof.Resolve (atm,_,_) => ppProofAtom mapping atm
@@ -833,11 +859,28 @@ in
   fun ppFormulaSource mapping source =
       case source of
         NoFormulaSource => Print.skip
+      | StripFormulaSource {inference,parents} =>
+        let
+          val gen = GEN_INFERENCE
+
+          val name = nameStrip inference
+        in
+          Print.blockProgram Print.Inconsistent (size gen + 1)
+            [Print.addString gen,
+             Print.addString "(",
+             Print.addString name,
+             Print.addString ",",
+             Print.addBreak 1,
+             Print.ppBracket "[" "]" (ppStrip mapping) inference,
+             Print.addString ",",
+             Print.addBreak 1,
+             Print.ppList ppParent parents]
+        end
       | NormalizeFormulaSource {inference,parents} =>
         let
           val gen = GEN_INFERENCE
 
-          val name = Normalize.toStringInference inference
+          val name = nameNormalize inference
         in
           Print.blockProgram Print.Inconsistent (size gen + 1)
             [Print.addString gen,
@@ -856,7 +899,7 @@ in
 
           val gen = if isTaut then GEN_INTRODUCED else GEN_INFERENCE
 
-          val name = Thm.inferenceTypeToString (Proof.inferenceType inference)
+          val name = nameProof inference
 
           val parents =
               let
@@ -1446,7 +1489,7 @@ end;
 
 datatype clauseSource =
     CnfClauseSource of string
-  | FofClauseSource of Normalize.inference;
+  | FofClauseSource of Normalize.thm;
 
 type 'a clauseInfo = 'a LiteralSetMap.map;
 
@@ -1882,81 +1925,106 @@ local
         bump
       end;
 
-  fun lookupClauseDerivation norm cl =
-      case LiteralSetMap.peek norm cl of
-        SOME deriv => deriv
-      | NONE => raise Bug "Tptp.lookupClauseDerivation";
+  fun lookupClauseSource sources cl =
+      case LiteralSetMap.peek sources cl of
+        SOME src => src
+      | NONE => raise Bug "Tptp.lookupClauseSource";
 
-  fun lookupDefName defNames defName =
-      case StringMap.peek defNames defName of
-        SOME name => name
-      | NONE => raise Bug "Tptp.lookupDefName";
-
-  fun lookupFmName fmNames fm =
+  fun lookupFormulaName fmNames fm =
       case FormulaMap.peek fmNames fm of
         SOME name => name
-      | NONE => raise Bug "Tptp.lookupFmName";
+      | NONE => raise Bug "Tptp.lookupFormulaName";
 
-  fun lookupClName clNames cl =
+  fun lookupClauseName clNames cl =
       case LiteralSetMap.peek clNames cl of
         SOME name => name
-      | NONE => raise Bug "Tptp.lookupClName";
+      | NONE => raise Bug "Tptp.lookupClauseName";
 
-  fun collectInferenceDeps (inf,(names,defs)) =
-      let
-        val names =
-            case inf of
-              Normalize.Axiom n => StringSet.add names n
-            | Normalize.Conjecture n => StringSet.add names n
-            | _ => names
-
-        val defs =
-            case inf of
-              Normalize.Definition n_d => StringMap.insert defs n_d
-            | _ => defs
-      in
-        (names,defs)
-      end;
-
-  fun collectProofStepDeps norm ((_,inf),names_defs_ths) =
+  fun collectProofDeps sources ((_,inf),names_ths) =
       case inf of
         Proof.Axiom cl =>
         let
-          val (names,defs,ths) = names_defs_ths
-
-          val Normalize.Derivation (step,ths') = lookupClauseDerivation norm cl
-
-          val (names,defs) = collectInferenceDeps (step,(names,defs))
-
-          val ths = ths' @ ths
+          val (names,ths) = names_ths
         in
-          (names,defs,ths)
+          case lookupClauseSource sources cl of
+            CnfClauseSource name =>
+            let
+              val names = StringSet.add names name
+            in
+              (names,ths)
+            end
+          | FofClauseSource th =>
+            let
+              val ths = th :: ths
+            in
+              (names,ths)
+            end
         end
-      | _ => names_defs_ths;
+      | _ => names_ths;
 
-  fun collectProofDeps ((norm,proof),names_defs_ths) =
-      List.foldl (collectProofStepDeps norm) names_defs_ths proof;
+  fun collectNormalizeDeps ((_,inf,_),fofs_defs) =
+      case inf of
+        Normalize.Axiom fm =>
+        let
+          val (fofs,defs) = fofs_defs
+          val fofs = FormulaSet.add fofs fm
+        in
+          (fofs,defs)
+        end
+      | Normalize.Definition n_d =>
+        let
+          val (fofs,defs) = fofs_defs
+          val defs = StringMap.insert defs n_d
+        in
+          (fofs,defs)
+        end
+      | _ => fofs_defs;
 
-  fun collectNormInferenceDeps ((_,inf,_),names_defs) =
-      collectInferenceDeps (inf,names_defs);
+  fun collectSubgoalProofDeps subgoalProof (names,fofs,defs) =
+      let
+        val {subgoal,sources,refutation} = subgoalProof
 
-  fun collectNormDeps (norm,names_defs) =
-      List.foldl collectNormInferenceDeps names_defs norm;
+        val names = StringSet.addList names (snd subgoal)
 
-  fun addProblemFormula names (formula,(formulas,avoid)) =
+        val proof = Proof.proof refutation
+
+        val (names,ths) =
+            List.foldl (collectProofDeps sources) (names,[]) proof
+
+        val normalization = Normalize.proveThms (rev ths)
+
+        val (fofs,defs) =
+            List.foldl collectNormalizeDeps (fofs,defs) normalization
+
+        val subgoalProof =
+            {subgoal = subgoal,
+             normalization = normalization,
+             sources = sources,
+             proof = proof}
+      in
+        (subgoalProof,(names,fofs,defs))
+      end;
+
+  fun addProblemFormula names fofs (formula,(avoid,formulas,fmNames)) =
       let
         val name = nameFormula formula
 
-        val formulas =
-            if not (StringSet.member name names) then formulas
-            else formula :: formulas
-
         val avoid = StringSet.add avoid name
+
+        val (formulas,fmNames) =
+            if StringSet.member name names then
+              (formula :: formulas, fmNames)
+            else
+              case bodyFormula formula of
+                CnfFormulaBody _ => (formulas,fmNames)
+              | FofFormulaBody fm =>
+                if not (FormulaSet.member fm fofs) then (formulas,fmNames)
+                else (formula :: formulas, FormulaMap.insert fmNames (fm,name))
       in
-        (formulas,avoid)
+        (avoid,formulas,fmNames)
       end;
 
-  fun addDefinitionFormula avoid (defName,def,(formulas,i,defNames)) =
+  fun addDefinitionFormula avoid (_,def,(formulas,i,fmNames)) =
       let
         val (name,i) = newName avoid "definition_" i
 
@@ -1975,64 +2043,105 @@ local
 
         val formulas = formula :: formulas
 
-        val defNames = StringMap.insert defNames (defName,name)
+        val fmNames = FormulaMap.insert fmNames (def,name)
       in
-        (formulas,i,defNames)
+        (formulas,i,fmNames)
       end;
 
-  fun mkNormalizeFormulaSource defNames fmNames step fms =
+  fun addSubgoalFormula avoid subgoalProof (formulas,i) =
       let
-        val parents = map (lookupFmName fmNames) fms
+        val {subgoal,normalization,sources,proof} = subgoalProof
 
-        val parents =
-            case step of
-              Normalize.Axiom name => name :: parents
-            | Normalize.Conjecture name => name :: parents
-            | Normalize.Definition (defName,_) =>
+        val (fm,pars) = subgoal
+
+        val (name,i) = newName avoid "subgoal_" i
+
+        val number = i - 1
+
+        val (subgoal,formulas) =
+            if null pars then (NONE,formulas)
+            else
               let
-                val name = lookupDefName defNames defName
+                val role = PlainRole
+
+                val body = FofFormulaBody fm
+
+                val source =
+                    StripFormulaSource
+                      {inference = "strip",
+                       parents = pars}
+
+                val formula =
+                    Formula
+                      {name = name,
+                       role = role,
+                       body = body,
+                       source = source}
               in
-                name :: parents
+                (SOME (name,fm), formula :: formulas)
               end
-            | _ => parents
+
+        val subgoalProof =
+            {number = number,
+             subgoal = subgoal,
+             normalization = normalization,
+             sources = sources,
+             proof = proof}
+      in
+        (subgoalProof,(formulas,i))
+      end;
+
+  fun mkNormalizeFormulaSource fmNames inference fms =
+      let
+        val fms =
+            case inference of
+              Normalize.Axiom fm => fm :: fms
+            | Normalize.Definition (_,fm) => fm :: fms
+            | _ => fms
+
+        val parents = map (lookupFormulaName fmNames) fms
       in
         NormalizeFormulaSource
-          {step = step,
+          {inference = inference,
            parents = parents}
       end;
 
-  fun mkProofFormulaSource norm defNames fmNames clNames inference =
-      case inference of
-        Proof.Axiom cl =>
-        let
-          val Normalize.Derivation (step,ths) = lookupClauseDerivation norm cl
-
-          val fms = map (fst o Normalize.destDerivedFormula) ths
-        in
-          mkNormalizeFormulaSource defNames fmNames step fms
-        end
-      | _ =>
-        let
-          val cls = map Thm.clause (Proof.parents inference)
-
-          val parents = map (lookupClName clNames) cls
-        in
+  fun mkProofFormulaSource sources fmNames clNames inference =
+      let
+        val parents =
+            case inference of
+              Proof.Axiom cl =>
+              (case lookupClauseSource sources cl of
+                 CnfClauseSource name => [name]
+               | FofClauseSource th =>
+                 let
+                   val (fm,_) = Normalize.destThm th
+                 in
+                   [lookupFormulaName fmNames fm]
+                 end)
+            | _ =>
+              let
+                val cls = map Thm.clause (Proof.parents inference)
+              in
+                map (lookupClauseName clNames) cls
+              end
+      in
           ProofFormulaSource
             {inference = inference,
              parents = parents}
         end;
 
-  fun addNormalizationFormula avoid defNames ((fm,inf,fms),acc) =
+  fun addNormalizeFormula avoid prefix ((fm,inf,fms),acc) =
       let
         val (formulas,i,fmNames) = acc
 
-        val (name,i) = newName avoid "normalization_" i
+        val (name,i) = newName avoid prefix i
 
         val role = PlainRole
 
         val body = FofFormulaBody fm
 
-        val source = mkNormalizeFormulaSource defNames fmNames inf fms
+        val source = mkNormalizeFormulaSource fmNames inf fms
 
         val formula =
             Formula
@@ -2048,7 +2157,7 @@ local
         (formulas,i,fmNames)
       end;
 
-  fun addRefutationFormula avoid norm defNames fmNames prefix ((th,inf),acc) =
+  fun addProofFormula avoid sources fmNames prefix ((th,inf),acc) =
       let
         val (formulas,i,clNames) = acc
 
@@ -2060,7 +2169,7 @@ local
 
         val body = CnfFormulaBody (clauseFromLiteralSet cl)
 
-        val source = mkProofFormulaSource norm defNames fmNames clNames inf
+        val source = mkProofFormulaSource sources fmNames clNames inf
 
         val formula =
             Formula
@@ -2076,53 +2185,83 @@ local
         (formulas,i,clNames)
       end;
 
-  fun addRefutationFormulas avoid defNames fmNames ((norm,proof),acc) =
+  fun addSubgoalProofFormulas avoid fmNames (subgoalProof,formulas) =
       let
-        val (formulas,i) = acc
+        val {number,subgoal,normalization,sources,proof} = subgoalProof
 
-        val prefix = "refutation_" ^ Int.toString i ^ "_"
+        val (formulas,fmNames) =
+            case subgoal of
+              NONE => (formulas,fmNames)
+            | SOME (name,fm) =>
+              let
+                val source =
+                    StripFormulaSource
+                      {inference = "negate",
+                       parents = [name]}
 
+                val prefix = "negate_" ^ Int.toString number ^ "_"
+
+                val (name,_) = newName avoid prefix 0
+
+                val role = PlainRole
+
+                val fm = Formula.Not fm
+
+                val body = FofFormulaBody fm
+
+                val formula =
+                    Formula
+                      {name = name,
+                       role = role,
+                       body = body,
+                       source = source}
+
+                val formulas = formula :: formulas
+
+                val fmNames = FormulaMap.insert fmNames (fm,name)
+              in
+                (formulas,fmNames)
+              end
+
+        val prefix = "normalize_" ^ Int.toString number ^ "_"
+        val (formulas,_,fmNames) =
+            List.foldl (addNormalizeFormula avoid prefix)
+              (formulas,0,fmNames) normalization
+
+        val prefix = "refute_" ^ Int.toString number ^ "_"
         val clNames : string LiteralSetMap.map = LiteralSetMap.new ()
         val (formulas,_,_) =
-            List.foldl (addRefutationFormula avoid norm defNames fmNames prefix)
+            List.foldl (addProofFormula avoid sources fmNames prefix)
               (formulas,0,clNames) proof
-
-        val i = i + 1
       in
-        (formulas,i)
+        formulas
       end;
 in
   fun fromProof {problem,proofs} =
       let
         val names = StringSet.empty
+        and fofs = FormulaSet.empty
         and defs : Formula.formula StringMap.map = StringMap.new ()
-        and ths : Normalize.derivedFormula list = []
 
-        val (names,defs,ths) =
-            List.foldl collectProofDeps (names,defs,ths) proofs
-
-        val norm = Normalize.deriveFormulas (rev ths)
-
-        val (names,defs) = collectNormDeps (norm,(names,defs))
+        val (proofs,(names,fofs,defs)) =
+            maps collectSubgoalProofDeps proofs (names,fofs,defs)
 
         val {comments = _, formulas} = problem
 
-        val (formulas,avoid) =
-            List.foldl (addProblemFormula names) ([],StringSet.empty) formulas
-
-        val defNames : string StringMap.map = StringMap.new ()
-        val (formulas,_,defNames) =
-            StringMap.foldl (addDefinitionFormula avoid)
-              (formulas,0,defNames) defs
-
         val fmNames : string FormulaMap.map = FormulaMap.new ()
-        val (formulas,_,fmNames) =
-            List.foldl (addNormalizationFormula avoid defNames)
-              (formulas,0,fmNames) norm
+        val (avoid,formulas,fmNames) =
+            List.foldl (addProblemFormula names fofs)
+              (StringSet.empty,[],fmNames) formulas
 
-        val (formulas,_) =
-            List.foldl (addRefutationFormulas avoid defNames fmNames)
-              (formulas,0) proofs
+        val (formulas,_,fmNames) =
+            StringMap.foldl (addDefinitionFormula avoid)
+              (formulas,0,fmNames) defs
+
+        val (proofs,(formulas,_)) =
+            maps (addSubgoalFormula avoid) proofs (formulas,0)
+
+        val formulas =
+            List.foldl (addSubgoalProofFormulas avoid fmNames) formulas proofs
       in
         rev formulas
       end

@@ -907,13 +907,13 @@ end;
 
 fun toStringInference inf =
     case inf of
-      Axiom _ => "axiom"
-    | Definition _ => "definition"
-    | Simplify _ => "simplify"
-    | Conjunct _ => "conjunct"
-    | Specialize _ => "specialize"
-    | Skolemize _ => "skolemize"
-    | Clausify _ => "clausify";
+      Axiom _ => "Axiom"
+    | Definition _ => "Definition"
+    | Simplify _ => "Simplify"
+    | Conjunct _ => "Conjunct"
+    | Specialize _ => "Specialize"
+    | Skolemize _ => "Skolemize"
+    | Clausify _ => "Clausify";
 
 val ppInference = Print.ppMap toStringInference Print.ppString;
 
@@ -1211,10 +1211,23 @@ val initialCnf = ConsistentCnf simplifyEmpty;
 local
   fun def_cnf_inconsistent th =
       let
-        val cls = [(LiteralSet.empty, Clausify th)]
+        val cls = [(LiteralSet.empty,th)]
       in
         (cls,InconsistentCnf)
       end;
+
+  fun def_cnf_clause inf (fm,acc) =
+      let
+        val cl = toClause fm
+        val th = Thm (fm,inf)
+      in
+        (cl,th) :: acc
+      end
+(*MetisDebug
+      handle Error err =>
+        (Print.trace pp "Normalize.addCnf.def_cnf_clause: fm" fm;
+         raise Bug ("Normalize.addCnf.def_cnf_clause: " ^ err));
+*)
 
   fun def_cnf cls simp ths =
       case ths of
@@ -1256,19 +1269,21 @@ local
           let
             val simp = simplifyAdd simp th
 
-            fun add (f,l) =
-                (toClause f, Clausify th) :: l
-(*MetisDebug
-                handle Error err =>
-                  (Print.trace pp "Normalize.addCnf.def_cnf_formula: f" f;
-                   raise Bug ("Normalize.addCnf.def_cnf_formula: " ^ err))
-*)
+            val fm = basicCnf fm
+
+            val inf = Clausify th
           in
-            case basicCnf fm of
+            case fm of
               True => def_cnf cls simp ths
-            | False => def_cnf_inconsistent th
-            | And (_,_,s) => def_cnf (Set.foldl add cls s) simp ths
-            | fm => def_cnf (add (fm,cls)) simp ths
+            | False => def_cnf_inconsistent (Thm (fm,inf))
+            | And (_,_,s) =>
+              let
+                val inf = Conjunct (Thm (fm,inf))
+                val cls = Set.foldl (def_cnf_clause inf) cls s
+              in
+                def_cnf cls simp ths
+              end
+            | fm => def_cnf (def_cnf_clause inf (fm,cls)) simp ths
           end;
 in
   fun addCnf th cnf =

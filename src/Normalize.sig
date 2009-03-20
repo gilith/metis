@@ -46,9 +46,9 @@ type cnf
 
 val initialCnf : cnf
 
-val addCnf : thm -> cnf -> (Thm.clause * inference) list * cnf
+val addCnf : thm -> cnf -> (Thm.clause * thm) list * cnf
 
-val proveCnf : thm list -> (Thm.clause * inference) list
+val proveCnf : thm list -> (Thm.clause * thm) list
 
 val cnf : Formula.formula -> Thm.clause list
 
