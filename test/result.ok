@@ -191,26 +191,25 @@ END OF PROOF
 
 START OF PROOF
 (0) |- $x = $x  [Refl $x]
-(1) |- ~($x0 = $x1) \/ $x0 = $x1  [Assume $x0 = $x1]
-(2) |- ~($x0 = $y0) \/ ~($y0 = $x1) \/ $x0 = $x1
+(1) |- ~($x0 = $y0) \/ ~($y0 = $x1) \/ $x0 = $x1
     [Equality {lit = ~($x0 = $x1), path = [0], res = $y0}]
-(3) |- ~($x1 = $y1) \/ ~($y0 = $y1) \/ $y0 = $x1
+(2) |- ~($x1 = $y1) \/ ~($y0 = $y1) \/ $y0 = $x1
     [Equality {lit = ~($y0 = $x1), path = [1], res = $y1}]
-(4) |- ~($x0 = $y0) \/ ~($x1 = $y1) \/ ~($y0 = $y1) \/ $x0 = $x1
-    [Resolve {res = $y0 = $x1, pos = (3), neg = (2)}]
-(5) |- ~($x = $x) \/ ~($x = $y) \/ ~($z = $y) \/ $x = $z
+(3) |- ~($x0 = $y0) \/ ~($x1 = $y1) \/ ~($y0 = $y1) \/ $x0 = $x1
+    [Resolve {res = $y0 = $x1, pos = (2), neg = (1)}]
+(4) |- ~($x = $x) \/ ~($x = $y) \/ ~($z = $y) \/ $x = $z
     [Subst
-       {sub = <[x0 |-> $x, x1 |-> $z, y0 |-> $x, y1 |-> $y]>, thm = (4)}]
-(6) |- ~($x = $y) \/ ~($z = $y) \/ $x = $z
-    [Resolve {res = $x = $x, pos = (0), neg = (5)}]
-(7) |- ~($x = $x) \/ ~($x = $y) \/ $y = $x
+       {sub = <[x0 |-> $x, x1 |-> $z, y0 |-> $x, y1 |-> $y]>, thm = (3)}]
+(5) |- ~($x = $y) \/ ~($z = $y) \/ $x = $z
+    [Resolve {res = $x = $x, pos = (0), neg = (4)}]
+(6) |- ~($x = $x) \/ ~($x = $y) \/ $y = $x
     [Equality {lit = $x = $x, path = [0], res = $y}]
-(8) |- ~($x = $y) \/ $y = $x
-    [Resolve {res = $x = $x, pos = (0), neg = (7)}]
-(9) |- ~($y = $z) \/ $z = $y
-    [Subst {sub = <[x |-> $y, y |-> $z]>, thm = (8)}]
-(10) |- ~($x = $y) \/ ~($y = $z) \/ $x = $z
-     [Resolve {res = $z = $y, pos = (9), neg = (6)}]
+(7) |- ~($x = $y) \/ $y = $x
+    [Resolve {res = $x = $x, pos = (0), neg = (6)}]
+(8) |- ~($y = $z) \/ $z = $y
+    [Subst {sub = <[x |-> $y, y |-> $z]>, thm = (7)}]
+(9) |- ~($x = $y) \/ ~($y = $z) \/ $x = $z
+    [Resolve {res = $z = $y, pos = (8), neg = (5)}]
 END OF PROOF
 
 START OF PROOF

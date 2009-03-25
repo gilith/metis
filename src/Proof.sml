@@ -353,38 +353,64 @@ end;
 (* ------------------------------------------------------------------------- *)
 
 local
-  fun thmCompare (th1,th2) =
-      LiteralSet.compare (Thm.clause th1, Thm.clause th2);
+  val emptyThms : Thm.thm LiteralSetMap.map = LiteralSetMap.new ();
 
-  fun buildProof (th,(m,l)) =
-      if Map.inDomain th m then (m,l)
-      else
-        let
-          val (_,deps) = Thm.inference th
-          val (m,l) = foldl buildProof (m,l) deps
-        in
-          if Map.inDomain th m then (m,l)
-          else
-            let
-              val l = (th, thmToInference th) :: l
-            in
-              (Map.insert m (th,l), l)
-            end
-        end;
+  fun addThms (th,ths) =
+      let
+        val cl = Thm.clause th
+      in
+        if LiteralSetMap.inDomain cl ths then ths
+        else
+          let
+            val (_,pars) = Thm.inference th
+            val ths = List.foldl addThms ths pars
+          in
+            if LiteralSetMap.inDomain cl ths then ths
+            else LiteralSetMap.insert ths (cl,th)
+          end
+      end;
+
+  fun mkThms th = addThms (th,emptyThms);
+
+  fun addProof (th,(ths,acc)) =
+      let
+        val cl = Thm.clause th
+      in
+        case LiteralSetMap.peek ths cl of
+          NONE => (ths,acc)
+        | SOME th =>
+          let
+            val (_,pars) = Thm.inference th
+            val (ths,acc) = List.foldl addProof (ths,acc) pars
+            val ths = LiteralSetMap.delete ths cl
+            val acc = (th, thmToInference th) :: acc
+          in
+            (ths,acc)
+          end
+      end;
+
+  fun mkProof ths th =
+      let
+        val (ths,acc) = addProof (th,(ths,[]))
+(*MetisTrace4
+        val () = Print.trace Print.ppInt "Proof.proof: unnecessary clauses" (LiteralSetMap.size ths)
+*)
+      in
+        rev acc
+      end;
 in
   fun proof th =
       let
 (*MetisTrace3
         val () = Print.trace Thm.pp "Proof.proof: th" th
 *)
-        val (m,_) = buildProof (th, (Map.new thmCompare, []))
+        val ths = mkThms th
+        val infs = mkProof ths th
 (*MetisTrace3
-        val () = Print.trace Print.ppInt "Proof.proof: size" (Map.size m)
+        val () = Print.trace Print.ppInt "Proof.proof: size" (length infs)
 *)
       in
-        case Map.peek m th of
-          SOME l => rev l
-        | NONE => raise Bug "Proof.proof"
+        infs
       end;
 end;
 
