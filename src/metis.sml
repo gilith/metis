@@ -83,7 +83,7 @@ end;
 
 val VERSION = "2.2";
 
-val versionString = "Metis "^VERSION^" (release 20090320)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20090325)"^"\n";
 
 val programOptions =
     {name = PROGRAM,

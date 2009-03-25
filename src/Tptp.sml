@@ -874,7 +874,8 @@ in
              Print.ppBracket "[" "]" (ppStrip mapping) inference,
              Print.addString ",",
              Print.addBreak 1,
-             Print.ppList ppParent parents]
+             Print.ppList ppParent parents,
+             Print.addString ")"]
         end
       | NormalizeFormulaSource {inference,parents} =>
         let
@@ -891,7 +892,8 @@ in
              Print.ppBracket "[" "]" (ppNormalize mapping) inference,
              Print.addString ",",
              Print.addBreak 1,
-             Print.ppList ppParent parents]
+             Print.ppList ppParent parents,
+             Print.addString ")"]
         end
       | ProofFormulaSource {inference,parents} =>
         let
@@ -923,7 +925,8 @@ in
                     Print.addString name,
                     Print.addString ",",
                     Print.addBreak 1,
-                    ppProof mapping inference]]
+                    ppProof mapping inference,
+                    Print.addString "]"]]
               else
                 [Print.addString name,
                  Print.addString ",",
