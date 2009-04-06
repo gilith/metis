@@ -699,7 +699,7 @@ in
       in
         case Stream.toList terms of
           [tm] => tm
-        | _ => raise Error "Syntax.stringToTerm"
+        | _ => raise Error "Term.fromString"
       end;
 end;
 
