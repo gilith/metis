@@ -160,7 +160,13 @@ val noClauseSources : clauseSources
 
 type comments = string list
 
-type problem = {comments : comments, formulas : formula list}
+type includes = string list
+
+datatype problem =
+    Problem of
+      {comments : comments,
+       includes : includes,
+       formulas : formula list}
 
 val hasCnfConjecture : problem -> bool
 val hasFofConjecture : problem -> bool
@@ -170,6 +176,7 @@ val freeVars : problem -> NameSet.set
 
 val mkProblem :
     {comments : comments,
+     includes : includes,
      names : clauseNames,
      roles : clauseRoles,
      problem : Problem.problem} -> problem

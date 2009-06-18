@@ -60,6 +60,8 @@ fun outputProblem outputDir {name,comments,goal} =
           (if null comment_footer then [] else "" :: comment_footer) @
           [comment_bar]
 
+      val includes = []
+
       val formulas =
           let
             val name = "goal"
@@ -74,7 +76,11 @@ fun outputProblem outputDir {name,comments,goal} =
                 source = source}]
           end
 
-      val problem = {comments = comments, formulas = formulas}
+      val problem =
+          Tptp.Problem
+            {comments = comments,
+             includes = includes,
+             formulas = formulas}
 
       val mapping = Tptp.defaultTptpMapping
 

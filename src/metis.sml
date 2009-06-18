@@ -178,12 +178,20 @@ local
 
     fun display_proof_body problem proofs =
         let
+          val comments = []
+
+          val includes = []
+
           val formulas =
               Tptp.fromProof
                 {problem = problem,
                  proofs = proofs}
 
-          val proof = {comments = [], formulas = formulas}
+          val proof =
+              Tptp.Problem
+                {comments = comments,
+                 includes = includes,
+                 formulas = formulas}
 
           val mapping = Tptp.defaultTptpMapping
           val mapping = Tptp.addVarSetTptpMapping mapping (Tptp.freeVars proof)
@@ -221,6 +229,7 @@ local
                 val problem =
                     Tptp.mkProblem
                       {comments = ["Saturation clause set for " ^ filename],
+                       includes = [],
                        names = Tptp.noClauseNames,
                        roles = Tptp.noClauseRoles,
                        problem = {axioms = [],
@@ -256,6 +265,7 @@ local
               val problem =
                   Tptp.mkProblem
                     {comments = ["CNF clauses for " ^ filename],
+                     includes = [],
                      names = Tptp.noClauseNames,
                      roles = Tptp.noClauseRoles,
                      problem = cls}
