@@ -34,6 +34,8 @@ val QUIET = ref false;
 
 val TEST = ref false;
 
+val TPTP : string option ref = ref NONE;
+
 val ITEMS = ["name","goal","clauses","size","category","proof","saturation"];
 
 val extended_items = "all" :: ITEMS;
@@ -73,6 +75,10 @@ in
       description = "hide ITEM (see below for list)",
       processor =
         beginOpt (enumOpt extended_items endOpt) (fn _ => fn s => hide s)},
+     {switches = ["--tptp"], arguments = ["DIR"],
+      description = "specify the TPTP installation directory",
+      processor =
+        beginOpt (stringOpt endOpt) (fn _ => fn s => TPTP := SOME s)},
      {switches = ["-q","--quiet"], arguments = [],
       description = "Run quietly; indicate provability with return value",
       processor = beginOpt endOpt (fn _ => QUIET := true)},
@@ -83,7 +89,7 @@ end;
 
 val VERSION = "2.2";
 
-val versionString = "Metis "^VERSION^" (release 20090325)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20090618)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -104,6 +110,27 @@ val (opts,work) =
     Options.processOptions programOptions (CommandLine.arguments ());
 
 val () = if null work then usage "no input problem files" else ();
+
+(* ------------------------------------------------------------------------- *)
+(* Set the TPTP variable.                                                    *)
+(* ------------------------------------------------------------------------- *)
+
+val mkTptpFilename =
+    let
+      val tptp =
+          case !TPTP of
+            SOME s => SOME s
+          | NONE => OS.Process.getEnv "TPTP"
+    in
+      case tptp of
+        NONE => I
+      | SOME tptp =>
+        let
+          val tptp = stripSuffix (equal #"/") tptp
+        in
+          fn s => tptp ^ "/" ^ s
+        end
+    end;
 
 (* ------------------------------------------------------------------------- *)
 (* The core application.                                                     *)
@@ -289,6 +316,50 @@ local
         ()
       end;
 
+  fun readIncludes mapping seen formulas includes =
+      case includes of
+        [] => formulas
+      | inc :: includes =>
+        if StringSet.member inc seen then
+          readIncludes mapping seen formulas includes
+        else
+          let
+            val seen = StringSet.add seen inc
+
+            val filename = mkTptpFilename inc
+
+            val Tptp.Problem {includes = i, formulas = f, ...} =
+                Tptp.read {filename = filename, mapping = mapping}
+
+            val formulas = f @ formulas
+
+            val includes = List.revAppend (i,includes)
+          in
+            readIncludes mapping seen formulas includes
+          end;
+
+  fun read mapping filename =
+      let
+        val problem = Tptp.read {filename = filename, mapping = mapping}
+
+        val Tptp.Problem {comments,includes,formulas} = problem
+      in
+        if null includes then problem
+        else
+          let
+            val seen = StringSet.empty
+
+            val includes = rev includes
+
+            val formulas = readIncludes mapping seen formulas includes
+          in
+            Tptp.Problem
+              {comments = comments,
+               includes = [],
+               formulas = formulas}
+          end
+      end;
+
   fun refute {axioms,conjecture} =
       let
         val axioms = map Thm.axiom axioms
@@ -355,7 +426,7 @@ in
       let
         val () = display_sep ()
         val () = display_name filename
-        val tptp = Tptp.read {filename = filename, mapping = mapping}
+        val tptp = read mapping filename
         val () = display_goal tptp
         val problems = Tptp.normalize tptp
       in
