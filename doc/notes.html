@@ -59,21 +59,76 @@ Cree, Ojibway or Saulteaux women.</li>
 
 <p>Metis began life in August 2001 as an intended replacement for the
 <tt>MESON_TAC</tt> proof tactic in HOL4. The first release of Metis in
-HOL (called <tt>METIS_TAC</tt>) occurred in July 2002 featuring a
+HOL4 (called <tt>METIS_TAC</tt>) occurred in July 2002 featuring a
 robust model elimination calculus. By November 2002 Metis also
 implemented the ordered paramodulation calculus, and shortly after
-gained some users in the form of HOL developers wishing to speed up
-their theory development.</p>
+gained some users in the form of HOL4 users wishing to speed up their
+theory development.</p>
 
 <p>September 2002 marked the appearance of the Metis standalone
 program, compiled to native code using the MLton compiler. This
 version of Metis is used for profiling the code and investigating
-performance on harder problems from the TPTP archive. This line of
-research led to an implementation of inherited term ordering
-constraints using the Omega procedure to check consistency.</p>
+performance on harder problems from the TPTP archive, and from 2007
+has been entered in the annual CASC competition for automatic theorem
+provers.</p>
 
-<p>As of 2008, the latest release of Metis comprises around 13,000
+<p>As of 2009, the latest release of Metis comprises around 13,000
 non-comment lines of SML code.</p>
+
+<h3>Users</h3>
+
+<ul>
+
+<li><a href="http://www.cl.cam.ac.uk/~lp15/">Larry Paulson</a>
+
+and
+
+<a href="http://www.doc.ic.ac.uk/~kws/">Kong Woei Susanto</a>
+
+used Metis to reconstruct proofs in an
+
+<a href="http://isabelle.in.tum.de/">Isabelle</a>
+
+tactic called
+
+<a href="http://isabelle.in.tum.de/sledgehammer.html"><tt>sledgehammer</tt></a>.</li>
+
+<li><a href="http://www.cl.cam.ac.uk/~lp15/">Larry Paulson</a>
+
+and
+
+<a href="http://www.cl.cam.ac.uk/~ba265/">Behzad Akbarpour</a>
+
+modified Metis to be the core inference engine of
+
+<a href="http://www.cl.cam.ac.uk/~lp15/papers/Arith/index.html">MetiTarski</a>.</li>
+
+<li><a href="http://www.cl.cam.ac.uk/~lp15/">Larry Paulson</a>
+
+and
+
+<a href="http://www4.informatik.tu-muenchen.de/~wenzelm/">Markus Wenzel</a>
+
+integrated Metis into the
+
+<a href="http://isabelle.in.tum.de/">Isabelle theorem prover</a>
+
+as a tactic called <tt>metis</tt>.</li>
+
+<li><a href="http://www.gilith.com">Joe Hurd</a>
+
+used Metis as a platform to carry out a performance comparison of
+different inheritance schemes for term ordering constraints.</li>
+
+<li><a href="http://www.gilith.com">Joe Hurd</a>
+
+integrated Metis into the
+
+<a href="http://hol.sourceforge.net/">HOL4 theorem prover</a>
+
+as a tactic called <tt>METIS_TAC</tt>.</li>
+
+</ul>
 
 <h3>Author</h3>
 
@@ -91,11 +146,7 @@ to support his
 
 <li><a href="http://www.cl.cam.ac.uk/~lp15/">Larry Paulson</a>
 
-modified Metis to be the core inference engine of
-
-<a href="http://www.cl.cam.ac.uk/~lp15/papers/Arith/index.html">MetiTarski</a>,
-
-which provided many useful bug reports and suggestions for improvement.</li>
+provided many useful bug reports and suggestions for improvement.</li>
 
 <li><a href="http://www.cs.miami.edu/~geoff/">Geoff Sutcliffe</a>
 
