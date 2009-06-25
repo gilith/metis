@@ -89,7 +89,7 @@ end;
 
 val VERSION = "2.2";
 
-val versionString = "Metis "^VERSION^" (release 20090618)"^"\n";
+val versionString = "Metis "^VERSION^" (release 20090625)"^"\n";
 
 val programOptions =
     {name = PROGRAM,
@@ -115,7 +115,7 @@ val () = if null work then usage "no input problem files" else ();
 (* Set the TPTP variable.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
-val mkTptpFilename =
+fun mkTptpFilename filename =
     let
       val tptp =
           case !TPTP of
@@ -123,12 +123,12 @@ val mkTptpFilename =
           | NONE => OS.Process.getEnv "TPTP"
     in
       case tptp of
-        NONE => I
+        NONE => filename
       | SOME tptp =>
         let
           val tptp = stripSuffix (equal #"/") tptp
         in
-          fn s => tptp ^ "/" ^ s
+          tptp ^ "/" ^ filename
         end
     end;
 
