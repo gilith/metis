@@ -1,7 +1,7 @@
 (* ========================================================================= *)
 (* METIS FIRST ORDER PROVER                                                  *)
 (*                                                                           *)
-(* Copyright (c) 2001-2009 Joe Hurd                                          *)
+(* Copyright (c) 2001 Joe Hurd                                               *)
 (*                                                                           *)
 (* Metis is free software; you can redistribute it and/or modify             *)
 (* it under the terms of the GNU General Public License as published by      *)
@@ -21,10 +21,14 @@
 open Useful;
 
 (* ------------------------------------------------------------------------- *)
-(* The program name.                                                         *)
+(* The program name and version.                                             *)
 (* ------------------------------------------------------------------------- *)
 
 val PROGRAM = "metis";
+
+val VERSION = "2.2";
+
+val versionString = PROGRAM^" "^VERSION^" (release 20090626)"^"\n";
 
 (* ------------------------------------------------------------------------- *)
 (* Program options.                                                          *)
@@ -63,6 +67,10 @@ fun show "all" = show_set true
 fun hide "all" = show_set false
   | hide s = case show_ref s of r => r := false;
 
+(* ------------------------------------------------------------------------- *)
+(* Process command line arguments and environment variables.                 *)
+(* ------------------------------------------------------------------------- *)
+
 local
   open Useful Options;
 in
@@ -87,10 +95,6 @@ in
       processor = beginOpt endOpt (fn _ => TEST := true)}];
 end;
 
-val VERSION = "2.2";
-
-val versionString = "Metis "^VERSION^" (release 20090625)"^"\n";
-
 val programOptions =
     {name = PROGRAM,
      version = versionString,
@@ -106,30 +110,18 @@ fun succeed () = Options.succeed programOptions;
 fun fail mesg = Options.fail programOptions mesg;
 fun usage mesg = Options.usage programOptions mesg;
 
-val (opts,work) =
-    Options.processOptions programOptions (CommandLine.arguments ());
-
-val () = if null work then usage "no input problem files" else ();
-
-(* ------------------------------------------------------------------------- *)
-(* Set the TPTP variable.                                                    *)
-(* ------------------------------------------------------------------------- *)
-
-fun mkTptpFilename filename =
+fun processOptions () =
     let
-      val tptp =
+      val args = CommandLine.arguments ()
+
+      val (_,work) = Options.processOptions programOptions args
+
+      val () =
           case !TPTP of
-            SOME s => SOME s
-          | NONE => OS.Process.getEnv "TPTP"
+            SOME _ => ()
+          | NONE => TPTP := OS.Process.getEnv "TPTP"
     in
-      case tptp of
-        NONE => filename
-      | SOME tptp =>
-        let
-          val tptp = stripSuffix (equal #"/") tptp
-        in
-          tptp ^ "/" ^ filename
-        end
+      work
     end;
 
 (* ------------------------------------------------------------------------- *)
@@ -316,6 +308,16 @@ local
         ()
       end;
 
+  fun mkTptpFilename filename =
+      case !TPTP of
+        NONE => filename
+      | SOME tptp =>
+        let
+          val tptp = stripSuffix (equal #"/") tptp
+        in
+          tptp ^ "/" ^ filename
+        end;
+
   fun readIncludes mapping seen formulas includes =
       case includes of
         [] => formulas
@@ -448,6 +450,10 @@ val () =
 let
   (*BasicDebug val () = print "Running in basic DEBUG mode.\n" *)
   (*MetisDebug val () = print "Running in metis DEBUG mode.\n" *)
+
+  val work = processOptions ()
+
+  val () = if null work then usage "no input problem files" else ()
 
   val mapping = Tptp.defaultTptpMapping
 
