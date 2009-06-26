@@ -711,7 +711,7 @@ p a /\ q a /\ q b /\ r b /\ (~p c \/ c = a) /\ (~r c \/ c = b) /\
  comments = ["The Melham problem after an inverse skolemization step."],
  goal = `
 (!x y. g x = g y ==> f x = f y) ==> !y. ?w. !x. y = g x ==> w = f x`},
- 
+
 {name = "CONGRUENCE_CLOSURE_EXAMPLE",
  comments = ["The example always given for congruence closure."],
  goal = `
@@ -1508,7 +1508,7 @@ SUC n * b = q * (SUC n * a) /\ 0 < SUC n /\ ~(b = q * a) ==> F`},
 (!x y z. divides x y \/ ~divides x z \/ ~divides x (z + y)) ==>
 ~(x + z <= x) /\ divides c (d * SUC x) /\ divides c (d * SUC (x + z)) /\
 ~divides c (d * z) ==> F`},
- 
+
 {name = "gcd_20",
  comments = [],
  goal = `
