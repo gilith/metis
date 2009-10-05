@@ -632,14 +632,15 @@ local
 
         fun varName bv =
             some (vName bv) ||
-            (exact "$" ++ some possibleVarName) >> (fn (_,s) => s)
+            (some (Useful.equal "$") ++ some possibleVarName) >> snd
 
         fun fName bv s =
             not (StringSet.member s specialTokens) andalso not (vName bv s)
 
         fun functionName bv =
             some (fName bv) ||
-            (exact "(" ++ any ++ exact ")") >> (fn (_,(s,_)) => s)
+            (some (Useful.equal "(") ++ any ++ some (Useful.equal ")")) >>
+            (fn (_,(s,_)) => s)
 
         fun basic bv tokens =
             let
@@ -649,7 +650,7 @@ local
                   functionName bv >> (fn f => Fn (Name.fromString f, []))
 
               fun bracket (ab,a,b) =
-                  (exact a ++ term bv ++ exact b) >>
+                  (some (Useful.equal a) ++ term bv ++ some (Useful.equal b)) >>
                   (fn (_,(tm,_)) =>
                       if ab = "()" then tm else Fn (Name.fromString ab, [tm]))
 
@@ -658,8 +659,9 @@ local
                     fun bind (v,t) =
                         Fn (Name.fromString q, [Var (Name.fromString v), t])
                   in
-                    (exact q ++ atLeastOne (some possibleVarName) ++
-                     exact ".") >>++
+                    (some (Useful.equal q) ++
+                     atLeastOne (some possibleVarName) ++
+                     some (Useful.equal ".")) >>++
                     (fn (_,(vs,_)) =>
                         term (StringSet.addList bv vs) >>
                         (fn body => foldr bind body vs))
@@ -673,7 +675,7 @@ local
 
         and molecule bv tokens =
             let
-              val negations = many (exact neg) >> length
+              val negations = many (some (Useful.equal neg)) >> length
 
               val function =
                   (functionName bv ++ many (basic bv)) >>

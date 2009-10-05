@@ -620,18 +620,18 @@ local
   val quoteToken =
       let
         val escapeParser =
-            exact #"'" >> singleton ||
-            exact #"\\" >> singleton
+            some (equal #"'") >> singleton ||
+            some (equal #"\\") >> singleton
 
         fun stopOn #"'" = true
           | stopOn #"\n" = true
           | stopOn _ = false
 
         val quotedParser =
-            exact #"\\" ++ escapeParser >> op:: ||
+            some (equal #"\\") ++ escapeParser >> op:: ||
             some (not o stopOn) >> singleton
       in
-        exact #"'" ++ many quotedParser ++ exact #"'" >>
+        exactChar #"'" ++ many quotedParser ++ exactChar #"'" >>
         (fn (_,(l,_)) => Quote (implode (List.concat l)))
       end;
 
@@ -1513,11 +1513,11 @@ local
   val filenameParser = maybe (fn Quote s => SOME s | _ => NONE);
 in
   val includeParser =
-      (exact (AlphaNum "include") ++
-       exact (Punct #"(") ++
+      (some (equal (AlphaNum "include")) ++
+       some (equal (Punct #"(")) ++
        filenameParser ++
-       exact (Punct #")") ++
-       exact (Punct #".")) >>
+       some (equal (Punct #")")) ++
+       some (equal (Punct #"."))) >>
       (fn (_,(_,(f,(_,_)))) => f);
 end;
 
