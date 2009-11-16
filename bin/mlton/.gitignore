@@ -1,0 +1,7 @@
+*.mlb
+*.sml
+*.ssa
+*.ssa2
+metis
+problems2tptp
+selftest

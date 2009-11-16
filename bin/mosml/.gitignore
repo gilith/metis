@@ -1,0 +1,7 @@
+*.sml
+*.ui
+*.uo
+a.out
+Makefile.src
+metis
+problems2tptp

@@ -1,0 +1,5 @@
+*.sml
+*.o
+metis
+problems2tptp
+selftest
