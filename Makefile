@@ -16,12 +16,13 @@ default: mosml
 # Cleaning temporary files.
 ###############################################################################
 
-TEMP = $(MOSML_TARGETS) \
-       bin/mosml/*.sml bin/mosml/*.ui bin/mosml/*.uo bin/mosml/a.out \
-       $(MLTON_TARGETS) \
-       bin/mlton/*.sml bin/mlton/*.mlb \
-       $(POLYML_TARGETS) \
-       bin/polyml/*.sml bin/polyml/*.o
+TEMP = \
+  $(MOSML_TARGETS) \
+  bin/mosml/*.sml bin/mosml/*.ui bin/mosml/*.uo bin/mosml/a.out \
+  $(MLTON_TARGETS) \
+  bin/mlton/*.sml bin/mlton/*.mlb \
+  $(POLYML_TARGETS) \
+  bin/polyml/*.sml bin/polyml/*.o
 
 .PHONY: clean
 clean:

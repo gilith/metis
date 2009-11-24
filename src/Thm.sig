@@ -1,6 +1,6 @@
 (* ========================================================================= *)
-(* A LOGICAL KERNEL FOR FIRST ORDER CLAUSES                                  *)
-(* Copyright (c) 2001-2004 Joe Hurd, distributed under the GNU GPL version 2 *)
+(* A LOGICAL KERNEL FOR FIRST ORDER CLAUSAL THEOREMS                         *)
+(* Copyright (c) 2001 Joe Hurd, distributed under the GNU GPL version 2      *)
 (* ========================================================================= *)
 
 signature Thm =
@@ -8,6 +8,12 @@ sig
 
 (* ------------------------------------------------------------------------- *)
 (* An abstract type of first order logic theorems.                           *)
+(* ------------------------------------------------------------------------- *)
+
+type thm
+
+(* ------------------------------------------------------------------------- *)
+(* Theorem destructors.                                                      *)
 (* ------------------------------------------------------------------------- *)
 
 type clause = LiteralSet.set
@@ -21,13 +27,7 @@ datatype inferenceType =
   | Refl
   | Equality
 
-type thm
-
 type inference = inferenceType * thm list
-
-(* ------------------------------------------------------------------------- *)
-(* Theorem destructors.                                                      *)
-(* ------------------------------------------------------------------------- *)
 
 val clause : thm -> clause
 

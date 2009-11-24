@@ -1,5 +1,5 @@
-.cvsignore
-CVS
+.git
+.gitignore
 metis/cnf_*.tptp
 metis/graph.png
 metis/data/problems/tptp-cnf
@@ -20,5 +20,6 @@ metis/scripts/mosml_dep
 metis/scripts/release_stamp
 metis/scripts/summarize
 metis/scripts/unproved
+metis/src/benchmark.sml
 metis/std-log
 metis/tptp-log

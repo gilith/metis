@@ -1,6 +1,6 @@
 (* ========================================================================= *)
-(* A LOGICAL KERNEL FOR FIRST ORDER CLAUSES                                  *)
-(* Copyright (c) 2001-2004 Joe Hurd, distributed under the GNU GPL version 2 *)
+(* A LOGICAL KERNEL FOR FIRST ORDER CLAUSAL THEOREMS                         *)
+(* Copyright (c) 2001 Joe Hurd, distributed under the GNU GPL version 2      *)
 (* ========================================================================= *)
 
 structure Thm :> Thm =
