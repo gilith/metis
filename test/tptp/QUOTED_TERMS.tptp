@@ -14,4 +14,4 @@ fof(c,axiom,p('quoted function'(a))).
 
 fof(d,axiom,p('quoted constant')).
 
-fof(e,conjecture,p(a)).
+fof(e,conjecture,p('quoted constant')).

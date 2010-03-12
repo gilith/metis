@@ -428,17 +428,17 @@ parsing SYSTEM_TERMS.tptp... ok
 six = $$times_int 2 3 ==> six = 6
 
 parsing QUOTED_TERMS.tptp... ok
-p a /\ (!X. 'quoted predicate' X) /\ 'quoted proposition' /\
-p ('quoted function' a) /\ p 'quoted constant' ==> p a
+p a /\ (!X. quoted predicate X) /\ quoted proposition /\
+p (quoted function a) /\ p quoted constant ==> p quoted constant
 
 parsing QUOTED_TERMS_IDENTITY.tptp... ok
 p ==> p
 
 parsing QUOTED_TERMS_DIFFERENT.tptp... ok
-p '1' ==> p 1
+p 1 ==> p 1
 
 parsing QUOTED_TERMS_SPECIAL.tptp... ok
-$times_int 2 3 = 6 ==> '$times_int' 2 3 = 6
+$times_int 2 3 = 6 ==> $times_int 2 3 = 6
 
 parsing RENAMING_VARIABLES.tptp... ok
 !V_X Y. ?Z. p V_X \/ p Y ==> p Z

@@ -85,42 +85,47 @@ fun variant avoid s =
 (* ------------------------------------------------------------------------- *)
 
 local
+  fun nonEmptyPred p l =
+      case l of
+        [] => false
+      | c :: cs => p (c,cs);
+
+  fun existsPred l x = List.exists (fn p => p x) l;
+
   fun isTptpChar #"_" = true
     | isTptpChar c = Char.isAlphaNum c;
 
-  val isTptpInitialChar = Char.isAlpha;
+  fun isTptpName l s = nonEmptyPred (existsPred l) (explode s);
 
-  fun explodeTptp s =
-      let
-        val l = explode s
-        val l = List.filter isTptpChar l
-        val l = dropWhile (not o isTptpInitialChar) l
-      in
-        l
-      end;
+  fun isRegular (c,cs) =
+      Char.isLower c andalso List.all isTptpChar cs;
 
-  fun mkTptpName isLower emp s =
+  fun isNumber (c,cs) =
+      Char.isDigit c andalso List.all Char.isDigit cs;
+
+  fun isDefined (c,cs) =
+      c = #"$" andalso nonEmptyPred isRegular cs;
+
+  fun isSystem (c,cs) =
+      c = #"$" andalso nonEmptyPred isDefined cs;
+in
+  fun mkTptpVarName s =
       let
         val s =
-            case explodeTptp s of
-              [] => emp
-            | c :: cs =>
-              let
-                val first = if isLower then Char.toLower else Char.toUpper
-
-                val c = first c
-              in
-                implode (c :: cs)
-              end
+            case List.filter isTptpChar (explode s) of
+              [] => [#"X"]
+            | l as c :: cs =>
+              if Char.isLower c then l
+              else if Char.isUpper c then Char.toLower c :: cs
+              else #"X" :: l
       in
-        s
+        implode s
       end;
-in
-  val mkTptpVarName = mkTptpName false "X"
-  and mkTptpConstName = mkTptpName true "c"
-  and mkTptpFnName = mkTptpName true "f"
-  and mkTptpPropName = mkTptpName true "p"
-  and mkTptpRelName = mkTptpName true "r";
+
+  val isTptpConstName = isTptpName [isRegular,isNumber,isDefined,isSystem]
+  and isTptpFnName = isTptpName [isRegular,isDefined,isSystem]
+  and isTptpPropName = isTptpName [isRegular,isDefined,isSystem]
+  and isTptpRelName = isTptpName [isRegular,isDefined,isSystem];
 end;
 
 (* ------------------------------------------------------------------------- *)
@@ -192,21 +197,31 @@ in
 end;
 
 local
-  fun singleQuote s = "'" ^ s ^ "'";
+  fun escapeChar c =
+      case c of
+        #"\\" => "\\\\"
+      | #"'" => "\\'"
+      | #"\n" => "\\n"
+      | #"\t" => "\\t"
+      | _ => str c;
+
+  val escapeString = String.translate escapeChar;
 in
-  fun getNameToTptp zeroToTptp plusToTptp (NameToTptp mapping) na =
-      case NameArityMap.peek mapping na of
-        SOME s => s
-      | NONE =>
-        let
-          val (n,a) = na
-          val s = Name.toString n
-          val toTptp = if a = 0 then zeroToTptp else plusToTptp
-          val s = if toTptp s = s then s else singleQuote s
-        in
-          s
-        end;
+  fun singleQuote s = "'" ^ escapeString s ^ "'";
 end;
+
+fun getNameToTptp isZeroTptp isPlusTptp (NameToTptp mapping) na =
+    case NameArityMap.peek mapping na of
+      SOME s => s
+    | NONE =>
+      let
+        val (n,a) = na
+        val s = Name.toString n
+        val isTptp = if a = 0 then isZeroTptp else isPlusTptp
+        val s = if isTptp s then s else singleQuote s
+      in
+        s
+      end;
 
 (* ------------------------------------------------------------------------- *)
 (* Mapping from TPTP function and relation names.                            *)
@@ -318,14 +333,14 @@ fun fnToTptp mapping fa =
     let
       val TptpMapping {fnTo,...} = mapping
     in
-      getNameToTptp mkTptpConstName mkTptpFnName fnTo fa
+      getNameToTptp isTptpConstName isTptpFnName fnTo fa
     end;
 
 fun relToTptp mapping ra =
     let
       val TptpMapping {relTo,...} = mapping
     in
-      getNameToTptp mkTptpPropName mkTptpRelName relTo ra
+      getNameToTptp isTptpPropName isTptpRelName relTo ra
     end;
 
 fun varFromTptp (_ : tptpMapping) v = getVarFromTptp v;
@@ -1140,14 +1155,7 @@ local
 
   fun punctParser c = somePunct (equal c) >> K ();
 
-  val quoteParser =
-      let
-        val p = isHdTlString Char.isLower isAlphaNum
-
-        fun q s = if p s then s else "'" ^ s ^ "'"
-      in
-        maybe (fn Quote s => SOME (q s) | _ => NONE)
-      end;
+  val quoteParser = maybe (fn Quote s => SOME s | _ => NONE);
 
   local
     fun f [] = raise Bug "symbolParser"
@@ -1189,13 +1197,12 @@ local
   end;
 
   local
-    fun isConstant s =
-        isHdTlString Char.isLower isAlphaNum s orelse
-        isHdTlString Char.isDigit Char.isDigit s;
+    fun isConstant s = isHdTlString Char.isLower isAlphaNum s;
   in
     val constantParser =
         someAlphaNum isConstant ||
         definedParser ||
+        numberParser ||
         systemParser ||
         quoteParser;
   end;
