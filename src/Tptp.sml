@@ -115,8 +115,8 @@ in
             case List.filter isTptpChar (explode s) of
               [] => [#"X"]
             | l as c :: cs =>
-              if Char.isLower c then l
-              else if Char.isUpper c then Char.toLower c :: cs
+              if Char.isUpper c then l
+              else if Char.isLower c then Char.toUpper c :: cs
               else #"X" :: l
       in
         implode s
