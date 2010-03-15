@@ -76,6 +76,15 @@ val relationLiteral : literal -> Atom.relation option
 val freeVarsLiteral : literal -> NameSet.set
 
 (* ------------------------------------------------------------------------- *)
+(* TPTP formula names.                                                       *)
+(* ------------------------------------------------------------------------- *)
+
+datatype formulaName =
+    FormulaName of string
+
+val ppFormulaName : formulaName Print.pp
+
+(* ------------------------------------------------------------------------- *)
 (* TPTP formula bodies.                                                      *)
 (* ------------------------------------------------------------------------- *)
 
@@ -91,13 +100,13 @@ datatype formulaSource =
     NoFormulaSource
   | StripFormulaSource of
       {inference : string,
-       parents : string list}
+       parents : formulaName list}
   | NormalizeFormulaSource of
       {inference : Normalize.inference,
-       parents : string list}
+       parents : formulaName list}
   | ProofFormulaSource of
       {inference : Proof.inference,
-       parents : string list}
+       parents : formulaName list}
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP formulas.                                                            *)
@@ -105,12 +114,12 @@ datatype formulaSource =
 
 datatype formula =
     Formula of
-      {name : string,
+      {name : formulaName,
        role : role,
        body : formulaBody,
        source : formulaSource}
 
-val nameFormula : formula -> string
+val nameFormula : formula -> formulaName
 
 val roleFormula : formula -> role
 
@@ -135,20 +144,18 @@ val isConjectureFormula : formula -> bool
 (* ------------------------------------------------------------------------- *)
 
 datatype clauseSource =
-    CnfClauseSource of string
+    CnfClauseSource of formulaName
   | FofClauseSource of Normalize.thm
 
 type 'a clauseInfo = 'a LiteralSetMap.map
 
-type clauseNames = string clauseInfo
+type clauseNames = formulaName clauseInfo
 
 type clauseRoles = role clauseInfo
 
 type clauseSources = clauseSource clauseInfo
 
 val noClauseNames : clauseNames
-
-val allClauseNames : clauseNames -> StringSet.set
 
 val noClauseRoles : clauseRoles
 
@@ -183,7 +190,7 @@ val mkProblem :
 
 val normalize :
     problem ->
-    {subgoal : Formula.formula * string list,
+    {subgoal : Formula.formula * formulaName list,
      problem : Problem.problem,
      sources : clauseSources} list
 
@@ -204,7 +211,7 @@ val prove : {filename : string, mapping : tptpMapping} -> bool
 
 val fromProof :
     {problem : problem,
-     proofs : {subgoal : Formula.formula * string list,
+     proofs : {subgoal : Formula.formula * formulaName list,
                sources : clauseSources,
                refutation : Thm.thm} list} -> formula list
 

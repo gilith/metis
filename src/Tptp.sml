@@ -126,6 +126,8 @@ in
   and isTptpFnName = isTptpName [isRegular,isDefined,isSystem]
   and isTptpPropName = isTptpName [isRegular,isDefined,isSystem]
   and isTptpRelName = isTptpName [isRegular,isDefined,isSystem];
+
+  val isTptpFormulaName = isTptpName [isRegular,isNumber];
 end;
 
 (* ------------------------------------------------------------------------- *)
@@ -210,17 +212,18 @@ in
   fun singleQuote s = "'" ^ escapeString s ^ "'";
 end;
 
-fun getNameToTptp isZeroTptp isPlusTptp (NameToTptp mapping) na =
+fun getNameToTptp isTptp s = if isTptp s then s else singleQuote s;
+
+fun getNameArityToTptp isZeroTptp isPlusTptp (NameToTptp mapping) na =
     case NameArityMap.peek mapping na of
       SOME s => s
     | NONE =>
       let
         val (n,a) = na
-        val s = Name.toString n
         val isTptp = if a = 0 then isZeroTptp else isPlusTptp
-        val s = if isTptp s then s else singleQuote s
+        val s = Name.toString n
       in
-        s
+        getNameToTptp isTptp s
       end;
 
 (* ------------------------------------------------------------------------- *)
@@ -333,14 +336,14 @@ fun fnToTptp mapping fa =
     let
       val TptpMapping {fnTo,...} = mapping
     in
-      getNameToTptp isTptpConstName isTptpFnName fnTo fa
+      getNameArityToTptp isTptpConstName isTptpFnName fnTo fa
     end;
 
 fun relToTptp mapping ra =
     let
       val TptpMapping {relTo,...} = mapping
     in
-      getNameToTptp isTptpPropName isTptpRelName relTo ra
+      getNameArityToTptp isTptpPropName isTptpRelName relTo ra
     end;
 
 fun varFromTptp (_ : tptpMapping) v = getVarFromTptp v;
@@ -702,6 +705,31 @@ fun clauseFromThm th = clauseFromLiteralSet (Thm.clause th);
 fun ppClause mapping = Print.ppMap clauseToFormula (ppFof mapping);
 
 (* ------------------------------------------------------------------------- *)
+(* TPTP formula names.                                                       *)
+(* ------------------------------------------------------------------------- *)
+
+datatype formulaName = FormulaName of string;
+
+datatype formulaNameSet = FormulaNameSet of formulaName Set.set;
+
+fun compareFormulaName (FormulaName s1, FormulaName s2) =
+    String.compare (s1,s2);
+
+fun toTptpFormulaName (FormulaName s) =
+    getNameToTptp isTptpFormulaName s;
+
+val ppFormulaName = Print.ppMap toTptpFormulaName Print.ppString;
+
+val emptyFormulaNameSet = FormulaNameSet (Set.empty compareFormulaName);
+
+fun memberFormulaNameSet n (FormulaNameSet s) = Set.member n s;
+
+fun addFormulaNameSet (FormulaNameSet s) n = FormulaNameSet (Set.add s n);
+
+fun addListFormulaNameSet (FormulaNameSet s) l =
+    FormulaNameSet (Set.addList s l);
+
+(* ------------------------------------------------------------------------- *)
 (* TPTP formula bodies.                                                      *)
 (* ------------------------------------------------------------------------- *)
 
@@ -741,7 +769,7 @@ fun formulaBodyFreeVars body =
 fun ppFormulaBody mapping body =
     case body of
       CnfFormulaBody cl => ppClause mapping cl
-    | FofFormulaBody fm => ppFof mapping fm;
+    | FofFormulaBody fm => ppFof mapping (Formula.generalize fm);
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP formula sources.                                                     *)
@@ -751,13 +779,13 @@ datatype formulaSource =
     NoFormulaSource
   | StripFormulaSource of
       {inference : string,
-       parents : string list}
+       parents : formulaName list}
   | NormalizeFormulaSource of
       {inference : Normalize.inference,
-       parents : string list}
+       parents : formulaName list}
   | ProofFormulaSource of
       {inference : Proof.inference,
-       parents : string list};
+       parents : formulaName list};
 
 fun isNoFormulaSource source =
     case source of
@@ -913,7 +941,7 @@ local
                ppProofTerm mapping tm]),
          Print.addString "]"];
 
-  val ppParent = Print.ppString;
+  val ppParent = ppFormulaName;
 
   fun ppProofSubst mapping =
       Print.ppMap Subst.toList
@@ -1015,7 +1043,7 @@ end;
 
 datatype formula =
     Formula of
-      {name : string,
+      {name : formulaName,
        role : role,
        body : formulaBody,
        source : formulaSource};
@@ -1109,7 +1137,7 @@ fun ppFormula mapping fm =
       Print.blockProgram Print.Inconsistent (size gen + 1)
         ([Print.addString gen,
           Print.addString "(",
-          Print.addString name,
+          ppFormulaName name,
           Print.addString ",",
           Print.addBreak 1,
           ppRole role,
@@ -1172,7 +1200,8 @@ local
       punctParser #"$" ++ punctParser #"$" ++ someAlphaNum (K true) >>
       (fn ((),((),s)) => "$$" ^ s);
 
-  val nameParser = stringParser || numberParser || quoteParser;
+  val nameParser =
+      (stringParser || numberParser || quoteParser) >> FormulaName;
 
   val roleParser = lowerParser >> fromStringRole;
 
@@ -1573,12 +1602,12 @@ end;
 (* ------------------------------------------------------------------------- *)
 
 datatype clauseSource =
-    CnfClauseSource of string
+    CnfClauseSource of formulaName
   | FofClauseSource of Normalize.thm;
 
 type 'a clauseInfo = 'a LiteralSetMap.map;
 
-type clauseNames = string clauseInfo;
+type clauseNames = formulaName clauseInfo;
 
 type clauseRoles = role clauseInfo;
 
@@ -1586,11 +1615,11 @@ type clauseSources = clauseSource clauseInfo;
 
 val noClauseNames : clauseNames = LiteralSetMap.new ();
 
-val allClauseNames : clauseNames -> StringSet.set =
+val allClauseNames : clauseNames -> formulaNameSet =
     let
-      fun add (_,n,s) = StringSet.add s n
+      fun add (_,n,s) = addFormulaNameSet s n
     in
-      LiteralSetMap.foldl add StringSet.empty
+      LiteralSetMap.foldl add emptyFormulaNameSet
     end;
 
 val noClauseRoles : clauseRoles = LiteralSetMap.new ();
@@ -1625,10 +1654,10 @@ fun freeVars (Problem {formulas,...}) = freeVarsListFormula formulas;
 local
   fun bump n avoid =
       let
-        val s = Int.toString n
+        val s = FormulaName (Int.toString n)
       in
-        if StringSet.member s avoid then bump (n + 1) avoid
-        else (s, n, StringSet.add avoid s)
+        if memberFormulaNameSet s avoid then bump (n + 1) avoid
+        else (s, n, addFormulaNameSet avoid s)
       end;
 
   fun fromClause defaultRole names roles cl (n,avoid) =
@@ -1686,8 +1715,8 @@ val initialNormalization : normalization =
 
 datatype problemGoal =
     NoGoal
-  | CnfGoal of (string * clause) list
-  | FofGoal of (string * Formula.formula) list;
+  | CnfGoal of (formulaName * clause) list
+  | FofGoal of (formulaName * Formula.formula) list;
 
 local
   fun partitionFormula (formula,(cnfAxioms,fofAxioms,cnfGoals,fofGoals)) =
@@ -2026,10 +2055,10 @@ local
       let
         fun bump i =
             let
-              val name = prefix ^ Int.toString i
+              val name = FormulaName (prefix ^ Int.toString i)
               val i = i + 1
             in
-              if StringSet.member name avoid then bump i else (name,i)
+              if memberFormulaNameSet name avoid then bump i else (name,i)
             end
       in
         bump
@@ -2059,7 +2088,7 @@ local
           case lookupClauseSource sources cl of
             CnfClauseSource name =>
             let
-              val names = StringSet.add names name
+              val names = addFormulaNameSet names name
             in
               (names,ths)
             end
@@ -2094,7 +2123,7 @@ local
       let
         val {subgoal,sources,refutation} = subgoalProof
 
-        val names = StringSet.addList names (snd subgoal)
+        val names = addListFormulaNameSet names (snd subgoal)
 
         val proof = Proof.proof refutation
 
@@ -2119,10 +2148,10 @@ local
       let
         val name = nameFormula formula
 
-        val avoid = StringSet.add avoid name
+        val avoid = addFormulaNameSet avoid name
 
         val (formulas,fmNames) =
-            if StringSet.member name names then
+            if memberFormulaNameSet name names then
               (formula :: formulas, fmNames)
             else
               case bodyFormula formula of
@@ -2339,7 +2368,7 @@ local
               (formulas,0,fmNames) normalization
 
         val prefix = "refute_" ^ Int.toString number ^ "_"
-        val clNames : string LiteralSetMap.map = LiteralSetMap.new ()
+        val clNames : formulaName LiteralSetMap.map = LiteralSetMap.new ()
         val (formulas,_,_) =
             List.foldl (addProofFormula avoid sources fmNames prefix)
               (formulas,0,clNames) proof
@@ -2349,7 +2378,7 @@ local
 in
   fun fromProof {problem,proofs} =
       let
-        val names = StringSet.empty
+        val names = emptyFormulaNameSet
         and fofs = FormulaSet.empty
         and defs : Formula.formula StringMap.map = StringMap.new ()
 
@@ -2358,10 +2387,10 @@ in
 
         val Problem {formulas,...} = problem
 
-        val fmNames : string FormulaMap.map = FormulaMap.new ()
+        val fmNames : formulaName FormulaMap.map = FormulaMap.new ()
         val (avoid,formulas,fmNames) =
             List.foldl (addProblemFormula names fofs)
-              (StringSet.empty,[],fmNames) formulas
+              (emptyFormulaNameSet,[],fmNames) formulas
 
         val (formulas,_,fmNames) =
             StringMap.foldl (addDefinitionFormula avoid)
