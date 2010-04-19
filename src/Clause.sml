@@ -52,6 +52,8 @@ in
       if !showId then ppIdThm (id,thm) else Thm.pp thm;
 end;
 
+fun toString cl = Print.toString pp cl;
+
 (* ------------------------------------------------------------------------- *)
 (* Basic operations.                                                         *)
 (* ------------------------------------------------------------------------- *)

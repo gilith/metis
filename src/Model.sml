@@ -1,6 +1,6 @@
 (* ========================================================================= *)
 (* RANDOM FINITE MODELS                                                      *)
-(* Copyright (c) 2003-2007 Joe Hurd, distributed under the GNU GPL version 2 *)
+(* Copyright (c) 2003 Joe Hurd, distributed under the GNU GPL version 2      *)
 (* ========================================================================= *)
 
 structure Model :> Model =
@@ -178,13 +178,25 @@ fun projection func =
       end;
 
 (* ------------------------------------------------------------------------- *)
+(* A model of size N has integer elements 0...N-1.                           *)
+(* ------------------------------------------------------------------------- *)
+
+type element = int;
+
+fun incrementElement {size = N} i =
+    let
+      val i = i + 1
+    in
+      if i = N then NONE else SOME i
+    end;
+
+(* ------------------------------------------------------------------------- *)
 (* The parts of the model that are fixed.                                    *)
-(* Note: a model of size N has integer elements 0...N-1.                     *)
 (* ------------------------------------------------------------------------- *)
 
 type fixedModel =
-     {functions : Term.functionName * int list -> int option,
-      relations : Atom.relationName * int list -> bool option};
+     {functions : Term.functionName * element list -> element option,
+      relations : Atom.relationName * element list -> bool option};
 
 type fixed = {size : int} -> fixedModel
 
@@ -829,41 +841,69 @@ fun perturbRelation M (rel_elts,pol) =
 (* Valuations.                                                               *)
 (* ------------------------------------------------------------------------- *)
 
-type valuation = int NameMap.map;
+datatype valuation = Valuation of element NameMap.map;
 
-val valuationEmpty : valuation = NameMap.new ();
+val emptyValuation = Valuation (NameMap.new ());
 
-fun valuationRandom {size = N} vs =
+fun insertValuation (Valuation m) v_i = Valuation (NameMap.insert m v_i);
+
+fun peekValuation (Valuation m) v = NameMap.peek m v;
+
+fun constantValuation i =
     let
-      fun f (v,V) = NameMap.insert V (v, Portable.randomInt N)
+      fun add (v,V) = insertValuation V (v,i)
     in
-      NameSet.foldl f valuationEmpty vs
+      NameSet.foldl add emptyValuation
     end;
 
-fun valuationFold {size = N} vs f =
+val zeroValuation = constantValuation 0;
+
+fun getValuation V v =
+    case peekValuation V v of
+      SOME i => i
+    | NONE => raise Error "Model.getValuation: incomplete valuation";
+
+fun randomValuation {size = N} vs =
     let
-      val vs = NameSet.toList vs
+      fun f (v,V) = insertValuation V (v, Portable.randomInt N)
+    in
+      NameSet.foldl f emptyValuation vs
+    end;
 
-      fun inc [] _ = NONE
-        | inc (v :: l) V =
-          case NameMap.peek V v of
-            NONE => raise Bug "Model.valuationFold"
-          | SOME k =>
+fun incrementValuation N vars =
+    let
+      fun inc vs V =
+          case vs of
+            [] => NONE
+          | v :: vs =>
             let
-              val k = if k = N - 1 then 0 else k + 1
-              val V = NameMap.insert V (v,k)
-            in
-              if k = 0 then inc l V else SOME V
-            end
+              val i =
+                  case incrementElement N (getValuation V v) of
+                    SOME i => i
+                  | NONE => 0
 
-      val zero = foldl (fn (v,V) => NameMap.insert V (v,0)) valuationEmpty vs
+              val V = insertValuation V (v,i)
+            in
+              if i = 0 then inc vs V else SOME V
+            end
+    in
+      inc (NameSet.toList vars)
+    end;
+
+fun foldValuation N vars f =
+    let
+      val inc = incrementValuation N vars
 
       fun fold V acc =
           let
             val acc = f (V,acc)
           in
-            case inc vs V of NONE => acc | SOME V => fold V acc
+            case inc V of
+              NONE => acc
+            | SOME V => fold V acc
           end
+
+      val zero = constantValuation 0 vars
     in
       fold zero
     end;
@@ -889,10 +929,7 @@ fun modelTerm M V =
     let
       fun modelTm tm =
           case destTerm tm of
-            Term.Var v =>
-            (case NameMap.peek V v of
-               NONE => raise Error "Model.interpretTerm: incomplete valuation"
-             | SOME x => (ModelVar,x))
+            Term.Var v => (ModelVar, getValuation V v)
           | Term.Fn (f,tms) =>
             let
               val (tms,xs) = unzip (map modelTm tms)
@@ -911,10 +948,7 @@ fun interpretTerm M V =
     let
       fun interpret tm =
           case destTerm tm of
-            Term.Var v =>
-            (case NameMap.peek V v of
-               NONE => raise Error "Model.interpretTerm: incomplete valuation"
-             | SOME i => i)
+            Term.Var v => getValuation V v
           | Term.Fn (f,tms) => lookupFunction M (f, map interpret tms)
     in
       interpret
@@ -927,32 +961,38 @@ fun interpretFormula M =
     let
       val N = size M
 
-      fun interpret _ Formula.True = true
-        | interpret _ Formula.False = false
-        | interpret V (Formula.Atom atm) = interpretAtom M V atm
-        | interpret V (Formula.Not p) = not (interpret V p)
-        | interpret V (Formula.Or (p,q)) = interpret V p orelse interpret V q
-        | interpret V (Formula.And (p,q)) = interpret V p andalso interpret V q
-        | interpret V (Formula.Imp (p,q)) =
-          interpret V (Formula.Or (Formula.Not p, q))
-        | interpret V (Formula.Iff (p,q)) = interpret V p = interpret V q
-        | interpret V (Formula.Forall (v,p)) = interpret' V v p N
-        | interpret V (Formula.Exists (v,p)) =
-          interpret V (Formula.Not (Formula.Forall (v, Formula.Not p)))
-      and interpret' _ _ _ 0 = true
-        | interpret' V v p i =
+      fun interpret V fm =
+          case fm of
+            Formula.True => true
+          | Formula.False => false
+          | Formula.Atom atm => interpretAtom M V atm
+          | Formula.Not p => not (interpret V p)
+          | Formula.Or (p,q) => interpret V p orelse interpret V q
+          | Formula.And (p,q) => interpret V p andalso interpret V q
+          | Formula.Imp (p,q) => interpret V (Formula.Or (Formula.Not p, q))
+          | Formula.Iff (p,q) => interpret V p = interpret V q
+          | Formula.Forall (v,p) => interpret' V p v N
+          | Formula.Exists (v,p) =>
+            interpret V (Formula.Not (Formula.Forall (v, Formula.Not p)))
+
+      and interpret' V fm v i =
+          i = 0 orelse
           let
             val i = i - 1
-            val V' = NameMap.insert V (v,i)
+            val V' = insertValuation V (v,i)
           in
-            interpret V' p andalso interpret' V v p i
+            interpret V' fm andalso interpret' V fm v i
           end
     in
       interpret
     end;
 
-fun interpretLiteral M V (true,atm) = interpretAtom M V atm
-  | interpretLiteral M V (false,atm) = not (interpretAtom M V atm);
+fun interpretLiteral M V (pol,atm) =
+    let
+      val b = interpretAtom M V atm
+    in
+      if pol then b else not b
+    end;
 
 fun interpretClause M V cl = LiteralSet.exists (interpretLiteral M V) cl;
 
@@ -968,15 +1008,19 @@ fun check interpret {maxChecks} M fv x =
       fun score (V,{T,F}) =
           if interpret M V x then {T = T + 1, F = F} else {T = T, F = F + 1}
 
-      fun randomCheck acc = score (valuationRandom {size = N} fv, acc)
+      fun randomCheck acc = score (randomValuation {size = N} fv, acc)
 
-      val small =
-          case intExp N (NameSet.size fv) of
-            SOME n => n <= maxChecks
-          | NONE => false
+      val maxChecks =
+          case maxChecks of
+            NONE => maxChecks
+          | SOME m =>
+            case intExp N (NameSet.size fv) of
+              SOME n => if n <= m then NONE else maxChecks
+            | NONE => maxChecks
     in
-      if small then valuationFold {size = N} fv score {T = 0, F = 0}
-      else funpow maxChecks randomCheck {T = 0, F = 0}
+      case maxChecks of
+        SOME m => funpow m randomCheck {T = 0, F = 0}
+      | NONE => foldValuation {size = N} fv score {T = 0, F = 0}
     end;
 
 fun checkAtom maxChecks M atm =
@@ -996,8 +1040,8 @@ fun checkClause maxChecks M cl =
 (* ------------------------------------------------------------------------- *)
 
 datatype perturbation =
-    FunctionPerturbation of (Term.functionName * int list) * int
-  | RelationPerturbation of (Atom.relationName * int list) * bool;
+    FunctionPerturbation of (Term.functionName * element list) * element
+  | RelationPerturbation of (Atom.relationName * element list) * bool;
 
 fun perturb M pert =
     case pert of
@@ -1095,5 +1139,15 @@ in
 
   fun perturbClause M V cl = pickPerturb M (pertClause M V cl []);
 end;
+
+(* ------------------------------------------------------------------------- *)
+(* Pretty printing.                                                          *)
+(* ------------------------------------------------------------------------- *)
+
+fun pp M =
+    Print.program
+      [Print.addString "Model{",
+       Print.ppInt (size M),
+       Print.addString "}"];
 
 end

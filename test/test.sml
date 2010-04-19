@@ -71,7 +71,8 @@ and pvRw = printval Rewrite.pp
 and pvU = printval Units.pp
 and pvLits = printval LiteralSet.pp
 and pvCl = printval Clause.pp
-and pvCls = printval (Print.ppList Clause.pp);
+and pvCls = printval (Print.ppList Clause.pp)
+and pvM = printval Model.pp;
 
 val NV = Name.fromString
 and NF = Name.fromString
@@ -83,7 +84,8 @@ and A = Atom.parse
 and L = Literal.parse
 and F = Formula.parse
 and S = Subst.fromList;
-val AX = Thm.axiom o LiteralSet.fromList o map L;
+val LS = LiteralSet.fromList o map L;
+val AX = Thm.axiom o LS;
 val CL = mkCl Clause.default o AX;
 val Q = (fn th => (Thm.destUnitEq th, th)) o AX o singleton
 and U = (fn th => (Thm.destUnit th, th)) o AX o singleton;
@@ -543,54 +545,84 @@ User: 0.706  System: 0.004  GC: 0.050  Real: 0.724  (* CNF *)
 val () = SAY "Finite models";
 (* ------------------------------------------------------------------------- *)
 
-(***
-val pv = printval M.pp_model;
+fun checkModelClause M cl =
+    let
+      val randomSamples = 100
 
-fun f m fm =
-  let
-    val PRINT_TIMING_INFO = false
-    val TIME_PER_SAMPLE = false
-    val RANDOM_SAMPLES = 1000
-    val timex_fn = if PRINT_TIMING_INFO then timed_many else timed
-    val timey_fn = if PRINT_TIMING_INFO then timed_many else timed
-    val (tx,i) = timex_fn (M.checkn m fm) RANDOM_SAMPLES
-    val tx = if TIME_PER_SAMPLE then tx / Real.fromInt RANDOM_SAMPLES else tx
-    val rx = Real.round (100.0 * Real.fromInt i / Real.fromInt RANDOM_SAMPLES)
-    val (ty,(j,n)) = timey_fn (M.count m) fm
-    val ty = if TIME_PER_SAMPLE then ty / Real.fromInt n else ty
-    val ry = Real.round (100.0 * Real.fromInt j / Real.fromInt n)
-    val () =
-      if not PRINT_TIMING_INFO then () else
-        print ("random sample time =     " ^ real_to_string tx ^ "s\n" ^
-               "exhaustive search time = " ^ real_to_string ty ^ "s\n")
-  in
-    print (formula_to_string fm ^ "   random sampling = " ^ int_to_string rx ^
-           "%   exhaustive search = " ^ int_to_string ry ^ "%\n\n")
-  end;
+      fun addRandomSample {T,F} =
+          let
+            val {T = T', F = F'} = Model.checkClause {maxChecks = SOME 1} M cl
+          in
+            {T = T + T', F = F + F'}
+          end
 
-val group_axioms = map Syntax.parseFormula
-  [`e * x = x`, `i x * x = e`, `x * y * z = x * (y * z)`];
+      val {T,F} = funpow randomSamples addRandomSample {T = 0, F = 0}
+      val rx = Real.fromInt T / Real.fromInt (T + F)
 
-val group_thms = map Syntax.parseFormula
-  [`x * e = x`, `x * i x = e`, `i (i x) = x`];
+      val {T,F} = Model.checkClause {maxChecks = NONE} M cl
+      val ry = Real.fromInt T / Real.fromInt (T + F)
+    in
+      [Formula.toString (LiteralSet.disjoin cl),
+       " | random sampling = " ^ percentToString rx,
+       " | exhaustive = " ^ percentToString ry]
+    end;
 
-val m = pv (M.new M.defaults);
-val () = app (f m) (group_axioms @ group_thms);
-val m = pv (M.perturb group_axioms 1000 m);
-val () = app (f m) (group_axioms @ group_thms);
+local
+  val format =
+      [{leftAlign = true, padChar = #" "},
+       {leftAlign = true, padChar = #" "},
+       {leftAlign = true, padChar = #" "}];
+in
+  fun checkModel M cls =
+      let
+        val table = map (checkModelClause M) cls
 
-(* Given the multiplication, can perturbations find inverse and identity? *)
-val gfix = M.map_fix (fn "*" => SOME "+" | _ => NONE) M.modulo_fix;
-val gparm = M.update_fix (M.fix_merge gfix) o M.update_size (K 10);
-val m = pv (M.new (gparm M.defaults));
-val () = app (f m) (group_axioms @ group_thms);
-val m = pv (M.perturb group_axioms 1000 m);
-val () = app (f m) (group_axioms @ group_thms);
-val () = print ("e = " ^ M.term_to_string m (Syntax.parseTerm `e`) ^ "\n\n");
-val () = print ("i x =\n" ^ M.term_to_string m (Syntax.parseTerm `i x`) ^ "\n");
-val () = print ("x * y =\n" ^ M.term_to_string m (Syntax.parseTerm `x * y`) ^ "\n");
-val () = print ("x = y =\n"^M.formula_to_string m (Syntax.parseFormula `x = y`)^"\n");
-***)
+        val rows = alignTable format table
+
+        val () = print (join "\n" rows ^ "\n\n")
+      in
+        ()
+      end;
+end;
+
+fun perturbModel M cls n =
+    let
+      val N = {size = Model.size M}
+
+      fun perturbClause (fv,cl) =
+          let
+            val V = Model.randomValuation N fv
+          in
+            if Model.interpretClause M V cl then ()
+            else Model.perturbClause M V cl
+          end
+
+      val cls = map (fn cl => (LiteralSet.freeVars cl, cl)) cls
+
+      fun perturbClauses () = app perturbClause cls
+
+      val () = funpow n perturbClauses ()
+    in
+      M
+    end;
+
+val groupAxioms =
+    [LS[`0 + $x = $x`],
+     LS[`~$x + $x = 0`],
+     LS[`$x + $y + $z = $x + ($y + $z)`]];
+
+val groupThms =
+    [LS[`$x + 0 = $x`],
+     LS[`$x + ~$x = 0`],
+     LS[`~~$x = $x`]];
+
+fun newM fixed = Model.new {size = 8, fixed = fixed};
+val M = pvM (newM Model.fixedPure);
+val () = checkModel M (groupAxioms @ groupThms);
+val M = pvM (perturbModel M groupAxioms 100);
+val () = checkModel M (groupAxioms @ groupThms);
+val M = pvM (newM (Model.fixedMerge Model.fixedModulo Model.fixedPure));
+val () = checkModel M (groupAxioms @ groupThms);
 
 (* ------------------------------------------------------------------------- *)
 val () = SAY "Syntax checking the problem sets";

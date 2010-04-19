@@ -29,7 +29,7 @@ type weight = real
 type modelParameters =
      {model : Model.parameters,
       initialPerturbations : int,
-      checks : int,
+      maxChecks : int option,
       perturbations : int,
       weight : weight}
 

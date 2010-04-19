@@ -270,6 +270,12 @@ struct
         if eq then lits else lits'
       end;
 
+  fun conjoin set =
+      Formula.listMkConj (List.map Literal.toFormula (toList set));
+
+  fun disjoin set =
+      Formula.listMkDisj (List.map Literal.toFormula (toList set));
+
   val pp =
       Print.ppMap
         toList

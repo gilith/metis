@@ -1,9 +1,9 @@
 ###############################################################################
 # METIS MAKEFILE
-# Copyright (c) 2001-2004 Joe Hurd, distributed under the GNU GPL version 2
+# Copyright (c) 2001 Joe Hurd, distributed under the GNU GPL version 2
 ###############################################################################
 
-IGNORE = '^User: \|^[0-9]\+: S='
+IGNORE = '^User: \|random sampling'
 
 ###############################################################################
 # The default action

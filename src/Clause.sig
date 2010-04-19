@@ -102,4 +102,6 @@ val showId : bool ref
 
 val pp : clause Print.pp
 
+val toString : clause -> string
+
 end

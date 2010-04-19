@@ -17,7 +17,7 @@ type weight = real;
 type modelParameters =
      {model : Model.parameters,
       initialPerturbations : int,
-      checks : int,
+      maxChecks : int option,
       perturbations : int,
       weight : weight}
 
@@ -50,7 +50,7 @@ val defaultModels : modelParameters list =
               Model.fixedSet,
               Model.fixedList]},
       initialPerturbations = 100,
-      checks = 20,
+      maxChecks = SOME 20,
       perturbations = 0,
       weight = 1.0}];
 
@@ -91,29 +91,24 @@ fun mkModelClause cl =
 
 val mkModelClauses = map mkModelClause;
 
-fun perturbModel _ [] = K ()
-  | perturbModel model cls =
-    let
-      val modelSize = {size = Model.size model}
+fun perturbModel M cls =
+    if null cls then K ()
+    else
+      let
+        val N = {size = Model.size M}
 
-      fun perturbClause (fv,cl) =
-          let
-            val v = Model.valuationRandom modelSize fv
-          in
-            if Model.interpretClause model v cl then ()
-            else Model.perturbClause model v cl
-          end
-
-        fun perturbClauses 0 = ()
-          | perturbClauses n =
+        fun perturbClause (fv,cl) =
             let
-              val () = app perturbClause cls
+              val V = Model.randomValuation N fv
             in
-              perturbClauses (n - 1)
+              if Model.interpretClause M V cl then ()
+              else Model.perturbClause M V cl
             end
-    in
-      perturbClauses
-    end;
+
+        fun perturbClauses () = app perturbClause cls
+      in
+        fn n => funpow n perturbClauses ()
+      end;
 
 fun initialModel axioms conjecture parm =
     let
@@ -129,8 +124,8 @@ fun checkModels parms models (fv,cl) =
     let
       fun check ((parm,model),z) =
           let
-            val {checks,weight,...} : modelParameters = parm
-            val n = {maxChecks = checks}
+            val {maxChecks,weight,...} : modelParameters = parm
+            val n = {maxChecks = maxChecks}
             val {T,F} = Model.check Model.interpretClause n model fv cl
           in
             Math.pow (1.0 + Real.fromInt T / Real.fromInt (T + F), weight) * z
