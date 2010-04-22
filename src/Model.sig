@@ -115,31 +115,37 @@ val overflowFixed : fixed
 
 (* Sets *)
 
-val emptyName : Name.name
-
-val universeName : Name.name
-
-val unionName : Name.name
-
-val intersectName : Name.name
+val cardName : Name.name
 
 val complementName : Name.name
 
-val cardName : Name.name
+val emptyName : Name.name
 
-val inName : Name.name
+val memberName : Name.name
+
+val insertName : Name.name
+
+val intersectName : Name.name
 
 val subsetName : Name.name
+
+val unionName : Name.name
+
+val universeName : Name.name
 
 val setFixed : fixed
 
 (* Lists *)
 
-val nilName : Name.name
+val appendName : Name.name
 
 val consName : Name.name
 
-val appendName : Name.name
+val nilName : Name.name
+
+val nullName : Name.name
+
+val tailName : Name.name
 
 val listFixed : fixed
 

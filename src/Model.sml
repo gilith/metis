@@ -304,21 +304,13 @@ local
 
   fun multN sz (x,y) = modN sz (x * y);
 
-  fun dividesN {size = N} x = x > 0 andalso N mod x = 0;
-
-  fun evenN sz = dividesN sz 2;
-
   (* Functions *)
 
   fun numeralFn i sz = SOME (modN sz i);
 
   fun addFn sz x y = SOME (modN sz (x + y));
 
-  fun divFn sz x y = if dividesN sz y then SOME (x div y) else NONE;
-
   fun expFn sz x y = SOME (exp (multN sz) x y (oneN sz));
-
-  fun modFn sz x y = if dividesN sz y then SOME (x mod y) else NONE;
 
   fun multFn sz x y = SOME (multN sz (x,y));
 
@@ -332,18 +324,18 @@ local
 
   (* Relations *)
 
-  fun dividesRel sz x y =
-      if x = 0 then SOME (y = 0)
-      else if dividesN sz x then SOME (y mod x = 0) else NONE;
+  fun dividesRel {size = N} x y =
+      let
+        val g = gcd N x
+      in
+        if divides g y then NONE else SOME false
+      end;
 
-  fun evenRel sz x =
-      if evenN sz then SOME (x mod 2 = 0) else NONE;
+  fun evenRel {size = N} x = if N mod 2 = 0 then SOME (x mod 2 = 0) else NONE;
 
-  fun isZeroRel sz x =
-      if x <> 0 then SOME false else NONE;
+  fun isZeroRel _ x = if x <> 0 then SOME false else NONE;
 
-  fun oddRel sz x =
-      if evenN sz then SOME (x mod 2 = 1) else NONE;
+  fun oddRel {size = N} x = if N mod 2 = 0 then SOME (x mod 2 = 1) else NONE;
 in
   val modularFixed =
       let
@@ -352,9 +344,7 @@ in
               (map (fn i => ((numeralName i,0), fixed0 (numeralFn i)))
                  numeralList @
                [((addName,2), fixed2 addFn),
-                ((divName,2), fixed2 divFn),
                 ((expName,2), fixed2 expFn),
-                ((modName,2), fixed2 modFn),
                 ((multName,2), fixed2 multFn),
                 ((negName,1), fixed1 negFn),
                 ((preName,1), fixed1 preFn),
@@ -374,40 +364,305 @@ in
       end;
 end;
 
-(***
-val modularFixed : fixed
+local
+  (* Support *)
 
-val overflowFixed : fixed
+  fun cutN {size = N} x = if x >= N then N - 1 else x;
+
+  fun oneN sz = cutN sz 1;
+
+  fun multN sz (x,y) = cutN sz (x * y);
+
+  (* Functions *)
+
+  fun numeralFn i sz = if i < 0 then NONE else SOME (cutN sz i);
+
+  fun addFn sz x y = SOME (cutN sz (x + y));
+
+  fun divFn _ x y = if y = 0 then NONE else SOME (x div y);
+
+  fun expFn sz x y = SOME (exp (multN sz) x y (oneN sz));
+
+  fun modFn {size = N} x y =
+      if y = 0 orelse x = N - 1 then NONE else SOME (x mod y);
+
+  fun multFn sz x y = SOME (multN sz (x,y));
+
+  fun negFn _ x = if x = 0 then SOME 0 else NONE;
+
+  fun preFn _ x = if x = 0 then NONE else SOME (x - 1);
+
+  fun subFn {size = N} x y =
+      if y = 0 then SOME x
+      else if x = N - 1 orelse x < y then NONE
+      else SOME (x - y);
+
+  fun sucFn sz x = SOME (cutN sz (x + 1));
+
+  (* Relations *)
+
+  fun dividesRel {size = N} x y =
+      if x = 1 orelse y = 0 then SOME true
+      else if x = 0 then SOME false
+      else if y = N - 1 then NONE
+      else SOME (divides x y);
+
+  fun evenRel {size = N} x =
+      if x = N - 1 then NONE else SOME (x mod 2 = 0);
+
+  fun geRel {size = N} y x =
+      if x = N - 1 then if y = N - 1 then NONE else SOME false
+      else if y = N - 1 then SOME true else SOME (x <= y);
+
+  fun gtRel {size = N} y x =
+      if x = N - 1 then if y = N - 1 then NONE else SOME false
+      else if y = N - 1 then SOME true else SOME (x < y);
+
+  fun isZeroRel _ x = SOME (x = 0);
+
+  fun leRel {size = N} x y =
+      if x = N - 1 then if y = N - 1 then NONE else SOME false
+      else if y = N - 1 then SOME true else SOME (x <= y);
+
+  fun ltRel {size = N} x y =
+      if x = N - 1 then if y = N - 1 then NONE else SOME false
+      else if y = N - 1 then SOME true else SOME (x < y);
+
+  fun oddRel {size = N} x =
+      if x = N - 1 then NONE else SOME (x mod 2 = 1);
+in
+  val overflowFixed =
+      let
+        val fns =
+            NameArityMap.fromList
+              (map (fn i => ((numeralName i,0), fixed0 (numeralFn i)))
+                 numeralList @
+               [((addName,2), fixed2 addFn),
+                ((divName,2), fixed2 divFn),
+                ((expName,2), fixed2 expFn),
+                ((modName,2), fixed2 modFn),
+                ((multName,2), fixed2 multFn),
+                ((negName,1), fixed1 negFn),
+                ((preName,1), fixed1 preFn),
+                ((subName,2), fixed2 subFn),
+                ((sucName,1), fixed1 sucFn)])
+
+        val rels =
+            NameArityMap.fromList
+              [((dividesName,2), fixed2 dividesRel),
+               ((evenName,1), fixed1 evenRel),
+               ((geName,2), fixed2 geRel),
+               ((gtName,2), fixed2 gtRel),
+               ((isZeroName,1), fixed1 isZeroRel),
+               ((leName,2), fixed2 leRel),
+               ((ltName,2), fixed2 ltRel),
+               ((oddName,1), fixed1 oddRel)]
+      in
+        Fixed
+          {functions = fns,
+           relations = rels}
+      end;
+end;
 
 (* Sets *)
 
-val emptyName : Name.name
+val cardName = Name.fromString "card"
+and complementName = Name.fromString "complement"
+and emptyName = Name.fromString "empty"
+and memberName = Name.fromString "member"
+and insertName = Name.fromString "insert"
+and intersectName = Name.fromString "intersect"
+and subsetName = Name.fromString "subset"
+and unionName = Name.fromString "union"
+and universeName = Name.fromString "universe";
 
-val universeName : Name.name
+local
+  (* Support *)
 
-val unionName : Name.name
+  fun eltN {size = N} =
+      let
+        fun f 0 acc = acc
+          | f x acc = f (x div 2) (acc + 1)
+      in
+        f N ~1
+      end;
 
-val intersectName : Name.name
+  fun posN i = Word.<< (0w1, Word.fromInt i);
 
-val complementName : Name.name
+  fun univN sz = Word.- (posN (eltN sz), 0w1);
 
-val cardName : Name.name
+  fun setN sz x = Word.andb (Word.fromInt x, univN sz);
 
-val inName : Name.name
+  (* Functions *)
 
-val subsetName : Name.name
+  fun cardFn sz x =
+      let
+        fun f 0w0 acc = acc
+          | f s acc =
+            let
+              val acc = if Word.andb (s,0w1) = 0w0 then acc else acc + 1
+            in
+              f (Word.>> (s,0w1)) acc
+            end
+      in
+        SOME (f (setN sz x) 0)
+      end;
 
-val setFixed : fixed
+  fun complementFn sz x = SOME (Word.toInt (Word.xorb (univN sz, setN sz x)));
+
+  fun emptyFn _ = SOME 0;
+
+  fun insertFn sz x y =
+      let
+        val x = x mod eltN sz
+        and y = setN sz y
+      in
+        SOME (Word.toInt (Word.orb (posN x, y)))
+      end;
+
+  fun intersectFn sz x y =
+      SOME (Word.toInt (Word.andb (setN sz x, setN sz y)));
+
+  fun unionFn sz x y =
+      SOME (Word.toInt (Word.orb (setN sz x, setN sz y)));
+
+  fun universeFn sz = SOME (Word.toInt (univN sz));
+
+  (* Relations *)
+
+  fun memberRel sz x y =
+      let
+        val x = x mod eltN sz
+        and y = setN sz y
+      in
+        SOME (Word.andb (posN x, y) <> 0w0)
+      end;
+
+  fun subsetRel sz x y =
+      let
+        val x = setN sz x
+        and y = setN sz y
+      in
+        SOME (Word.andb (Word.xorb (univN sz, x), y) = 0w0)
+      end;
+in
+  val setFixed =
+      let
+        val fns =
+            NameArityMap.fromList
+              [((cardName,1), fixed1 cardFn),
+               ((complementName,1), fixed1 complementFn),
+               ((emptyName,0), fixed0 emptyFn),
+               ((insertName,2), fixed2 insertFn),
+               ((intersectName,2), fixed2 intersectFn),
+               ((unionName,2), fixed2 unionFn),
+               ((universeName,0), fixed0 universeFn)]
+
+        val rels =
+            NameArityMap.fromList
+              [((memberName,2), fixed2 memberRel),
+               ((subsetName,2), fixed2 subsetRel)]
+      in
+        Fixed
+          {functions = fns,
+           relations = rels}
+      end;
+end;
 
 (* Lists *)
 
-val nilName : Name.name
+val appendName = Name.fromString "@"
+and consName = Name.fromString "::"
+and nilName = Name.fromString "nil"
+and nullName = Name.fromString "null"
+and tailName = Name.fromString "tail";
 
-val consName : Name.name
+local
+  val fixMap =
+     {functionMap = NameArityMap.fromList
+                      [((appendName,2),addName),
+                       ((consName,1),sucName),
+                       ((nilName,0), numeralName 0),
+                       ((tailName,1),preName)],
+      relationMap = NameArityMap.fromList
+                      [((nullName,1),isZeroName)]};
+in
+  val listFixed = mapFixed fixMap overflowFixed;
+end;
 
-val appendName : Name.name
+(* ------------------------------------------------------------------------- *)
+(* Valuations.                                                               *)
+(* ------------------------------------------------------------------------- *)
 
-val listFixed : fixed
+datatype valuation = Valuation of element NameMap.map;
+
+val emptyValuation = Valuation (NameMap.new ());
+
+fun insertValuation (Valuation m) v_i = Valuation (NameMap.insert m v_i);
+
+fun peekValuation (Valuation m) v = NameMap.peek m v;
+
+fun constantValuation i =
+    let
+      fun add (v,V) = insertValuation V (v,i)
+    in
+      NameSet.foldl add emptyValuation
+    end;
+
+val zeroValuation = constantValuation zeroElement;
+
+fun getValuation V v =
+    case peekValuation V v of
+      SOME i => i
+    | NONE => raise Error "Model.getValuation: incomplete valuation";
+
+fun randomValuation {size = N} vs =
+    let
+      fun f (v,V) = insertValuation V (v, Portable.randomInt N)
+    in
+      NameSet.foldl f emptyValuation vs
+    end;
+
+fun incrementValuation N vars =
+    let
+      fun inc vs V =
+          case vs of
+            [] => NONE
+          | v :: vs =>
+            let
+              val (carry,i) =
+                  case incrementElement N (getValuation V v) of
+                    SOME i => (false,i)
+                  | NONE => (true,zeroElement)
+
+              val V = insertValuation V (v,i)
+            in
+              if carry then inc vs V else SOME V
+            end
+    in
+      inc (NameSet.toList vars)
+    end;
+
+fun foldValuation N vars f =
+    let
+      val inc = incrementValuation N vars
+
+      fun fold V acc =
+          let
+            val acc = f (V,acc)
+          in
+            case inc V of
+              NONE => acc
+            | SOME V => fold V acc
+          end
+
+      val zero = zeroValuation vars
+    in
+      fold zero
+    end;
+
+
+(***
 
 (* ------------------------------------------------------------------------- *)
 (* Interpreted names.                                                        *)
@@ -1224,77 +1479,6 @@ fun perturbRelation M (rel_elts,pol) =
       val Model {size = N, relations, ...} = M
     in
       updateTables relations N (rel_elts, boolToInt pol)
-    end;
-
-(* ------------------------------------------------------------------------- *)
-(* Valuations.                                                               *)
-(* ------------------------------------------------------------------------- *)
-
-datatype valuation = Valuation of element NameMap.map;
-
-val emptyValuation = Valuation (NameMap.new ());
-
-fun insertValuation (Valuation m) v_i = Valuation (NameMap.insert m v_i);
-
-fun peekValuation (Valuation m) v = NameMap.peek m v;
-
-fun constantValuation i =
-    let
-      fun add (v,V) = insertValuation V (v,i)
-    in
-      NameSet.foldl add emptyValuation
-    end;
-
-val zeroValuation = constantValuation zeroElement;
-
-fun getValuation V v =
-    case peekValuation V v of
-      SOME i => i
-    | NONE => raise Error "Model.getValuation: incomplete valuation";
-
-fun randomValuation {size = N} vs =
-    let
-      fun f (v,V) = insertValuation V (v, Portable.randomInt N)
-    in
-      NameSet.foldl f emptyValuation vs
-    end;
-
-fun incrementValuation N vars =
-    let
-      fun inc vs V =
-          case vs of
-            [] => NONE
-          | v :: vs =>
-            let
-              val (carry,i) =
-                  case incrementElement N (getValuation V v) of
-                    SOME i => (false,i)
-                  | NONE => (true,zeroElement)
-
-              val V = insertValuation V (v,i)
-            in
-              if carry then inc vs V else SOME V
-            end
-    in
-      inc (NameSet.toList vars)
-    end;
-
-fun foldValuation N vars f =
-    let
-      val inc = incrementValuation N vars
-
-      fun fold V acc =
-          let
-            val acc = f (V,acc)
-          in
-            case inc V of
-              NONE => acc
-            | SOME V => fold V acc
-          end
-
-      val zero = zeroValuation vars
-    in
-      fold zero
     end;
 
 (* ------------------------------------------------------------------------- *)
