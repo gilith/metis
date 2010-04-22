@@ -183,13 +183,11 @@ type parameters = {size : int, fixed : fixed}
 
 type model
 
+val default : parameters
+
 val new : parameters -> model
 
 val size : model -> int
-
-val fixed : model -> fixed
-
-val default : model
 
 (* ------------------------------------------------------------------------- *)
 (* Interpreting terms and formulas in the model.                             *)

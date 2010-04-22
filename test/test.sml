@@ -617,11 +617,11 @@ val groupThms =
      LS[`~~$x = $x`]];
 
 fun newM fixed = Model.new {size = 8, fixed = fixed};
-val M = pvM (newM Model.fixedPure);
+val M = pvM (newM Model.basicFixed);
 val () = checkModel M (groupAxioms @ groupThms);
-val M = pvM (perturbModel M groupAxioms 100);
+val M = pvM (perturbModel M groupAxioms 1000);
 val () = checkModel M (groupAxioms @ groupThms);
-val M = pvM (newM (Model.fixedMerge Model.fixedModulo Model.fixedPure));
+val M = pvM (newM (Model.unionFixed Model.modularFixed Model.basicFixed));
 val () = checkModel M (groupAxioms @ groupThms);
 
 (* ------------------------------------------------------------------------- *)

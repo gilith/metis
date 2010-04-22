@@ -40,15 +40,7 @@ datatype waiting =
 (* ------------------------------------------------------------------------- *)
 
 val defaultModels : modelParameters list =
-    [{model =
-        {size = 4,
-         fixed =
-           Model.fixedMergeList
-             [Model.fixedPure,
-              Model.fixedBasic,
-              Model.fixedModulo,
-              Model.fixedSet,
-              Model.fixedList]},
+    [{model = Model.default,
       initialPerturbations = 100,
       maxChecks = SOME 20,
       perturbations = 0,
