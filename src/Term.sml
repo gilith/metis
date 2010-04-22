@@ -1,6 +1,6 @@
 (* ========================================================================= *)
 (* FIRST ORDER LOGIC TERMS                                                   *)
-(* Copyright (c) 2001-2006 Joe Hurd, distributed under the GNU GPL version 2 *)
+(* Copyright (c) 2001 Joe Hurd, distributed under the GNU GPL version 2      *)
 (* ========================================================================= *)
 
 structure Term :> Term =
@@ -249,10 +249,13 @@ end;
 (* Special support for terms with type annotations.                          *)
 (* ------------------------------------------------------------------------- *)
 
-val hasTypeName = Name.fromString ":";
+val hasTypeFunctionName = Name.fromString ":";
 
-fun destFnHasType ((f,a) : Name.name * term list) =
-    if not (Name.equal f hasTypeName) then raise Error "Term.destFnHasType"
+val hasTypeFunction = (hasTypeFunctionName,2);
+
+fun destFnHasType ((f,a) : functionName * term list) =
+    if not (Name.equal f hasTypeFunctionName) then
+      raise Error "Term.destFnHasType"
     else
       case a of
         [tm,ty] => (tm,ty)
@@ -323,37 +326,37 @@ end;
 (* Special support for terms with an explicit function application operator. *)
 (* ------------------------------------------------------------------------- *)
 
-val combName = Name.fromString ".";
+val appName = Name.fromString ".";
 
-fun mkFnComb (fTm,aTm) = (combName, [fTm,aTm]);
+fun mkFnApp (fTm,aTm) = (appName, [fTm,aTm]);
 
-fun mkComb f_a = Fn (mkFnComb f_a);
+fun mkApp f_a = Fn (mkFnApp f_a);
 
-fun destFnComb ((f,a) : Name.name * term list) =
-    if not (Name.equal f combName) then raise Error "Term.destFnComb"
+fun destFnApp ((f,a) : Name.name * term list) =
+    if not (Name.equal f appName) then raise Error "Term.destFnApp"
     else
       case a of
         [fTm,aTm] => (fTm,aTm)
-      | _ => raise Error "Term.destFnComb";
+      | _ => raise Error "Term.destFnApp";
 
-val isFnComb = can destFnComb;
+val isFnApp = can destFnApp;
 
-fun destComb tm =
+fun destApp tm =
     case tm of
-      Var _ => raise Error "Term.destComb"
-    | Fn func => destFnComb func;
+      Var _ => raise Error "Term.destApp"
+    | Fn func => destFnApp func;
 
-val isComb = can destComb;
+val isApp = can destApp;
 
-fun listMkComb (f,l) = foldl mkComb f l;
+fun listMkApp (f,l) = foldl mkApp f l;
 
 local
   fun strip tms tm =
-      case total destComb tm of
+      case total destApp tm of
         SOME (f,a) => strip (a :: tms) f
       | NONE => (tm,tms);
 in
-  fun stripComb tm = strip [] tm;
+  fun stripApp tm = strip [] tm;
 end;
 
 (* ------------------------------------------------------------------------- *)

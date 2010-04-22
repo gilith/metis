@@ -9,6 +9,407 @@ struct
 open Useful;
 
 (* ------------------------------------------------------------------------- *)
+(* Constants.                                                                *)
+(* ------------------------------------------------------------------------- *)
+
+val maxSpace = 1000;
+
+(* ------------------------------------------------------------------------- *)
+(* Helper functions.                                                         *)
+(* ------------------------------------------------------------------------- *)
+
+val multInt =
+    case Int.maxInt of
+      NONE => (fn x => fn y => SOME (x * y))
+    | SOME m =>
+      let
+        val m = Real.floor (Math.sqrt (Real.fromInt m))
+      in
+        fn x => fn y => if x <= m andalso y <= m then SOME (x * y) else NONE
+      end;
+
+local
+  fun iexp x y acc =
+      if y mod 2 = 0 then iexp' x y acc
+      else
+        case multInt acc x of
+          SOME acc => iexp' x y acc
+        | NONE => NONE
+
+  and iexp' x y acc =
+      if y = 1 then SOME acc
+      else
+        let
+          val y = y div 2
+        in
+          case multInt x x of
+            SOME x => iexp x y acc
+          | NONE => NONE
+        end;
+in
+  fun expInt x y =
+      if y <= 1 then
+        if y = 0 then SOME 1
+        else if y = 1 then SOME x
+        else raise Bug "expInt: negative exponent"
+      else if x <= 1 then
+        if 0 <= x then SOME x
+        else raise Bug "expInt: negative exponand"
+      else iexp x y 1;
+end;
+
+fun boolToInt true = 1
+  | boolToInt false = 0;
+
+fun intToBool 1 = true
+  | intToBool 0 = false
+  | intToBool _ = raise Bug "Model.intToBool";
+
+fun minMaxInterval i j = interval i (1 + j - i);
+
+(* ------------------------------------------------------------------------- *)
+(* Model size.                                                               *)
+(* ------------------------------------------------------------------------- *)
+
+type size = {size : int};
+
+(* ------------------------------------------------------------------------- *)
+(* A model of size N has integer elements 0...N-1.                           *)
+(* ------------------------------------------------------------------------- *)
+
+type element = int;
+
+val zeroElement = 0;
+
+fun incrementElement {size = N} i =
+    let
+      val i = i + 1
+    in
+      if i = N then NONE else SOME i
+    end;
+
+fun elementListSpace {size = N} arity =
+    case expInt N arity of
+      NONE => NONE
+    | s as SOME m => if m <= maxSpace then s else NONE;
+
+fun elementListIndex {size = N} =
+    let
+      fun f acc elts =
+          case elts of
+            [] => acc
+          | elt :: elts => f (N * acc + elt) elts
+    in
+      f 0
+    end;
+
+(* ------------------------------------------------------------------------- *)
+(* The parts of the model that are fixed.                                    *)
+(* ------------------------------------------------------------------------- *)
+
+type fixedFunction = size -> element list -> element option;
+
+type fixedRelation = size -> element list -> bool option;
+
+datatype fixed =
+    Fixed of
+      {functions : fixedFunction NameArityMap.map,
+       relations : fixedRelation NameArityMap.map};
+
+val emptyFunctions : fixedFunction NameArityMap.map = NameArityMap.new ();
+
+val emptyRelations : fixedRelation NameArityMap.map = NameArityMap.new ();
+
+fun fixed0 f sz elts =
+    case elts of
+      [] => f sz
+    | _ => raise Bug "Model.fixed0: wrong arity";
+
+fun fixed1 f sz elts =
+    case elts of
+      [x] => f sz x
+    | _ => raise Bug "Model.fixed1: wrong arity";
+
+fun fixed2 f sz elts =
+    case elts of
+      [x,y] => f sz x y
+    | _ => raise Bug "Model.fixed2: wrong arity";
+
+val emptyFixed =
+    let
+      val fns = emptyFunctions
+      and rels = emptyRelations
+    in
+      Fixed
+        {functions = fns,
+         relations = rels}
+    end;
+
+local
+  fun hasTypeFn _ elts =
+      case elts of
+        [x,_] => SOME x
+      | _ => raise Bug "Model.hasTypeFn: wrong arity";
+
+  fun eqRel _ elts =
+      case elts of
+        [x,y] => SOME (x = y)
+      | _ => raise Bug "Model.eqRel: wrong arity";
+in
+  val basicFixed =
+      let
+        val fns = NameArityMap.singleton (Term.hasTypeFunction,hasTypeFn)
+
+        val rels = NameArityMap.singleton (Atom.eqRelation,eqRel)
+      in
+        Fixed
+          {functions = fns,
+           relations = rels}
+      end;
+end;
+
+local
+  fun union _ = raise Bug "Model.unionFixed: nameArity clash";
+in
+  fun unionFixed fix1 fix2 =
+      let
+        val Fixed {functions = fns1, relations = rels1} = fix1
+        and Fixed {functions = fns2, relations = rels2} = fix2
+
+        val fns = NameArityMap.union union fns1 fns2
+
+        val rels = NameArityMap.union union rels1 rels2
+      in
+        Fixed
+          {functions = fns,
+           relations = rels}
+      end;
+end;
+
+val unionListFixed =
+    let
+      fun union (fix,acc) = unionFixed acc fix
+    in
+      List.foldl union emptyFixed
+    end;
+
+(* ------------------------------------------------------------------------- *)
+(* Renaming fixed model parts.                                               *)
+(* ------------------------------------------------------------------------- *)
+
+type fixedMap =
+     {functionMap : Name.name NameArityMap.map,
+      relationMap : Name.name NameArityMap.map};
+
+fun mapFixed fixMap fix =
+    let
+      val {functionMap = fnMap, relationMap = relMap} = fixMap
+      and Fixed {functions = fns, relations = rels} = fix
+
+      val fns = NameArityMap.compose fnMap fns
+
+      val rels = NameArityMap.compose relMap rels
+    in
+      Fixed
+        {functions = fns,
+         relations = rels}
+    end;
+
+(* ------------------------------------------------------------------------- *)
+(* Standard fixed model parts.                                               *)
+(* ------------------------------------------------------------------------- *)
+
+(* Projections *)
+
+val projectionMin = 1
+and projectionMax = 9;
+
+val projectionList = minMaxInterval projectionMin projectionMax;
+
+fun projectionName i =
+    let
+      val _ = projectionMin <= i orelse
+              raise Bug "Model.projectionName: less than projectionMin"
+
+      val _ = i <= projectionMax orelse
+              raise Bug "Model.projectionName: greater than projectionMax"
+    in
+      Name.fromString ("#" ^ Int.toString i)
+    end;
+
+fun projectionFn i _ elts = SOME (List.nth (elts,i));
+
+fun arityProjectionFixed arity =
+    let
+      fun mkProj i = ((projectionName i, arity), projectionFn i)
+
+      fun addProj i acc =
+          if i > arity then acc
+          else addProj (i + 1) (NameArityMap.insert acc (mkProj i))
+
+      val fns = addProj projectionMin emptyFunctions
+
+      val rels = emptyRelations
+    in
+      Fixed
+        {functions = fns,
+         relations = rels}
+    end;
+
+val projectionFixed =
+    unionListFixed (map arityProjectionFixed projectionList);
+
+(* Arithmetic *)
+
+val numeralMin = ~100
+and numeralMax = 100;
+
+val numeralList = minMaxInterval numeralMin numeralMax;
+
+fun numeralName i =
+    let
+      val _ = numeralMin <= i orelse
+              raise Bug "Model.numeralName: less than numeralMin"
+
+      val _ = i <= numeralMax orelse
+              raise Bug "Model.numeralName: greater than numeralMax"
+    in
+      Name.fromString (Int.toString i)
+    end;
+
+val addName = Name.fromString "+"
+and divName = Name.fromString "div"
+and dividesName = Name.fromString "divides"
+and evenName = Name.fromString "even"
+and expName = Name.fromString "exp"
+and geName = Name.fromString ">="
+and gtName = Name.fromString ">"
+and isZeroName = Name.fromString "isZero"
+and leName = Name.fromString "<="
+and ltName = Name.fromString "<"
+and modName = Name.fromString "mod"
+and multName = Name.fromString "*"
+and negName = Name.fromString "~"
+and oddName = Name.fromString "odd"
+and preName = Name.fromString "pre"
+and subName = Name.fromString "-"
+and sucName = Name.fromString "suc";
+
+local
+  (* Support *)
+
+  fun modN {size = N} x = x mod N;
+
+  fun oneN sz = modN sz 1;
+
+  fun multN sz (x,y) = modN sz (x * y);
+
+  fun dividesN {size = N} x = x > 0 andalso N mod x = 0;
+
+  fun evenN sz = dividesN sz 2;
+
+  (* Functions *)
+
+  fun numeralFn i sz = SOME (modN sz i);
+
+  fun addFn sz x y = SOME (modN sz (x + y));
+
+  fun divFn sz x y = if dividesN sz y then SOME (x div y) else NONE;
+
+  fun expFn sz x y = SOME (exp (multN sz) x y (oneN sz));
+
+  fun modFn sz x y = if dividesN sz y then SOME (x mod y) else NONE;
+
+  fun multFn sz x y = SOME (multN sz (x,y));
+
+  fun negFn {size = N} x = SOME (if x = 0 then 0 else N - x);
+
+  fun preFn {size = N} x = SOME (if x = 0 then N - 1 else x - 1);
+
+  fun subFn {size = N} x y = SOME (if x < y then N + x - y else x - y);
+
+  fun sucFn {size = N} x = SOME (if x = N - 1 then 0 else x + 1);
+
+  (* Relations *)
+
+  fun dividesRel sz x y =
+      if x = 0 then SOME (y = 0)
+      else if dividesN sz x then SOME (y mod x = 0) else NONE;
+
+  fun evenRel sz x =
+      if evenN sz then SOME (x mod 2 = 0) else NONE;
+
+  fun isZeroRel sz x =
+      if x <> 0 then SOME false else NONE;
+
+  fun oddRel sz x =
+      if evenN sz then SOME (x mod 2 = 1) else NONE;
+in
+  val modularFixed =
+      let
+        val fns =
+            NameArityMap.fromList
+              (map (fn i => ((numeralName i,0), fixed0 (numeralFn i)))
+                 numeralList @
+               [((addName,2), fixed2 addFn),
+                ((divName,2), fixed2 divFn),
+                ((expName,2), fixed2 expFn),
+                ((modName,2), fixed2 modFn),
+                ((multName,2), fixed2 multFn),
+                ((negName,1), fixed1 negFn),
+                ((preName,1), fixed1 preFn),
+                ((subName,2), fixed2 subFn),
+                ((sucName,1), fixed1 sucFn)])
+
+        val rels =
+            NameArityMap.fromList
+              [((dividesName,2), fixed2 dividesRel),
+               ((evenName,1), fixed1 evenRel),
+               ((isZeroName,1), fixed1 isZeroRel),
+               ((oddName,1), fixed1 oddRel)]
+      in
+        Fixed
+          {functions = fns,
+           relations = rels}
+      end;
+end;
+
+(***
+val modularFixed : fixed
+
+val overflowFixed : fixed
+
+(* Sets *)
+
+val emptyName : Name.name
+
+val universeName : Name.name
+
+val unionName : Name.name
+
+val intersectName : Name.name
+
+val complementName : Name.name
+
+val cardName : Name.name
+
+val inName : Name.name
+
+val subsetName : Name.name
+
+val setFixed : fixed
+
+(* Lists *)
+
+val nilName : Name.name
+
+val consName : Name.name
+
+val appendName : Name.name
+
+val listFixed : fixed
+
+(* ------------------------------------------------------------------------- *)
 (* Interpreted names.                                                        *)
 (* ------------------------------------------------------------------------- *)
 
@@ -176,19 +577,6 @@ fun projection func =
           if k <= 0 orelse k > n then NONE
           else SOME (List.nth (args, k - 1))
       end;
-
-(* ------------------------------------------------------------------------- *)
-(* A model of size N has integer elements 0...N-1.                           *)
-(* ------------------------------------------------------------------------- *)
-
-type element = int;
-
-fun incrementElement {size = N} i =
-    let
-      val i = i + 1
-    in
-      if i = N then NONE else SOME i
-    end;
 
 (* ------------------------------------------------------------------------- *)
 (* The parts of the model that are fixed.                                    *)
@@ -629,7 +1017,8 @@ fun fixedList {size = N} =
 
       fun relations _ = NONE
     in
-      {functions = functions, relations = relations}
+      {functions = functions,
+       relations = relations}
     end;
 
 (* ------------------------------------------------------------------------- *)
@@ -856,7 +1245,7 @@ fun constantValuation i =
       NameSet.foldl add emptyValuation
     end;
 
-val zeroValuation = constantValuation 0;
+val zeroValuation = constantValuation zeroElement;
 
 fun getValuation V v =
     case peekValuation V v of
@@ -877,14 +1266,14 @@ fun incrementValuation N vars =
             [] => NONE
           | v :: vs =>
             let
-              val i =
+              val (carry,i) =
                   case incrementElement N (getValuation V v) of
-                    SOME i => i
-                  | NONE => 0
+                    SOME i => (false,i)
+                  | NONE => (true,zeroElement)
 
               val V = insertValuation V (v,i)
             in
-              if i = 0 then inc vs V else SOME V
+              if carry then inc vs V else SOME V
             end
     in
       inc (NameSet.toList vars)
@@ -903,7 +1292,7 @@ fun foldValuation N vars f =
             | SOME V => fold V acc
           end
 
-      val zero = constantValuation 0 vars
+      val zero = zeroValuation vars
     in
       fold zero
     end;
@@ -920,9 +1309,9 @@ fun destTerm tm =
     case tm of
       Term.Var _ => tm
     | Term.Fn f_tms =>
-      case Term.stripComb tm of
+      case Term.stripApp tm of
         (_,[]) => tm
-      | (v as Term.Var _, tms) => Term.Fn (Term.combName, v :: tms)
+      | (v as Term.Var _, tms) => Term.Fn (Term.appName, v :: tms)
       | (Term.Fn (f,tms), tms') => Term.Fn (f, tms @ tms');
 
 fun modelTerm M V =
@@ -1149,5 +1538,6 @@ fun pp M =
       [Print.addString "Model{",
        Print.ppInt (size M),
        Print.addString "}"];
+***)
 
 end

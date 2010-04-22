@@ -1,6 +1,6 @@
 (* ========================================================================= *)
 (* FIRST ORDER LOGIC TERMS                                                   *)
-(* Copyright (c) 2001-2006 Joe Hurd, distributed under the GNU GPL version 2 *)
+(* Copyright (c) 2001 Joe Hurd, distributed under the GNU GPL version 2      *)
 (* ========================================================================= *)
 
 signature Term =
@@ -126,7 +126,9 @@ val variantNum : NameSet.set -> var -> var
 (* Special support for terms with type annotations.                          *)
 (* ------------------------------------------------------------------------- *)
 
-val hasTypeName : Name.name
+val hasTypeFunctionName : functionName
+
+val hasTypeFunction : function
 
 val isTypedVar : term -> bool
 
@@ -138,17 +140,17 @@ val nonVarTypedSubterms : term -> (path * term) list
 (* Special support for terms with an explicit function application operator. *)
 (* ------------------------------------------------------------------------- *)
 
-val combName : Name.name
+val appName : Name.name
 
-val mkComb : term * term -> term
+val mkApp : term * term -> term
 
-val destComb : term -> term * term
+val destApp : term -> term * term
 
-val isComb : term -> bool
+val isApp : term -> bool
 
-val listMkComb : term * term list -> term
+val listMkApp : term * term list -> term
 
-val stripComb : term -> term * term list
+val stripApp : term -> term * term list
 
 (* ------------------------------------------------------------------------- *)
 (* Parsing and pretty printing.                                              *)

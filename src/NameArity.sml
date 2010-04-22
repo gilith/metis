@@ -72,4 +72,20 @@ struct
 
 end
 
-structure NameArityMap = KeyMap (NameArityOrdered);
+structure NameArityMap =
+struct
+
+  local
+    structure S = KeyMap (NameArityOrdered);
+  in
+    open S;
+  end;
+
+  fun compose m1 m2 =
+      let
+        fun pk ((_,a),n) = peek m2 (n,a)
+      in
+        mapPartial pk m1
+      end;
+
+end

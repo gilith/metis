@@ -7,54 +7,141 @@ signature Model =
 sig
 
 (* ------------------------------------------------------------------------- *)
+(* Model size.                                                               *)
+(* ------------------------------------------------------------------------- *)
+
+type size = {size : int}
+
+(* ------------------------------------------------------------------------- *)
 (* A model of size N has integer elements 0...N-1.                           *)
 (* ------------------------------------------------------------------------- *)
 
 type element = int
 
-val incrementElement : {size : int} -> element -> element option
+val zeroElement : element
+
+val incrementElement : size -> element -> element option
 
 (* ------------------------------------------------------------------------- *)
 (* The parts of the model that are fixed.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-type fixed =
-     {size : int} ->
-     {functions : Term.functionName * element list -> element option,
-      relations : Atom.relationName * element list -> bool option}
+type fixedFunction = size -> element list -> element option
 
-val fixedMerge : fixed -> fixed -> fixed  (* Prefers the second fixed *)
+type fixedRelation = size -> element list -> bool option
 
-val fixedMergeList : fixed list -> fixed
+datatype fixed =
+    Fixed of
+      {functions : fixedFunction NameArityMap.map,
+       relations : fixedRelation NameArityMap.map}
 
-val fixedPure : fixed  (* = *)
+val emptyFixed : fixed
 
-val fixedBasic : fixed  (* : id fst snd #1 #2 #3 <> *)
+val basicFixed : fixed  (* interprets equality and hasType *)
 
-val fixedModulo : fixed  (* <numerals> suc pre ~ + - * exp div mod *)
-                         (* is_0 divides even odd *)
+val unionFixed : fixed -> fixed -> fixed
 
-val fixedOverflowNum : fixed  (* <numerals> suc pre + - * exp div mod *)
-                              (* is_0 <= < >= > divides even odd *)
-
-val fixedOverflowInt : fixed  (* <numerals> suc pre + - * exp div mod *)
-                              (* is_0 <= < >= > divides even odd *)
-
-val fixedSet : fixed  (* empty univ union intersect compl card in subset *)
-
-val fixedList : fixed  (* nil :: @ *)
+val unionListFixed : fixed list -> fixed
 
 (* ------------------------------------------------------------------------- *)
-(* A type of random finite models.                                           *)
+(* Renaming fixed model parts.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-type parameters = {size : int, fixed : fixed}
+type fixedMap =
+     {functionMap : Name.name NameArityMap.map,
+      relationMap : Name.name NameArityMap.map}
 
-type model
+val mapFixed : fixedMap -> fixed -> fixed
 
-val new : parameters -> model
+(* ------------------------------------------------------------------------- *)
+(* Standard fixed model parts.                                               *)
+(* ------------------------------------------------------------------------- *)
 
-val size : model -> int
+(* Projections *)
+
+val projectionMin : int
+
+val projectionMax : int
+
+val projectionName : int -> Name.name
+
+val projectionFixed : fixed
+
+(* Arithmetic *)
+
+val numeralMin : int
+
+val numeralMax : int
+
+val numeralName : int -> Name.name
+
+val addName : Name.name
+
+val divName : Name.name
+
+val dividesName : Name.name
+
+val evenName : Name.name
+
+val expName : Name.name
+
+val geName : Name.name
+
+val gtName : Name.name
+
+val isZeroName : Name.name
+
+val leName : Name.name
+
+val ltName : Name.name
+
+val modName : Name.name
+
+val multName : Name.name
+
+val negName : Name.name
+
+val oddName : Name.name
+
+val preName : Name.name
+
+val subName : Name.name
+
+val sucName : Name.name
+
+val modularFixed : fixed
+
+val overflowFixed : fixed
+
+(* Sets *)
+
+val emptyName : Name.name
+
+val universeName : Name.name
+
+val unionName : Name.name
+
+val intersectName : Name.name
+
+val complementName : Name.name
+
+val cardName : Name.name
+
+val inName : Name.name
+
+val subsetName : Name.name
+
+val setFixed : fixed
+
+(* Lists *)
+
+val nilName : Name.name
+
+val consName : Name.name
+
+val appendName : Name.name
+
+val listFixed : fixed
 
 (* ------------------------------------------------------------------------- *)
 (* Valuations.                                                               *)
@@ -83,8 +170,28 @@ val foldValuation :
     {size : int} -> NameSet.set -> (valuation * 'a -> 'a) -> 'a -> 'a
 
 (* ------------------------------------------------------------------------- *)
+(* A type of random finite models.                                           *)
+(* ------------------------------------------------------------------------- *)
+
+type parameters = {size : int, fixed : fixed}
+
+type model
+
+val new : parameters -> model
+
+val size : model -> int
+
+val fixed : model -> fixed
+
+val default : model
+
+(* ------------------------------------------------------------------------- *)
 (* Interpreting terms and formulas in the model.                             *)
 (* ------------------------------------------------------------------------- *)
+
+val interpretFunction : model -> Term.functionName * element list -> element
+
+val interpretRelation : model -> Atom.relationName * element list -> bool
 
 val interpretTerm : model -> valuation -> Term.term -> element
 
@@ -118,16 +225,18 @@ val checkClause :
     {maxChecks : int option} -> model -> Thm.clause -> {T : int, F : int}
 
 (* ------------------------------------------------------------------------- *)
-(* Perturbing the model.                                                     *)
+(* Updating the model.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-val perturbFunction :
+val updateFunction :
     model -> (Term.functionName * element list) * element -> unit
 
-val perturbRelation :
+val updateRelation :
     model -> (Atom.relationName * element list) * bool -> unit
 
-(* Choosing a random perturbation to make a formula true *)
+(* ------------------------------------------------------------------------- *)
+(* Choosing a random perturbation to make a formula true in the model.       *)
+(* ------------------------------------------------------------------------- *)
 
 val perturbTerm : model -> valuation -> Term.term * element list -> unit
 
