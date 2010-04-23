@@ -149,6 +149,8 @@ val appendName : Name.name
 
 val consName : Name.name
 
+val lengthName : Name.name
+
 val nilName : Name.name
 
 val nullName : Name.name

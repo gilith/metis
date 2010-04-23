@@ -401,21 +401,21 @@ Finite models
 
 Model{8}
 
-0 + $x = $x                   | random sampling = 0%  | exhaustive = 0%
-~$x + $x = 0                  | random sampling = 16% | exhaustive = 12%
-$x + $y + $z = $x + ($y + $z) | random sampling = 16% | exhaustive = 17%
-$x + 0 = $x                   | random sampling = 36% | exhaustive = 38%
+0 + $x = $x                   | random sampling = 4%  | exhaustive = 12%
+~$x + $x = 0                  | random sampling = 44% | exhaustive = 50%
+$x + $y + $z = $x + ($y + $z) | random sampling = 9%  | exhaustive = 15%
+$x + 0 = $x                   | random sampling = 26% | exhaustive = 25%
 $x + ~$x = 0                  | random sampling = 15% | exhaustive = 12%
-~~$x = $x                     | random sampling = 25% | exhaustive = 25%
+~~$x = $x                     | random sampling = 12% | exhaustive = 12%
 
 Model{8}
 
-0 + $x = $x                   | random sampling = 86% | exhaustive = 88%
-~$x + $x = 0                  | random sampling = 52% | exhaustive = 50%
-$x + $y + $z = $x + ($y + $z) | random sampling = 34% | exhaustive = 45%
-$x + 0 = $x                   | random sampling = 60% | exhaustive = 62%
-$x + ~$x = 0                  | random sampling = 12% | exhaustive = 12%
-~~$x = $x                     | random sampling = 21% | exhaustive = 25%
+0 + $x = $x                   | random sampling = 84% | exhaustive = 88%
+~$x + $x = 0                  | random sampling = 43% | exhaustive = 50%
+$x + $y + $z = $x + ($y + $z) | random sampling = 68% | exhaustive = 65%
+$x + 0 = $x                   | random sampling = 73% | exhaustive = 75%
+$x + ~$x = 0                  | random sampling = 0%  | exhaustive = 0%
+~~$x = $x                     | random sampling = 30% | exhaustive = 25%
 
 Model{8}
 
@@ -543,6 +543,7 @@ function has_type/2 -> :
 function identity/0 -> 1
 function identity_map/1 -> #1
 function intersection/2 -> intersect
+function minus/1 -> ~
 function multiplicative_identity/0 -> 1
 function multiply/2 -> *
 function n0/0 -> 0
@@ -571,6 +572,7 @@ relation equal/2 -> =
 relation equal_elements/2 -> =
 relation equal_sets/2 -> =
 relation equalish/2 -> =
+relation equivalent/2 -> =
 relation greater_equal/2 -> >=
 relation greater_than/2 -> >
 relation less/2 -> <

@@ -629,6 +629,7 @@ end;
 
 val appendName = Name.fromString "@"
 and consName = Name.fromString "::"
+and lengthName = Name.fromString "length"
 and nilName = Name.fromString "nil"
 and nullName = Name.fromString "null"
 and tailName = Name.fromString "tail";
@@ -638,12 +639,15 @@ local
      {functionMap = NameArityMap.fromList
                       [((appendName,2),addName),
                        ((consName,1),sucName),
+                       ((lengthName,1), projectionName 1),
                        ((nilName,0), numeralName 0),
                        ((tailName,1),preName)],
       relationMap = NameArityMap.fromList
                       [((nullName,1),isZeroName)]};
+
+  val fix = unionFixed projectionFixed overflowFixed;
 in
-  val listFixed = mapFixed fixMap overflowFixed;
+  val listFixed = mapFixed fixMap fix;
 end;
 
 (* ------------------------------------------------------------------------- *)
