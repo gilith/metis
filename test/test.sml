@@ -530,17 +530,6 @@ val _ = cnf
   `(!x. P x ==> (!x. Q x)) /\ ((!x. Q x \/ R x) ==> (?x. Q x /\ R x)) /\
    ((?x. R x) ==> (!x. L x ==> M x)) ==> (!x. P x /\ L x ==> M x)`;
 
-(* verbose
-use "../test/large-problem.sml";
-val large_problem = time F large_problem_quotation;
-val large_refute = time (Formula.Not o Formula.generalize) large_problem;
-val _ = time Normalize.cnf large_refute;
-
-User: 0.256  System: 0.002  GC: 0.060  Real: 0.261  (* Parsing *)
-User: 0.017  System: 0.000  GC: 0.000  Real: 0.017  (* Negation *)
-User: 0.706  System: 0.004  GC: 0.050  Real: 0.724  (* CNF *)
-*)
-
 (* ------------------------------------------------------------------------- *)
 val () = SAY "Finite models";
 (* ------------------------------------------------------------------------- *)
@@ -625,6 +614,60 @@ val M = pvM (newM (Model.unionFixed Model.modularFixed Model.basicFixed));
 val () = checkModel M (groupAxioms @ groupThms);
 
 (* ------------------------------------------------------------------------- *)
+val () = SAY "Clauses";
+(* ------------------------------------------------------------------------- *)
+
+val cl = pvCl (CL[`P $x`,`P $y`]);
+val _ = pvLits (Clause.largestLiterals cl);
+val _ = pvCls (Clause.factor cl);
+val cl = pvCl (CL[`P $x`,`~P (f $x)`]);
+val _ = pvLits (Clause.largestLiterals cl);
+val cl = pvCl (CL[`$x = $y`,`f $y = f $x`]);
+val _ = pvLits (Clause.largestLiterals cl);
+val cl = pvCl (CL[`$x = f $y`,`f $x = $y`]);
+val _ = pvLits (Clause.largestLiterals cl);
+val cl = pvCl (CL[`s = a`,`s = b`,`h b c`]);
+val _ = pvLits (Clause.largestLiterals cl);
+val cl = pvCl (CL[`a = a`,`a = b`,`h b c`]);
+val _ = pvLits (Clause.largestLiterals cl);
+
+(* Test cases contributed by Larry Paulson *)
+
+local
+  val lnFnName = Name.fromString "ln"
+  and expFnName = Name.fromString "exp"
+  and divFnName = Name.fromString "/"
+
+  val leRelName = Name.fromString "<";
+
+  fun weight na =
+      case na of
+        (n,1) =>
+        if Name.equal n lnFnName then 500
+        else if Name.equal n expFnName then 500
+        else 1
+      | (n,2) =>
+        if Name.equal n divFnName then 50
+        else if Name.equal n leRelName then 20
+        else 1
+      | _ => 1;
+
+  val ordering =
+      {weight = weight, precedence = #precedence KnuthBendixOrder.default};
+
+  val clauseParameters =
+      {ordering = ordering,
+       orderLiterals = Clause.UnsignedLiteralOrder,
+       orderTerms = true};
+in
+  val LcpCL = mkCl clauseParameters o AX;
+end;
+
+val cl = pvCl (LcpCL[`~($y <= (2 + (2 * $x + pow $x 2)) / 2)`, `~(0 <= $x)`,
+                     `$y <= exp $x`]);
+val _ = pvLits (Clause.largestLiterals cl);
+
+(* ------------------------------------------------------------------------- *)
 val () = SAY "Syntax checking the problem sets";
 (* ------------------------------------------------------------------------- *)
 
@@ -690,7 +733,7 @@ fun tptp d f =
     let
       val () = print ("parsing " ^ f ^ "... ")
       val filename = d ^ "/" ^ f
-      val mapping = Tptp.defaultTptpMapping
+      val mapping = Tptp.defaultMapping
       val goal = Tptp.goal (Tptp.read {filename = filename, mapping = mapping})
       val () = print "ok\n"
     in
@@ -710,55 +753,7 @@ val _ = tptp "tptp" "MIXED_PROBLEM.tptp";
 val _ = tptp "tptp" "BLOCK_COMMENTS.tptp";
 
 (* ------------------------------------------------------------------------- *)
-val () = SAY "Clauses";
+val () = SAY "The TPTP finite model";
 (* ------------------------------------------------------------------------- *)
 
-val cl = pvCl (CL[`P $x`,`P $y`]);
-val _ = pvLits (Clause.largestLiterals cl);
-val _ = pvCls (Clause.factor cl);
-val cl = pvCl (CL[`P $x`,`~P (f $x)`]);
-val _ = pvLits (Clause.largestLiterals cl);
-val cl = pvCl (CL[`$x = $y`,`f $y = f $x`]);
-val _ = pvLits (Clause.largestLiterals cl);
-val cl = pvCl (CL[`$x = f $y`,`f $x = $y`]);
-val _ = pvLits (Clause.largestLiterals cl);
-val cl = pvCl (CL[`s = a`,`s = b`,`h b c`]);
-val _ = pvLits (Clause.largestLiterals cl);
-val cl = pvCl (CL[`a = a`,`a = b`,`h b c`]);
-val _ = pvLits (Clause.largestLiterals cl);
-
-(* Test cases contributed by Larry Paulson *)
-
-local
-  val lnFnName = Name.fromString "ln"
-  and expFnName = Name.fromString "exp"
-  and divFnName = Name.fromString "/"
-
-  val leRelName = Name.fromString "<";
-
-  fun weight na =
-      case na of
-        (n,1) =>
-        if Name.equal n lnFnName then 500
-        else if Name.equal n expFnName then 500
-        else 1
-      | (n,2) =>
-        if Name.equal n divFnName then 50
-        else if Name.equal n leRelName then 20
-        else 1
-      | _ => 1;
-
-  val ordering =
-      {weight = weight, precedence = #precedence KnuthBendixOrder.default};
-
-  val clauseParameters =
-      {ordering = ordering,
-       orderLiterals = Clause.UnsignedLiteralOrder,
-       orderTerms = true};
-in
-  val LcpCL = mkCl clauseParameters o AX;
-end;
-
-val cl = pvCl (LcpCL[`~($y <= (2 + (2 * $x + pow $x 2)) / 2)`, `~(0 <= $x)`,
-                     `$y <= exp $x`]);
-val _ = pvLits (Clause.largestLiterals cl);
+val _ = printval (Tptp.ppFixedMap Tptp.defaultMapping) Tptp.defaultFixedMap;

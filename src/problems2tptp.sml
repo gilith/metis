@@ -82,10 +82,13 @@ fun outputProblem outputDir {name,comments,goal} =
              includes = includes,
              formulas = formulas}
 
-      val mapping = Tptp.defaultTptpMapping
+      val mapping = Tptp.defaultMapping
 
       val () =
-          Tptp.write {problem = problem, mapping = mapping, filename = filename}
+          Tptp.write
+            {problem = problem,
+             mapping = mapping,
+             filename = filename}
     in
       ()
     end;

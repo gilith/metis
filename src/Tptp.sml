@@ -37,70 +37,65 @@ val defaultRelationMapping =
      (* Expanding HOL symbols to TPTP alphanumerics *)
      {name = "{}", arity = 1, tptp = "bool"}];
 
-val functionModel =
-    [("~", 1, Model.negName),
-     ("*", 2, Model.multName),
-     ("/", 2, Model.divName),
-     ("+", 2, Model.addName),
-     ("-", 2, Model.subName),
-     ("::", 2, Model.consName),
-     ("@", 2, Model.appendName),
-     (":", 2, Term.hasTypeFunctionName),
-     ("additive_identity", 0, Model.numeralName 0),
-     ("app", 2, Model.appendName),
-     ("complement", 1, Model.complementName),
-     ("difference", 2, Model.differenceName),
-     ("divide", 2, Model.divName),
-     ("empty_set", 0, Model.emptyName),
-     ("identity", 0, Model.numeralName 1),
-     ("identity_map", 1, Model.projectionName 1),
-     ("intersection", 2, Model.intersectName),
-     ("multiplicative_identity", 0, Model.numeralName 1),
-     ("n0", 0, Model.numeralName 0),
-     ("n1", 0, Model.numeralName 1),
-     ("n2", 0, Model.numeralName 2),
-     ("n3", 0, Model.numeralName 3),
-     ("n4", 0, Model.numeralName 4),
-     ("n5", 0, Model.numeralName 5),
-     ("n6", 0, Model.numeralName 6),
-     ("n7", 0, Model.numeralName 7),
-     ("n8", 0, Model.numeralName 8),
-     ("n9", 0, Model.numeralName 9),
-     ("nil", 0, Model.nilName),
-     ("null_class", 0, Model.emptyName),
-     ("singleton", 1, Model.singletonName),
-     ("successor", 1, Model.sucName),
-     ("symmetric_difference", 2, Model.symmetricDifferenceName),
-     ("union", 2, Model.unionName),
-     ("universal_class", 0, Model.universeName)];
+(* ------------------------------------------------------------------------- *)
+(* Interpreting TPTP functions and relations in a finite model.              *)
+(* ------------------------------------------------------------------------- *)
 
-val relationModel =
-    [("=", 2, Atom.eqRelationName),
-     ("==", 2, Atom.eqRelationName),
-     ("<=", 2, Model.leName),
-     ("<", 2, Model.ltName),
-     (">=", 2, Model.geName),
-     (">", 2, Model.gtName),
-     ("divides", 2, Model.dividesName),
-     ("element_of_set", 2, Model.memberName),
-     ("equal", 2, Atom.eqRelationName),
-     ("equal_elements", 2, Atom.eqRelationName),
-     ("equal_sets", 2, Atom.eqRelationName),
-     ("less", 2, Model.ltName),
-     ("less_or_equal", 2, Model.leName),
-     ("member", 2, Model.memberName),
-     ("subclass", 2, Model.subsetName),
-     ("subset", 2, Model.subsetName)];
+val defaultFunctionModel =
+    [{name = "~", arity = 1, model = Model.negName},
+     {name = "*", arity = 2, model = Model.multName},
+     {name = "/", arity = 2, model = Model.divName},
+     {name = "+", arity = 2, model = Model.addName},
+     {name = "-", arity = 2, model = Model.subName},
+     {name = "::", arity = 2, model = Model.consName},
+     {name = "@", arity = 2, model = Model.appendName},
+     {name = ":", arity = 2, model = Term.hasTypeFunctionName},
+     {name = "additive_identity", arity = 0, model = Model.numeralName 0},
+     {name = "app", arity = 2, model = Model.appendName},
+     {name = "complement", arity = 1, model = Model.complementName},
+     {name = "difference", arity = 2, model = Model.differenceName},
+     {name = "divide", arity = 2, model = Model.divName},
+     {name = "empty_set", arity = 0, model = Model.emptyName},
+     {name = "identity", arity = 0, model = Model.numeralName 1},
+     {name = "identity_map", arity = 1, model = Model.projectionName 1},
+     {name = "intersection", arity = 2, model = Model.intersectName},
+     {name = "multiplicative_identity", arity = 0, model = Model.numeralName 1},
+     {name = "n0", arity = 0, model = Model.numeralName 0},
+     {name = "n1", arity = 0, model = Model.numeralName 1},
+     {name = "n2", arity = 0, model = Model.numeralName 2},
+     {name = "n3", arity = 0, model = Model.numeralName 3},
+     {name = "n4", arity = 0, model = Model.numeralName 4},
+     {name = "n5", arity = 0, model = Model.numeralName 5},
+     {name = "n6", arity = 0, model = Model.numeralName 6},
+     {name = "n7", arity = 0, model = Model.numeralName 7},
+     {name = "n8", arity = 0, model = Model.numeralName 8},
+     {name = "n9", arity = 0, model = Model.numeralName 9},
+     {name = "nil", arity = 0, model = Model.nilName},
+     {name = "null_class", arity = 0, model = Model.emptyName},
+     {name = "singleton", arity = 1, model = Model.singletonName},
+     {name = "successor", arity = 1, model = Model.sucName},
+     {name = "symmetric_difference", arity = 2,
+      model = Model.symmetricDifferenceName},
+     {name = "union", arity = 2, model = Model.unionName},
+     {name = "universal_class", arity = 0, model = Model.universeName}];
 
-val modelFixedMap : Model.fixedMap =
-    let
-      fun mkEntry (tptp,arity,name) = ((Name.fromString tptp, arity), name)
-
-      fun mkMap l = NameArityMap.fromList (map mkEntry l)
-    in
-      {functionMap = mkMap functionModel,
-       relationMap = mkMap relationModel}
-    end;
+val defaultRelationModel =
+    [{name = "=", arity = 2, model = Atom.eqRelationName},
+     {name = "==", arity = 2, model = Atom.eqRelationName},
+     {name = "<=", arity = 2, model = Model.leName},
+     {name = "<", arity = 2, model = Model.ltName},
+     {name = ">=", arity = 2, model = Model.geName},
+     {name = ">", arity = 2, model = Model.gtName},
+     {name = "divides", arity = 2, model = Model.dividesName},
+     {name = "element_of_set", arity = 2, model = Model.memberName},
+     {name = "equal", arity = 2, model = Atom.eqRelationName},
+     {name = "equal_elements", arity = 2, model = Atom.eqRelationName},
+     {name = "equal_sets", arity = 2, model = Atom.eqRelationName},
+     {name = "less", arity = 2, model = Model.ltName},
+     {name = "less_or_equal", arity = 2, model = Model.leName},
+     {name = "member", arity = 2, model = Model.memberName},
+     {name = "subclass", arity = 2, model = Model.subsetName},
+     {name = "subset", arity = 2, model = Model.subsetName}];
 
 (* ------------------------------------------------------------------------- *)
 (* Helper functions.                                                         *)
@@ -326,15 +321,15 @@ fun getNameFromTptp (NameFromTptp mapping) sa =
 (* Mapping to and from TPTP variable, function and relation names.           *)
 (* ------------------------------------------------------------------------- *)
 
-datatype tptpMapping =
-    TptpMapping of
+datatype mapping =
+    Mapping of
       {varTo : varToTptp,
        fnTo : nameToTptp,
        relTo : nameToTptp,
        fnFrom : nameFromTptp,
        relFrom : nameFromTptp};
 
-fun mkTptpMapping mapping =
+fun mkMapping mapping =
     let
       val {functionMapping,relationMapping} = mapping
 
@@ -345,7 +340,7 @@ fun mkTptpMapping mapping =
       val fnFrom = mkNameFromTptp functionMapping
       val relFrom = mkNameFromTptp relationMapping
     in
-      TptpMapping
+      Mapping
         {varTo = varTo,
          fnTo = fnTo,
          relTo = relTo,
@@ -353,9 +348,9 @@ fun mkTptpMapping mapping =
          relFrom = relFrom}
     end;
 
-fun addVarListTptpMapping mapping vs =
+fun addVarListMapping mapping vs =
     let
-      val TptpMapping
+      val Mapping
             {varTo,
              fnTo,
              relTo,
@@ -364,7 +359,7 @@ fun addVarListTptpMapping mapping vs =
 
       val varTo = addListVarToTptp varTo vs
     in
-      TptpMapping
+      Mapping
         {varTo = varTo,
          fnTo = fnTo,
          relTo = relTo,
@@ -372,9 +367,9 @@ fun addVarListTptpMapping mapping vs =
          relFrom = relFrom}
     end;
 
-fun addVarSetTptpMapping mapping vs =
+fun addVarSetMapping mapping vs =
     let
-      val TptpMapping
+      val Mapping
             {varTo,
              fnTo,
              relTo,
@@ -383,7 +378,7 @@ fun addVarSetTptpMapping mapping vs =
 
       val varTo = addSetVarToTptp varTo vs
     in
-      TptpMapping
+      Mapping
         {varTo = varTo,
          fnTo = fnTo,
          relTo = relTo,
@@ -393,42 +388,42 @@ fun addVarSetTptpMapping mapping vs =
 
 fun varToTptp mapping v =
     let
-      val TptpMapping {varTo,...} = mapping
+      val Mapping {varTo,...} = mapping
     in
       getVarToTptp varTo v
     end;
 
 fun fnToTptp mapping fa =
     let
-      val TptpMapping {fnTo,...} = mapping
+      val Mapping {fnTo,...} = mapping
     in
       getNameArityToTptp isTptpConstName isTptpFnName fnTo fa
     end;
 
 fun relToTptp mapping ra =
     let
-      val TptpMapping {relTo,...} = mapping
+      val Mapping {relTo,...} = mapping
     in
       getNameArityToTptp isTptpPropName isTptpRelName relTo ra
     end;
 
-fun varFromTptp (_ : tptpMapping) v = getVarFromTptp v;
+fun varFromTptp (_ : mapping) v = getVarFromTptp v;
 
 fun fnFromTptp mapping fa =
     let
-      val TptpMapping {fnFrom,...} = mapping
+      val Mapping {fnFrom,...} = mapping
     in
       getNameFromTptp fnFrom fa
     end;
 
 fun relFromTptp mapping ra =
     let
-      val TptpMapping {relFrom,...} = mapping
+      val Mapping {relFrom,...} = mapping
     in
       getNameFromTptp relFrom ra
     end;
 
-val defaultTptpMapping =
+val defaultMapping =
     let
       fun lift {name,arity,tptp} =
           {name = Name.fromString name, arity = arity, tptp = tptp}
@@ -440,24 +435,61 @@ val defaultTptpMapping =
           {functionMapping = functionMapping,
            relationMapping = relationMapping}
     in
-      mkTptpMapping mapping
+      mkMapping mapping
     end;
 
 (* ------------------------------------------------------------------------- *)
-(* Comments.                                                                 *)
+(* Interpreting TPTP functions and relations in a finite model.              *)
 (* ------------------------------------------------------------------------- *)
 
-fun mkLineComment "" = "%"
-  | mkLineComment line = "% " ^ line;
+fun mkFixedMap funcModel relModel =
+    let
+      fun mkEntry {name,arity,model} = ((Name.fromString name, arity), model)
 
-fun destLineComment cs =
-    case cs of
-      [] => ""
-    | #"%" :: #" " :: rest => implode rest
-    | #"%" :: rest => implode rest
-    | _ => raise Error "Tptp.destLineComment";
+      fun mkMap l = NameArityMap.fromList (map mkEntry l)
+    in
+      {functionMap = mkMap funcModel,
+       relationMap = mkMap relModel}
+    end;
 
-val isLineComment = can destLineComment;
+val defaultFixedMap = mkFixedMap defaultFunctionModel defaultRelationModel;
+
+val defaultModel =
+    let
+      val {size = N, fixed = fix} = Model.default
+
+      val fix = Model.mapFixed defaultFixedMap fix
+    in
+      {size = N, fixed = fix}
+    end;
+
+local
+  fun toTptpMap toTptp =
+      let
+        fun add ((src,arity),dest,m) =
+            let
+              val src = Name.fromString (toTptp (src,arity))
+            in
+              NameArityMap.insert m ((src,arity),dest)
+            end
+      in
+        fn m => NameArityMap.foldl add (NameArityMap.new ()) m
+      end;
+
+  fun toTptpFixedMap mapping fixMap =
+      let
+        val {functionMap = fnMap, relationMap = relMap} = fixMap
+
+        val fnMap = toTptpMap (fnToTptp mapping) fnMap
+        and relMap = toTptpMap (relToTptp mapping) relMap
+      in
+        {functionMap = fnMap,
+         relationMap = relMap}
+      end;
+in
+  fun ppFixedMap mapping fixMap =
+      Model.ppFixedMap (toTptpFixedMap mapping fixMap);
+end;
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP roles.                                                               *)
@@ -656,7 +688,7 @@ local
 
   and quantified mapping (q,(vs,fm)) =
       let
-        val mapping = addVarListTptpMapping mapping vs
+        val mapping = addVarListMapping mapping vs
       in
         Print.blockProgram Print.Inconsistent 2
           [Print.addString q,
@@ -1691,6 +1723,22 @@ val allClauseNames : clauseNames -> formulaNameSet =
 val noClauseRoles : clauseRoles = LiteralSetMap.new ();
 
 val noClauseSources : clauseSources = LiteralSetMap.new ();
+
+(* ------------------------------------------------------------------------- *)
+(* Comments.                                                                 *)
+(* ------------------------------------------------------------------------- *)
+
+fun mkLineComment "" = "%"
+  | mkLineComment line = "% " ^ line;
+
+fun destLineComment cs =
+    case cs of
+      [] => ""
+    | #"%" :: #" " :: rest => implode rest
+    | #"%" :: rest => implode rest
+    | _ => raise Error "Tptp.destLineComment";
+
+val isLineComment = can destLineComment;
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP problems.                                                            *)

@@ -215,6 +215,33 @@ fun mapFixed fixMap fix =
          relations = rels}
     end;
 
+local
+  fun mkEntry tag (na,n) = (tag,na,n);
+
+  fun mkList tag m = map (mkEntry tag) (NameArityMap.toList m);
+
+  fun ppEntry (tag,source_arity,target) =
+      Print.blockProgram Print.Inconsistent 2
+        [Print.addString tag,
+         Print.addBreak 1,
+         NameArity.pp source_arity,
+         Print.addString " ->",
+         Print.addBreak 1,
+         Name.pp target];
+in
+  fun ppFixedMap fixMap =
+      let
+        val {functionMap = fnMap, relationMap = relMap} = fixMap
+      in
+        case mkList "function" fnMap @ mkList "relation" relMap of
+          [] => Print.skip
+        | entry :: entries =>
+          Print.blockProgram Print.Consistent 0
+            (ppEntry entry ::
+             map (Print.sequence Print.addNewline o ppEntry) entries)
+      end;
+end;
+
 (* ------------------------------------------------------------------------- *)
 (* Standard fixed model parts.                                               *)
 (* ------------------------------------------------------------------------- *)

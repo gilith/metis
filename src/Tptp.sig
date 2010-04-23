@@ -10,18 +10,26 @@ sig
 (* Mapping to and from TPTP variable, function and relation names.           *)
 (* ------------------------------------------------------------------------- *)
 
-type tptpMapping
+type mapping
 
-val defaultTptpMapping : tptpMapping
+val defaultMapping : mapping
 
-val mkTptpMapping :
+val mkMapping :
     {functionMapping : {name : Name.name, arity : int, tptp : string} list,
      relationMapping : {name : Name.name, arity : int, tptp : string} list} ->
-    tptpMapping
+    mapping
 
-val addVarSetTptpMapping : tptpMapping -> NameSet.set -> tptpMapping
+val addVarSetMapping : mapping -> NameSet.set -> mapping
 
-val modelFixedMap : Model.fixedMap
+(* ------------------------------------------------------------------------- *)
+(* Interpreting TPTP functions and relations in a finite model.              *)
+(* ------------------------------------------------------------------------- *)
+
+val defaultFixedMap : Model.fixedMap
+
+val defaultModel : Model.parameters
+
+val ppFixedMap : mapping -> Model.fixedMap Print.pp
 
 (* ------------------------------------------------------------------------- *)
 (* TPTP roles.                                                               *)
@@ -198,14 +206,14 @@ val normalize :
 
 val goal : problem -> Formula.formula
 
-val read : {mapping : tptpMapping, filename : string} -> problem
+val read : {mapping : mapping, filename : string} -> problem
 
 val write :
     {problem : problem,
-     mapping : tptpMapping,
+     mapping : mapping,
      filename : string} -> unit
 
-val prove : {filename : string, mapping : tptpMapping} -> bool
+val prove : {filename : string, mapping : mapping} -> bool
 
 (* ------------------------------------------------------------------------- *)
 (* TSTP proofs.                                                              *)

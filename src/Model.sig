@@ -53,6 +53,8 @@ type fixedMap =
 
 val mapFixed : fixedMap -> fixed -> fixed
 
+val ppFixedMap : fixedMap Print.pp
+
 (* ------------------------------------------------------------------------- *)
 (* Standard fixed model parts.                                               *)
 (* ------------------------------------------------------------------------- *)

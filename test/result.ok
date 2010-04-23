@@ -402,20 +402,20 @@ Finite models
 Model{8}
 
 0 + $x = $x                   | random sampling = 0%  | exhaustive = 0%
-~$x + $x = 0                  | random sampling = 0%  | exhaustive = 0%
-$x + $y + $z = $x + ($y + $z) | random sampling = 13% | exhaustive = 12%
-$x + 0 = $x                   | random sampling = 23% | exhaustive = 25%
-$x + ~$x = 0                  | random sampling = 8%  | exhaustive = 12%
-~~$x = $x                     | random sampling = 32% | exhaustive = 25%
+~$x + $x = 0                  | random sampling = 16% | exhaustive = 12%
+$x + $y + $z = $x + ($y + $z) | random sampling = 16% | exhaustive = 17%
+$x + 0 = $x                   | random sampling = 36% | exhaustive = 38%
+$x + ~$x = 0                  | random sampling = 15% | exhaustive = 12%
+~~$x = $x                     | random sampling = 25% | exhaustive = 25%
 
 Model{8}
 
-0 + $x = $x                   | random sampling = 89% | exhaustive = 88%
-~$x + $x = 0                  | random sampling = 90% | exhaustive = 88%
-$x + $y + $z = $x + ($y + $z) | random sampling = 33% | exhaustive = 40%
-$x + 0 = $x                   | random sampling = 54% | exhaustive = 50%
-$x + ~$x = 0                  | random sampling = 21% | exhaustive = 25%
-~~$x = $x                     | random sampling = 32% | exhaustive = 25%
+0 + $x = $x                   | random sampling = 86% | exhaustive = 88%
+~$x + $x = 0                  | random sampling = 52% | exhaustive = 50%
+$x + $y + $z = $x + ($y + $z) | random sampling = 34% | exhaustive = 45%
+$x + 0 = $x                   | random sampling = 60% | exhaustive = 62%
+$x + ~$x = 0                  | random sampling = 12% | exhaustive = 12%
+~~$x = $x                     | random sampling = 21% | exhaustive = 25%
 
 Model{8}
 
@@ -425,6 +425,39 @@ $x + $y + $z = $x + ($y + $z) | random sampling = 100% | exhaustive = 100%
 $x + 0 = $x                   | random sampling = 100% | exhaustive = 100%
 $x + ~$x = 0                  | random sampling = 100% | exhaustive = 100%
 ~~$x = $x                     | random sampling = 100% | exhaustive = 100%
+
+--------------------------------------------------------------------------
+Clauses
+
+|- P $x \/ P $y
+
+{P $x, P $y}
+
+[|- P $y]
+
+|- ~P (f $x) \/ P $x
+
+{~P (f $x)}
+
+|- $x = $y \/ f $y = f $x
+
+{f $y = f $x}
+
+|- $x = f $y \/ f $x = $y
+
+{$x = f $y, f $x = $y}
+
+|- s = a \/ s = b \/ h b c
+
+{h b c}
+
+|- a = a \/ a = b \/ h b c
+
+{h b c}
+
+|- ~($y <= (2 + (2 * $x + pow $x 2)) / 2) \/ ~(0 <= $x) \/ $y <= exp $x
+
+{~($y <= (2 + (2 * $x + pow $x 2)) / 2), $y <= exp $x}
 
 --------------------------------------------------------------------------
 Syntax checking the problem sets
@@ -495,35 +528,56 @@ parsing BLOCK_COMMENTS.tptp... ok
 ~(agatha = butler) ==> killed agatha agatha
 
 --------------------------------------------------------------------------
-Clauses
+The TPTP finite model
 
-|- P $x \/ P $y
-
-{P $x, P $y}
-
-[|- P $y]
-
-|- ~P (f $x) \/ P $x
-
-{~P (f $x)}
-
-|- $x = $y \/ f $y = f $x
-
-{f $y = f $x}
-
-|- $x = f $y \/ f $x = $y
-
-{$x = f $y, f $x = $y}
-
-|- s = a \/ s = b \/ h b c
-
-{h b c}
-
-|- a = a \/ a = b \/ h b c
-
-{h b c}
-
-|- ~($y <= (2 + (2 * $x + pow $x 2)) / 2) \/ ~(0 <= $x) \/ $y <= exp $x
-
-{~($y <= (2 + (2 * $x + pow $x 2)) / 2), $y <= exp $x}
+function add/2 -> +
+function additive_identity/0 -> 0
+function app/2 -> @
+function append/2 -> @
+function complement/1 -> complement
+function cons/2 -> ::
+function difference/2 -> difference
+function divide/2 -> div
+function empty_set/0 -> empty
+function has_type/2 -> :
+function identity/0 -> 1
+function identity_map/1 -> #1
+function intersection/2 -> intersect
+function multiplicative_identity/0 -> 1
+function multiply/2 -> *
+function n0/0 -> 0
+function n1/0 -> 1
+function n2/0 -> 2
+function n3/0 -> 3
+function n4/0 -> 4
+function n5/0 -> 5
+function n6/0 -> 6
+function n7/0 -> 7
+function n8/0 -> 8
+function n9/0 -> 9
+function negate/1 -> ~
+function nil/0 -> nil
+function null_class/0 -> empty
+function singleton/1 -> singleton
+function subtract/2 -> -
+function successor/1 -> suc
+function symmetric_difference/2 -> symmetricDifference
+function union/2 -> union
+function universal_class/0 -> universe
+relation =/2 -> =
+relation divides/2 -> divides
+relation element_of_set/2 -> member
+relation equal/2 -> =
+relation equal_elements/2 -> =
+relation equal_sets/2 -> =
+relation equalish/2 -> =
+relation greater_equal/2 -> >=
+relation greater_than/2 -> >
+relation less/2 -> <
+relation less_equal/2 -> <=
+relation less_or_equal/2 -> <=
+relation less_than/2 -> <
+relation member/2 -> member
+relation subclass/2 -> subset
+relation subset/2 -> subset
 

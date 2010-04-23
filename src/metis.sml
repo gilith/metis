@@ -28,7 +28,7 @@ val PROGRAM = "metis";
 
 val VERSION = "2.2";
 
-val versionString = PROGRAM^" "^VERSION^" (release 20100422)"^"\n";
+val versionString = PROGRAM^" "^VERSION^" (release 20100423)"^"\n";
 
 (* ------------------------------------------------------------------------- *)
 (* Program options.                                                          *)
@@ -212,8 +212,8 @@ local
                  includes = includes,
                  formulas = formulas}
 
-          val mapping = Tptp.defaultTptpMapping
-          val mapping = Tptp.addVarSetTptpMapping mapping (Tptp.freeVars proof)
+          val mapping = Tptp.defaultMapping
+          val mapping = Tptp.addVarSetMapping mapping (Tptp.freeVars proof)
 
           val filename = "-"
         in
@@ -255,7 +255,7 @@ local
                                   conjecture = map Thm.clause ths}}
 
                 val mapping =
-                    Tptp.addVarSetTptpMapping Tptp.defaultTptpMapping
+                    Tptp.addVarSetMapping Tptp.defaultMapping
                       (Tptp.freeVars problem)
               in
                 Tptp.write
@@ -290,7 +290,7 @@ local
                      problem = cls}
 
               val mapping =
-                  Tptp.addVarSetTptpMapping Tptp.defaultTptpMapping
+                  Tptp.addVarSetMapping Tptp.defaultMapping
                     (Tptp.freeVars problem)
 
               val filename = "cnf_" ^ Int.toString (next_cnf ()) ^ ".tptp"
@@ -376,22 +376,13 @@ local
 
               val models =
                   case models of
-                    [{model,
+                    [{model = _,
                       initialPerturbations,
                       maxChecks,
                       perturbations,
                       weight}] =>
                     let
-                      val model =
-                          let
-                            val {size,
-                                 fixed} = model
-
-                            val fixed = Model.mapFixed Tptp.modelFixedMap fixed
-                          in
-                            {size = size,
-                             fixed = fixed}
-                          end
+                      val model = Tptp.defaultModel
                     in
                       [{model = model,
                         initialPerturbations = initialPerturbations,
@@ -504,7 +495,7 @@ let
 
   val () = if null work then usage "no input problem files" else ()
 
-  val mapping = Tptp.defaultTptpMapping
+  val mapping = Tptp.defaultMapping
 
   val success = proveAll mapping work
 in
