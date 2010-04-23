@@ -28,7 +28,7 @@ val PROGRAM = "metis";
 
 val VERSION = "2.2";
 
-val versionString = PROGRAM^" "^VERSION^" (release 20100414)"^"\n";
+val versionString = PROGRAM^" "^VERSION^" (release 20100422)"^"\n";
 
 (* ------------------------------------------------------------------------- *)
 (* Program options.                                                          *)
@@ -362,12 +362,61 @@ local
           end
       end;
 
+  val resolutionParameters =
+      let
+        val {active,
+             waiting} = Resolution.default
+
+        val waiting =
+            let
+              val {symbolsWeight,
+                   variablesWeight,
+                   literalsWeight,
+                   models} = waiting
+
+              val models =
+                  case models of
+                    [{model,
+                      initialPerturbations,
+                      maxChecks,
+                      perturbations,
+                      weight}] =>
+                    let
+                      val model =
+                          let
+                            val {size,
+                                 fixed} = model
+
+                            val fixed = Model.mapFixed Tptp.modelFixedMap fixed
+                          in
+                            {size = size,
+                             fixed = fixed}
+                          end
+                    in
+                      [{model = model,
+                        initialPerturbations = initialPerturbations,
+                        maxChecks = maxChecks,
+                        perturbations = perturbations,
+                        weight = weight}]
+                    end
+                  | _ => raise Bug "resolutionParameters.waiting.models"
+            in
+              {symbolsWeight = symbolsWeight,
+               variablesWeight = variablesWeight,
+               literalsWeight = literalsWeight,
+               models = models}
+            end
+      in
+        {active = active,
+         waiting = waiting}
+      end;
+
   fun refute {axioms,conjecture} =
       let
         val axioms = map Thm.axiom axioms
         and conjecture = map Thm.axiom conjecture
         val problem = {axioms = axioms, conjecture = conjecture}
-        val resolution = Resolution.new Resolution.default problem
+        val resolution = Resolution.new resolutionParameters problem
       in
         Resolution.loop resolution
       end;

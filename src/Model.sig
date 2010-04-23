@@ -119,6 +119,8 @@ val cardName : Name.name
 
 val complementName : Name.name
 
+val differenceName : Name.name
+
 val emptyName : Name.name
 
 val memberName : Name.name
@@ -127,7 +129,11 @@ val insertName : Name.name
 
 val intersectName : Name.name
 
+val singletonName : Name.name
+
 val subsetName : Name.name
+
+val symmetricDifferenceName : Name.name
 
 val unionName : Name.name
 

@@ -1,6 +1,6 @@
 (* ========================================================================= *)
-(* THE TPTP PROBLEM FILE FORMAT (TPTP v2)                                    *)
-(* Copyright (c) 2001-2007 Joe Hurd, distributed under the GNU GPL version 2 *)
+(* THE TPTP PROBLEM FILE FORMAT                                              *)
+(* Copyright (c) 2001 Joe Hurd, distributed under the GNU GPL version 2      *)
 (* ========================================================================= *)
 
 structure Tptp :> Tptp =
@@ -24,8 +24,7 @@ val defaultFunctionMapping =
      {name = ",", arity = 2, tptp = "pair"},
      (* Expanding HOL symbols to TPTP alphanumerics *)
      {name = ":", arity = 2, tptp = "has_type"},
-     {name = ".", arity = 2, tptp = "apply"},
-     {name = "<=", arity = 0, tptp = "less_equal"}];
+     {name = ".", arity = 2, tptp = "apply"}];
 
 val defaultRelationMapping =
     [(* Mapping TPTP relations to infix symbols *)
@@ -33,8 +32,75 @@ val defaultRelationMapping =
      {name = "==", arity = 2, tptp = "equalish"},
      {name = "<=", arity = 2, tptp = "less_equal"},
      {name = "<", arity = 2, tptp = "less_than"},
+     {name = ">=", arity = 2, tptp = "greater_equal"},
+     {name = ">", arity = 2, tptp = "greater_than"},
      (* Expanding HOL symbols to TPTP alphanumerics *)
      {name = "{}", arity = 1, tptp = "bool"}];
+
+val functionModel =
+    [("~", 1, Model.negName),
+     ("*", 2, Model.multName),
+     ("/", 2, Model.divName),
+     ("+", 2, Model.addName),
+     ("-", 2, Model.subName),
+     ("::", 2, Model.consName),
+     ("@", 2, Model.appendName),
+     (":", 2, Term.hasTypeFunctionName),
+     ("additive_identity", 0, Model.numeralName 0),
+     ("app", 2, Model.appendName),
+     ("complement", 1, Model.complementName),
+     ("difference", 2, Model.differenceName),
+     ("divide", 2, Model.divName),
+     ("empty_set", 0, Model.emptyName),
+     ("identity", 0, Model.numeralName 1),
+     ("identity_map", 1, Model.projectionName 1),
+     ("intersection", 2, Model.intersectName),
+     ("multiplicative_identity", 0, Model.numeralName 1),
+     ("n0", 0, Model.numeralName 0),
+     ("n1", 0, Model.numeralName 1),
+     ("n2", 0, Model.numeralName 2),
+     ("n3", 0, Model.numeralName 3),
+     ("n4", 0, Model.numeralName 4),
+     ("n5", 0, Model.numeralName 5),
+     ("n6", 0, Model.numeralName 6),
+     ("n7", 0, Model.numeralName 7),
+     ("n8", 0, Model.numeralName 8),
+     ("n9", 0, Model.numeralName 9),
+     ("nil", 0, Model.nilName),
+     ("null_class", 0, Model.emptyName),
+     ("singleton", 1, Model.singletonName),
+     ("successor", 1, Model.sucName),
+     ("symmetric_difference", 2, Model.symmetricDifferenceName),
+     ("union", 2, Model.unionName),
+     ("universal_class", 0, Model.universeName)];
+
+val relationModel =
+    [("=", 2, Atom.eqRelationName),
+     ("==", 2, Atom.eqRelationName),
+     ("<=", 2, Model.leName),
+     ("<", 2, Model.ltName),
+     (">=", 2, Model.geName),
+     (">", 2, Model.gtName),
+     ("divides", 2, Model.dividesName),
+     ("element_of_set", 2, Model.memberName),
+     ("equal", 2, Atom.eqRelationName),
+     ("equal_elements", 2, Atom.eqRelationName),
+     ("equal_sets", 2, Atom.eqRelationName),
+     ("less", 2, Model.ltName),
+     ("less_or_equal", 2, Model.leName),
+     ("member", 2, Model.memberName),
+     ("subclass", 2, Model.subsetName),
+     ("subset", 2, Model.subsetName)];
+
+val modelFixedMap : Model.fixedMap =
+    let
+      fun mkEntry (tptp,arity,name) = ((Name.fromString tptp, arity), name)
+
+      fun mkMap l = NameArityMap.fromList (map mkEntry l)
+    in
+      {functionMap = mkMap functionModel,
+       relationMap = mkMap relationModel}
+    end;
 
 (* ------------------------------------------------------------------------- *)
 (* Helper functions.                                                         *)

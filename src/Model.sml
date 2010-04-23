@@ -468,11 +468,14 @@ end;
 
 val cardName = Name.fromString "card"
 and complementName = Name.fromString "complement"
+and differenceName = Name.fromString "difference"
 and emptyName = Name.fromString "empty"
 and memberName = Name.fromString "member"
 and insertName = Name.fromString "insert"
 and intersectName = Name.fromString "intersect"
+and singletonName = Name.fromString "singleton"
 and subsetName = Name.fromString "subset"
+and symmetricDifferenceName = Name.fromString "symmetricDifference"
 and unionName = Name.fromString "union"
 and universeName = Name.fromString "universe";
 
@@ -510,6 +513,14 @@ local
 
   fun complementFn sz x = SOME (Word.toInt (Word.xorb (univN sz, setN sz x)));
 
+  fun differenceFn sz x y =
+      let
+        val x = setN sz x
+        and y = setN sz y
+      in
+        SOME (Word.toInt (Word.andb (x, Word.notb y)))
+      end;
+
   fun emptyFn _ = SOME 0;
 
   fun insertFn sz x y =
@@ -522,6 +533,21 @@ local
 
   fun intersectFn sz x y =
       SOME (Word.toInt (Word.andb (setN sz x, setN sz y)));
+
+  fun singletonFn sz x =
+      let
+        val x = x mod eltN sz
+      in
+        SOME (Word.toInt (posN x))
+      end;
+
+  fun symmetricDifferenceFn sz x y =
+      let
+        val x = setN sz x
+        and y = setN sz y
+      in
+        SOME (Word.toInt (Word.xorb (x,y)))
+      end;
 
   fun unionFn sz x y =
       SOME (Word.toInt (Word.orb (setN sz x, setN sz y)));
@@ -543,7 +569,7 @@ local
         val x = setN sz x
         and y = setN sz y
       in
-        SOME (Word.andb (Word.xorb (univN sz, x), y) = 0w0)
+        SOME (Word.andb (x, Word.notb y) = 0w0)
       end;
 in
   val setFixed =
@@ -552,9 +578,12 @@ in
             NameArityMap.fromList
               [((cardName,1), fixed1 cardFn),
                ((complementName,1), fixed1 complementFn),
+               ((differenceName,2), fixed2 differenceFn),
                ((emptyName,0), fixed0 emptyFn),
                ((insertName,2), fixed2 insertFn),
                ((intersectName,2), fixed2 intersectFn),
+               ((singletonName,1), fixed1 singletonFn),
+               ((symmetricDifferenceName,2), fixed2 symmetricDifferenceFn),
                ((unionName,2), fixed2 unionFn),
                ((universeName,0), fixed0 universeFn)]
 
