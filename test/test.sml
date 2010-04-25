@@ -614,6 +614,402 @@ val M = pvM (newM (Model.unionFixed Model.modularFixed Model.basicFixed));
 val () = checkModel M (groupAxioms @ groupThms);
 
 (* ------------------------------------------------------------------------- *)
+val () = SAY "Checking the standard model";
+(* ------------------------------------------------------------------------- *)
+
+fun ppPercentClause (r,cl) =
+    let
+      val ind = 6
+
+      val p = percentToString r
+
+      val fm = LiteralSet.disjoin cl
+    in
+      Print.blockProgram Print.Consistent ind
+        [Print.addString p,
+         Print.addString (nChars #" " (ind - size p)),
+         Formula.pp fm]
+    end;
+
+val standardModel = Model.new Model.default;
+
+fun checkStandardModelClause cl =
+    let
+      val {T,F} = Model.checkClause {maxChecks = SOME 1000} standardModel cl
+      val r = Real.fromInt T / Real.fromInt (T + F)
+    in
+      (r,cl)
+    end;
+
+val pvPCl = printval ppPercentClause
+
+(* Equality *)
+
+val cl = LS[`$x = $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~($x = $y)`,`$y = $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~($x = $y)`,`~($y = $z)`,`$x = $z`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Projections *)
+
+val cl = LS[`project1 $x1 = $x1`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project1 $x1 $x2 = $x1`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project2 $x1 $x2 = $x2`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project1 $x1 $x2 $x3 = $x1`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project2 $x1 $x2 $x3 = $x2`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project3 $x1 $x2 $x3 = $x3`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project1 $x1 $x2 $x3 $x4 = $x1`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project2 $x1 $x2 $x3 $x4 = $x2`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project3 $x1 $x2 $x3 $x4 = $x3`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project4 $x1 $x2 $x3 $x4 = $x4`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project1 $x1 $x2 $x3 $x4 $x5 = $x1`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project2 $x1 $x2 $x3 $x4 $x5 = $x2`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project3 $x1 $x2 $x3 $x4 $x5 = $x3`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project4 $x1 $x2 $x3 $x4 $x5 = $x4`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project5 $x1 $x2 $x3 $x4 $x5 = $x5`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project1 $x1 $x2 $x3 $x4 $x5 $x6 = $x1`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project2 $x1 $x2 $x3 $x4 $x5 $x6 = $x2`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project3 $x1 $x2 $x3 $x4 $x5 $x6 = $x3`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project4 $x1 $x2 $x3 $x4 $x5 $x6 = $x4`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project5 $x1 $x2 $x3 $x4 $x5 $x6 = $x5`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project6 $x1 $x2 $x3 $x4 $x5 $x6 = $x6`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project1 $x1 $x2 $x3 $x4 $x5 $x6 $x7 = $x1`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project2 $x1 $x2 $x3 $x4 $x5 $x6 $x7 = $x2`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project3 $x1 $x2 $x3 $x4 $x5 $x6 $x7 = $x3`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project4 $x1 $x2 $x3 $x4 $x5 $x6 $x7 = $x4`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project5 $x1 $x2 $x3 $x4 $x5 $x6 $x7 = $x5`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project6 $x1 $x2 $x3 $x4 $x5 $x6 $x7 = $x6`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project7 $x1 $x2 $x3 $x4 $x5 $x6 $x7 = $x7`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project1 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 = $x1`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project2 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 = $x2`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project3 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 = $x3`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project4 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 = $x4`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project5 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 = $x5`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project6 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 = $x6`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project7 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 = $x7`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project8 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 = $x8`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project1 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 $x9 = $x1`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project2 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 $x9 = $x2`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project3 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 $x9 = $x3`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project4 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 $x9 = $x4`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project5 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 $x9 = $x5`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project6 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 $x9 = $x6`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project7 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 $x9 = $x7`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project8 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 $x9 = $x8`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`project9 $x1 $x2 $x3 $x4 $x5 $x6 $x7 $x8 $x9 = $x9`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Arithmetic *)
+
+(* Zero *)
+val cl = LS[`~isZero $x`,`$x = 0`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`isZero $x`,`~($x = 0)`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Positive numerals *)
+val cl = LS[`0 + 1 = 1`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`1 + 1 = 2`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`2 + 1 = 3`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`3 + 1 = 4`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`4 + 1 = 5`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`5 + 1 = 6`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`6 + 1 = 7`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`7 + 1 = 8`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`8 + 1 = 9`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`9 + 1 = 10`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Negative numerals *)
+val cl = LS[`~1 = negative1`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~2 = negative2`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~3 = negative3`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~4 = negative4`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~5 = negative5`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~6 = negative6`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~7 = negative7`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~8 = negative8`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~9 = negative9`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~10 = negative10`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Addition *)
+val cl = LS[`0 + $x = $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`$x + $y = $y + $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`$x + ($y + $z) = ($x + $y) + $z`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Negation *)
+val cl = LS[`~$x + $x = 0`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~~$x = $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Subtraction *)
+val cl = LS[`$x - $y = $x + ~$y`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Successor *)
+val cl = LS[`suc $x = $x + 1`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Predecessor *)
+val cl = LS[`pre $x = $x - 1`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Ordering *)
+val cl = LS[`$x <= $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~($x <= $y)`,`~($y <= $z)`,`$x <= $z`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~($x <= $y)`,`~($y <= $x)`,`$x = $y`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`0 <= $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~($x >= $y)`,`$y <= $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`$x >= $y`,`~($y <= $x)`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`$x > $y`,`$x <= $y`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~($x > $y)`,`~($x <= $y)`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`$x < $y`,`$y <= $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~($x < $y)`,`~($y <= $x)`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`$x = 0`,`~($x <= $y)`,`~$y <= ~$x`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Multiplication *)
+val cl = LS[`1 * $x = $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`0 * $x = 0`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`$x * $y = $y * $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`$x * ($y * $z) = ($x * $y) * $z`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`$x * ($y + $z) = ($x * $y) + ($x * $z)`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`$x * ~$y = ~($x * $y)`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Division *)
+val cl = LS[`$y = 0`,`$x mod $y < $y`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`$y * ($x div $y) + $x mod $y = $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Exponentiation *)
+val cl = LS[`exp $x 0 = 1`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`$y = 0`,`exp $x $y = $x * exp $x (pre $y)`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Divides *)
+val cl = LS[`divides $x $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~(divides $x $y)`,`~(divides $y $z)`,`divides $x $z`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~(divides $x $y)`,`~(divides $y $x)`,`$x = $y`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`divides 1 $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`divides $x 0`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Even and odd *)
+val cl = LS[`even 0`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`$x = 0`,`~(even (pre $x))`,`odd $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`$x = 0`,`~(odd (pre $x))`,`even $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Sets *)
+
+(* The empty set *)
+val cl = LS[`~member $x empty`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* The universal set *)
+val cl = LS[`member $x universe`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Complement *)
+val cl = LS[`member $x $y`,`member $x (complement $y)`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~(member $x $y)`,`~member $x (complement $y)`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`complement (complement $x) = $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`complement empty = universe`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`complement universe = empty`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* The subset relation *)
+val cl = LS[`subset $x $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~subset $x $y`,`~subset $y $z`,`subset $x $z`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~subset $x $y`,`~subset $y $x`,`$x = $y`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`subset empty $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`subset $x universe`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~subset $x $y`,`subset (complement $y) (complement $x)`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~member $x $y`,`~subset $y $z`,`member $x $z`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Union *)
+val cl = LS[`union $x $y = union $y $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`union $x (union $y $z) = union (union $x $y) $z`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`union empty $x = $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`union universe $x = universe`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`subset $x (union $x $y)`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~member $x (union $y $z)`,`member $x $y`,`member $x $z`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Intersection *)
+val cl = LS[`intersect $x $y =
+             complement (union (complement $x) (complement $y))`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`subset (intersect $x $y) $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Difference *)
+val cl = LS[`difference $x $y = intersect $x (complement $y)`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Symmetric difference *)
+val cl = LS[`symmetricDifference $x $y =
+             union (difference $x $y) (difference $y $x)`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Insert *)
+val cl = LS[`member $x (insert $x $y)`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Singleton *)
+val cl = LS[`singleton $x = (insert $x empty)`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Cardinality *)
+val cl = LS[`card empty = 0`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`member $x $y`,`card (insert $x $y) = suc (card $y)`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Lists *)
+
+(* Nil *)
+val cl = LS[`null nil`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`~null $x`, `$x = nil`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Cons *)
+val cl = LS[`~(nil = $x :: $y)`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Append *)
+val cl = LS[`$x @ ($y @ $z) = ($x @ $y) @ $z`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`nil @ $x = $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`$x @ nil = $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Length *)
+val cl = LS[`length nil = 0`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`length ($x :: $y) >= length $y`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`length ($x @ $y) >= length $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+val cl = LS[`length ($x @ $y) >= length $y`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* Tail *)
+val cl = LS[`null $x`,`suc (length (tail $x)) = length $x`];
+val _ = pvPCl (checkStandardModelClause cl);
+
+(* ------------------------------------------------------------------------- *)
 val () = SAY "Clauses";
 (* ------------------------------------------------------------------------- *)
 

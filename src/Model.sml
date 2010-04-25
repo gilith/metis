@@ -116,6 +116,10 @@ datatype fixed =
       {functions : fixedFunction NameArityMap.map,
        relations : fixedRelation NameArityMap.map};
 
+val uselessFixedFunction : fixedFunction = K (K NONE);
+
+val uselessFixedRelation : fixedRelation = K (K NONE);
+
 val emptyFunctions : fixedFunction NameArityMap.map = NameArityMap.new ();
 
 val emptyRelations : fixedRelation NameArityMap.map = NameArityMap.new ();
@@ -145,28 +149,51 @@ val emptyFixed =
          relations = rels}
     end;
 
-local
-  fun hasTypeFn _ elts =
-      case elts of
-        [x,_] => SOME x
-      | _ => raise Bug "Model.hasTypeFn: wrong arity";
+fun peekFunctionFixed fix name_arity =
+    let
+      val Fixed {functions = fns, ...} = fix
+    in
+      NameArityMap.peek fns name_arity
+    end;
 
-  fun eqRel _ elts =
-      case elts of
-        [x,y] => SOME (x = y)
-      | _ => raise Bug "Model.eqRel: wrong arity";
-in
-  val basicFixed =
-      let
-        val fns = NameArityMap.singleton (Term.hasTypeFunction,hasTypeFn)
+fun peekRelationFixed fix name_arity =
+    let
+      val Fixed {relations = rels, ...} = fix
+    in
+      NameArityMap.peek rels name_arity
+    end;
 
-        val rels = NameArityMap.singleton (Atom.eqRelation,eqRel)
-      in
-        Fixed
-          {functions = fns,
-           relations = rels}
-      end;
-end;
+fun getFunctionFixed fix name_arity =
+    case peekFunctionFixed fix name_arity of
+      SOME f => f
+    | NONE => uselessFixedFunction;
+
+fun getRelationFixed fix name_arity =
+    case peekRelationFixed fix name_arity of
+      SOME rel => rel
+    | NONE => uselessFixedRelation;
+
+fun insertFunctionFixed fix name_arity_fn =
+    let
+      val Fixed {functions = fns, relations = rels} = fix
+
+      val fns = NameArityMap.insert fns name_arity_fn
+    in
+      Fixed
+        {functions = fns,
+         relations = rels}
+    end;
+
+fun insertRelationFixed fix name_arity_rel =
+    let
+      val Fixed {functions = fns, relations = rels} = fix
+
+      val rels = NameArityMap.insert rels name_arity_rel
+    in
+      Fixed
+        {functions = fns,
+         relations = rels}
+    end;
 
 local
   fun union _ = raise Bug "Model.unionFixed: nameArity clash";
@@ -192,6 +219,29 @@ val unionListFixed =
     in
       List.foldl union emptyFixed
     end;
+
+local
+  fun hasTypeFn _ elts =
+      case elts of
+        [x,_] => SOME x
+      | _ => raise Bug "Model.hasTypeFn: wrong arity";
+
+  fun eqRel _ elts =
+      case elts of
+        [x,y] => SOME (x = y)
+      | _ => raise Bug "Model.eqRel: wrong arity";
+in
+  val basicFixed =
+      let
+        val fns = NameArityMap.singleton (Term.hasTypeFunction,hasTypeFn)
+
+        val rels = NameArityMap.singleton (Atom.eqRelation,eqRel)
+      in
+        Fixed
+          {functions = fns,
+           relations = rels}
+      end;
+end;
 
 (* ------------------------------------------------------------------------- *)
 (* Renaming fixed model parts.                                               *)
@@ -261,10 +311,10 @@ fun projectionName i =
       val _ = i <= projectionMax orelse
               raise Bug "Model.projectionName: greater than projectionMax"
     in
-      Name.fromString ("#" ^ Int.toString i)
+      Name.fromString ("project" ^ Int.toString i)
     end;
 
-fun projectionFn i _ elts = SOME (List.nth (elts,i));
+fun projectionFn i _ elts = SOME (List.nth (elts, i - 1));
 
 fun arityProjectionFixed arity =
     let
@@ -300,8 +350,10 @@ fun numeralName i =
 
       val _ = i <= numeralMax orelse
               raise Bug "Model.numeralName: greater than numeralMax"
+
+      val s = if i < 0 then "negative" ^ Int.toString (~i) else Int.toString i
     in
-      Name.fromString (Int.toString i)
+      Name.fromString s
     end;
 
 val addName = Name.fromString "+"
@@ -337,7 +389,21 @@ local
 
   fun addFn sz x y = SOME (modN sz (x + y));
 
+  fun divFn {size = N} x y =
+      let
+        val y = if y = 0 then N else y
+      in
+        SOME (x div y)
+      end;
+
   fun expFn sz x y = SOME (exp (multN sz) x y (oneN sz));
+
+  fun modFn {size = N} x y =
+      let
+        val y = if y = 0 then N else y
+      in
+        SOME (x mod y)
+      end;
 
   fun multFn sz x y = SOME (multN sz (x,y));
 
@@ -351,18 +417,21 @@ local
 
   (* Relations *)
 
-  fun dividesRel {size = N} x y =
-      let
-        val g = gcd N x
-      in
-        if divides g y then NONE else SOME false
-      end;
+  fun dividesRel _ x y = SOME (divides x y);
 
-  fun evenRel {size = N} x = if N mod 2 = 0 then SOME (x mod 2 = 0) else NONE;
+  fun evenRel _ x = SOME (x mod 2 = 0);
 
-  fun isZeroRel _ x = if x <> 0 then SOME false else NONE;
+  fun geRel _ x y = SOME (x >= y);
 
-  fun oddRel {size = N} x = if N mod 2 = 0 then SOME (x mod 2 = 1) else NONE;
+  fun gtRel _ x y = SOME (x > y);
+
+  fun isZeroRel _ x = SOME (x = 0);
+
+  fun leRel _ x y = SOME (x <= y);
+
+  fun ltRel _ x y = SOME (x < y);
+
+  fun oddRel _ x = SOME (x mod 2 = 1);
 in
   val modularFixed =
       let
@@ -371,7 +440,9 @@ in
               (map (fn i => ((numeralName i,0), fixed0 (numeralFn i)))
                  numeralList @
                [((addName,2), fixed2 addFn),
+                ((divName,2), fixed2 divFn),
                 ((expName,2), fixed2 expFn),
+                ((modName,2), fixed2 modFn),
                 ((multName,2), fixed2 multFn),
                 ((negName,1), fixed1 negFn),
                 ((preName,1), fixed1 preFn),
@@ -382,7 +453,11 @@ in
             NameArityMap.fromList
               [((dividesName,2), fixed2 dividesRel),
                ((evenName,1), fixed1 evenRel),
+               ((geName,2), fixed2 geRel),
+               ((gtName,2), fixed2 gtRel),
                ((isZeroName,1), fixed1 isZeroRel),
+               ((leName,2), fixed2 leRel),
+               ((ltName,2), fixed2 ltRel),
                ((oddName,1), fixed1 oddRel)]
       in
         Fixed
@@ -635,19 +710,29 @@ and nullName = Name.fromString "null"
 and tailName = Name.fromString "tail";
 
 local
-  val fixMap =
-     {functionMap = NameArityMap.fromList
-                      [((appendName,2),addName),
-                       ((consName,1),sucName),
-                       ((lengthName,1), projectionName 1),
-                       ((nilName,0), numeralName 0),
-                       ((tailName,1),preName)],
-      relationMap = NameArityMap.fromList
-                      [((nullName,1),isZeroName)]};
+  val baseFix =
+      let
+        val fix = unionFixed projectionFixed overflowFixed
 
-  val fix = unionFixed projectionFixed overflowFixed;
+        val sucFn = getFunctionFixed fix (sucName,1)
+
+        fun suc2Fn sz _ x = sucFn sz [x]
+      in
+        insertFunctionFixed fix ((sucName,2), fixed2 suc2Fn)
+      end;
+
+  val fixMap =
+      {functionMap = NameArityMap.fromList
+                       [((appendName,2),addName),
+                        ((consName,2),sucName),
+                        ((lengthName,1), projectionName 1),
+                        ((nilName,0), numeralName 0),
+                        ((tailName,1),preName)],
+       relationMap = NameArityMap.fromList
+                       [((nullName,1),isZeroName)]};
+
 in
-  val listFixed = mapFixed fixMap fix;
+  val listFixed = mapFixed fixMap baseFix;
 end;
 
 (* ------------------------------------------------------------------------- *)

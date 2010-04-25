@@ -37,11 +37,19 @@ datatype fixed =
 
 val emptyFixed : fixed
 
-val basicFixed : fixed  (* interprets equality and hasType *)
-
 val unionFixed : fixed -> fixed -> fixed
 
+val getFunctionFixed : fixed -> NameArity.nameArity -> fixedFunction
+
+val getRelationFixed : fixed -> NameArity.nameArity -> fixedRelation
+
+val insertFunctionFixed : fixed -> NameArity.nameArity * fixedFunction -> fixed
+
+val insertRelationFixed : fixed -> NameArity.nameArity * fixedRelation -> fixed
+
 val unionListFixed : fixed list -> fixed
+
+val basicFixed : fixed  (* interprets equality and hasType *)
 
 (* ------------------------------------------------------------------------- *)
 (* Renaming fixed model parts.                                               *)
