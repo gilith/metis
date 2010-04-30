@@ -36,15 +36,16 @@ reduced with respect to all the unit equalities so far derived.</p>
 
 <p>In addition to standard age and size measures, Metis 2.2 uses
 finite models to weight clauses in the <em>Passive</em> set. When
-integrated with higher order logic, a finite model is manually
-constructed to interpret standard functions and relations in such a
-way as to make many standard axioms true and negated goals false.
-Non-standard functions and relations are interpreted randomly, but
-with a bias towards making negated goals false. Since it is part of
-the CASC competition rules that standard functions and relations are
-obfuscated, Metis 2.2 will back off to the biased random
-interpretation of all functions and relations (except equality), using
-a finite model with 4 elements.</p>
+integrated with higher order logic, an interpretation of known
+functions and relations is manually constructed to make many of their
+standard properties valid in the finite model. For example, the domain
+of the model is the set <em>{0,...,7}</em>, and the higher order logic
+arithmetic functions are interpreted in the model modulo <em>8</em>.
+Unknown functions and relations are interpreted randomly, but with a
+bias towards making supporting theorems valid in the model. The finite
+model strategy carries over to TPTP problems, by manually interpreting
+a collection of functions and relations that appear in TPTP axiom
+files in such a way as to make the axioms valid in the model.</p>
 
 <p>Metis 2.2 reads problems in TPTP format and outputs detailed proofs
 in TSTP format, where each refutation step is one of 6 simple
@@ -61,7 +62,10 @@ downloaded from
 
 <p>There have been only minor changes to Metis 2.2 since CASC 22, so
 it is expected to perform at approximately the same level in CASC J5
-and end up in the lower half of the table.</p>
+and end up in the lower half of the table. However, it is possible
+that Metis 2.2 might get a boost from its finite model clause
+weighting, since this year the CASC competition rules have changed so
+that function and relation names are no longer obfuscated.</p>
 
 <H3>References</H3>
 <dl>
