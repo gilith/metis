@@ -763,7 +763,7 @@ ok
 --------------------------------------------------------------------------
 Parsing TPTP problems
 
-parsing PUZ001-1.tptp... ok
+parsing PUZ001-1... ok
 lives agatha /\ lives butler /\ lives charles /\
 (!X Y. ~killed X Y \/ ~richer X Y) /\
 (!X. ~hates agatha X \/ ~hates charles X) /\
@@ -774,32 +774,32 @@ hates agatha agatha /\ hates agatha charles /\
 (!X. ~lives X \/ richer X agatha \/ hates butler X) ==>
 killed butler agatha \/ killed charles agatha ==> F
 
-parsing NUMBERED_FORMULAS.tptp... ok
+parsing NUMBERED_FORMULAS... ok
 p ==> p
 
-parsing DEFINED_TERMS.tptp... ok
+parsing DEFINED_TERMS... ok
 six = $times_int 2 3 ==> six = 6
 
-parsing SYSTEM_TERMS.tptp... ok
+parsing SYSTEM_TERMS... ok
 six = $$times_int 2 3 ==> six = 6
 
-parsing QUOTED_TERMS.tptp... ok
+parsing QUOTED_TERMS... ok
 p a /\ (!X. quoted predicate X) /\ quoted proposition /\
 p (quoted function a) /\ p quoted constant ==> p quoted constant
 
-parsing QUOTED_TERMS_IDENTITY.tptp... ok
+parsing QUOTED_TERMS_IDENTITY... ok
 p ==> p
 
-parsing QUOTED_TERMS_DIFFERENT.tptp... ok
+parsing QUOTED_TERMS_DIFFERENT... ok
 p 1 ==> p 1
 
-parsing QUOTED_TERMS_SPECIAL.tptp... ok
+parsing QUOTED_TERMS_SPECIAL... ok
 $times_int 2 3 = 6 ==> $times_int 2 3 = 6
 
-parsing RENAMING_VARIABLES.tptp... ok
+parsing RENAMING_VARIABLES... ok
 !V_X Y. ?Z. p V_X \/ p Y ==> p Z
 
-parsing MIXED_PROBLEM.tptp... ok
+parsing MIXED_PROBLEM... ok
 (!X Y. ~killed X Y \/ hates X Y) ==>
 (?X. lives X /\ killed X agatha) /\
 (lives agatha /\ lives butler /\ lives charles) /\
@@ -811,7 +811,7 @@ parsing MIXED_PROBLEM.tptp... ok
 (!X. hates agatha X ==> hates butler X) /\ (!X. ?Y. ~hates X Y) /\
 ~(agatha = butler) ==> killed agatha agatha
 
-parsing BLOCK_COMMENTS.tptp... ok
+parsing BLOCK_COMMENTS... ok
 (!X Y. ~killed X Y \/ hates X Y) ==>
 (?X. lives X /\ killed X agatha) /\
 (lives agatha /\ lives butler /\ lives charles) /\

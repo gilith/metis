@@ -1123,12 +1123,10 @@ val () = check_syntax problems;
 val () = SAY "Parsing TPTP problems";
 (* ------------------------------------------------------------------------- *)
 
-val TPTP_DIR = "../data/problems/all";
-
-fun tptp d f =
+fun tptp f =
     let
       val () = print ("parsing " ^ f ^ "... ")
-      val filename = d ^ "/" ^ f
+      val filename = "tptp/" ^ f ^ ".tptp"
       val mapping = Tptp.defaultMapping
       val goal = Tptp.goal (Tptp.read {filename = filename, mapping = mapping})
       val () = print "ok\n"
@@ -1136,17 +1134,17 @@ fun tptp d f =
       pvFm goal
     end;
 
-val Agatha = tptp TPTP_DIR "PUZ001-1.tptp";
-val _ = tptp "tptp" "NUMBERED_FORMULAS.tptp";
-val _ = tptp "tptp" "DEFINED_TERMS.tptp";
-val _ = tptp "tptp" "SYSTEM_TERMS.tptp";
-val _ = tptp "tptp" "QUOTED_TERMS.tptp";
-val _ = tptp "tptp" "QUOTED_TERMS_IDENTITY.tptp";
-val _ = tptp "tptp" "QUOTED_TERMS_DIFFERENT.tptp";
-val _ = tptp "tptp" "QUOTED_TERMS_SPECIAL.tptp";
-val _ = tptp "tptp" "RENAMING_VARIABLES.tptp";
-val _ = tptp "tptp" "MIXED_PROBLEM.tptp";
-val _ = tptp "tptp" "BLOCK_COMMENTS.tptp";
+val _ = tptp "PUZ001-1";
+val _ = tptp "NUMBERED_FORMULAS";
+val _ = tptp "DEFINED_TERMS";
+val _ = tptp "SYSTEM_TERMS";
+val _ = tptp "QUOTED_TERMS";
+val _ = tptp "QUOTED_TERMS_IDENTITY";
+val _ = tptp "QUOTED_TERMS_DIFFERENT";
+val _ = tptp "QUOTED_TERMS_SPECIAL";
+val _ = tptp "RENAMING_VARIABLES";
+val _ = tptp "MIXED_PROBLEM";
+val _ = tptp "BLOCK_COMMENTS";
 
 (* ------------------------------------------------------------------------- *)
 val () = SAY "The TPTP finite model";
