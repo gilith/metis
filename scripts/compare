@@ -82,7 +82,7 @@ sub read_log {
         (system("gzcat $raw | scripts/summarize -l > $input") == 0) or
             die "compare: couldn't preprocess input:\n$!";
     }
-    
+
     open INPUT, $input or
         die "compare: couldn't open $input:\n$!\n";
 
