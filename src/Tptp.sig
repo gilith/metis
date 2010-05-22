@@ -154,7 +154,7 @@ val isConjectureFormula : formula -> bool
 (* ------------------------------------------------------------------------- *)
 
 datatype clauseSource =
-    CnfClauseSource of formulaName
+    CnfClauseSource of formulaName * literal list
   | FofClauseSource of Normalize.thm
 
 type 'a clauseInfo = 'a LiteralSetMap.map

@@ -567,11 +567,20 @@ datatype literal =
     Boolean of bool
   | Literal of Literal.literal;
 
-fun destLiteral (Literal l) = l
-  | destLiteral _ = raise Error "destLiteral";
+fun destLiteral lit =
+    case lit of
+      Literal l => l
+    | _ => raise Error "Tptp.destLiteral";
 
-fun literalIsBooleanTrue (Boolean true) = true
-  | literalIsBooleanTrue _ = false;
+fun isBooleanLiteral lit =
+    case lit of
+      Boolean _ => true
+    | _ => false;
+
+fun equalBooleanLiteral b lit =
+    case lit of
+      Boolean b' => b = b'
+    | _ => false;
 
 fun negateLiteral (Boolean b) = (Boolean (not b))
   | negateLiteral (Literal l) = (Literal (Literal.negate l));
@@ -1702,7 +1711,7 @@ end;
 (* ------------------------------------------------------------------------- *)
 
 datatype clauseSource =
-    CnfClauseSource of formulaName
+    CnfClauseSource of formulaName * literal list
   | FofClauseSource of Normalize.thm;
 
 type 'a clauseInfo = 'a LiteralSetMap.map;
@@ -1907,13 +1916,13 @@ local
       end;
 
   fun addCnf role ((name,clause),(norm,cnf)) =
-      if List.exists literalIsBooleanTrue clause then (norm,cnf)
+      if List.exists (equalBooleanLiteral true) clause then (norm,cnf)
       else
         let
           val cl = List.mapPartial (total destLiteral) clause
           val cl = LiteralSet.fromList cl
 
-          val src = CnfClauseSource name
+          val src = CnfClauseSource (name,clause)
 
           val norm = addClauses role [(cl,src)] norm
         in
@@ -2195,6 +2204,16 @@ local
         SOME name => name
       | NONE => raise Bug "Tptp.lookupClauseName";
 
+  fun lookupClauseSourceName sources fmNames cl =
+      case lookupClauseSource sources cl of
+        CnfClauseSource (name,_) => name
+      | FofClauseSource th =>
+        let
+          val (fm,_) = Normalize.destThm th
+        in
+          lookupFormulaName fmNames fm
+        end;
+
   fun collectProofDeps sources ((_,inf),names_ths) =
       case inf of
         Proof.Axiom cl =>
@@ -2202,7 +2221,7 @@ local
           val (names,ths) = names_ths
         in
           case lookupClauseSource sources cl of
-            CnfClauseSource name =>
+            CnfClauseSource (name,_) =>
             let
               val names = addFormulaNameSet names name
             in
@@ -2365,15 +2384,7 @@ local
       let
         val parents =
             case inference of
-              Proof.Axiom cl =>
-              (case lookupClauseSource sources cl of
-                 CnfClauseSource name => [name]
-               | FofClauseSource th =>
-                 let
-                   val (fm,_) = Normalize.destThm th
-                 in
-                   [lookupFormulaName fmNames fm]
-                 end)
+              Proof.Axiom cl => [lookupClauseSourceName sources fmNames cl]
             | _ =>
               let
                 val cls = map Thm.clause (Proof.parents inference)
@@ -2381,10 +2392,10 @@ local
                 map (lookupClauseName clNames) cls
               end
       in
-          ProofFormulaSource
-            {inference = inference,
-             parents = parents}
-        end;
+        ProofFormulaSource
+          {inference = inference,
+           parents = parents}
+      end;
 
   fun addNormalizeFormula avoid prefix ((fm,inf,fms),acc) =
       let
@@ -2412,32 +2423,52 @@ local
         (formulas,i,fmNames)
       end;
 
+  fun isSameClause sources formulas inf =
+      case inf of
+        Proof.Axiom cl =>
+          (case lookupClauseSource sources cl of
+             CnfClauseSource (name,lits) =>
+             if List.exists isBooleanLiteral lits then NONE
+             else SOME name
+           | _ => NONE)
+      | _ => NONE;
+
   fun addProofFormula avoid sources fmNames prefix ((th,inf),acc) =
       let
         val (formulas,i,clNames) = acc
 
         val cl = Thm.clause th
-
-        val (name,i) = newName avoid prefix i
-
-        val role = PlainRole
-
-        val body = CnfFormulaBody (clauseFromLiteralSet cl)
-
-        val source = mkProofFormulaSource sources fmNames clNames inf
-
-        val formula =
-            Formula
-              {name = name,
-               role = role,
-               body = body,
-               source = source}
-
-        val formulas = formula :: formulas
-
-        val clNames = LiteralSetMap.insert clNames (cl,name)
       in
-        (formulas,i,clNames)
+        case isSameClause sources formulas inf of
+          SOME name =>
+          let
+            val clNames = LiteralSetMap.insert clNames (cl,name)
+          in
+            (formulas,i,clNames)
+          end
+        | NONE =>
+          let
+            val (name,i) = newName avoid prefix i
+
+            val role = PlainRole
+
+            val body = CnfFormulaBody (clauseFromLiteralSet cl)
+
+            val source = mkProofFormulaSource sources fmNames clNames inf
+
+            val formula =
+                Formula
+                  {name = name,
+                   role = role,
+                   body = body,
+                   source = source}
+
+            val formulas = formula :: formulas
+
+            val clNames = LiteralSetMap.insert clNames (cl,name)
+          in
+            (formulas,i,clNames)
+          end
       end;
 
   fun addSubgoalProofFormulas avoid fmNames (subgoalProof,formulas) =
