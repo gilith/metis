@@ -64,7 +64,7 @@ fun weightIsZero (Weight (m,c)) = c = 0 andalso NameMap.null m;
 fun weightNeg (Weight (m,c)) = Weight (NameMap.transform ~ m, ~c);
 
 local
-  fun add (n1,n2) =
+  fun add ((_,n1),(_,n2)) =
       let
         val n = n1 + n2
       in

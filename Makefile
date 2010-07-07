@@ -50,9 +50,9 @@ SRC = \
   src/Useful.sig src/Useful.sml \
   src/Lazy.sig src/Lazy.sml \
   src/Ordered.sig src/Ordered.sml \
-  src/Set.sig src/RandomSet.sml src/Set.sml \
+  src/Set.sig src/Set.sml \
   src/ElementSet.sig src/ElementSet.sml \
-  src/Map.sig src/RandomMap.sml src/Map.sml \
+  src/Map.sig src/Map.sml \
   src/KeyMap.sig src/KeyMap.sml \
   src/Sharing.sig src/Sharing.sml \
   src/Stream.sig src/Stream.sml \

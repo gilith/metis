@@ -121,7 +121,7 @@ fun compose (sub1 as Subst m1) sub2 =
 (* ------------------------------------------------------------------------- *)
 
 local
-  fun compatible (tm1,tm2) =
+  fun compatible ((_,tm1),(_,tm2)) =
       if Term.equal tm1 tm2 then SOME tm1
       else raise Error "Subst.union: incompatible";
 in

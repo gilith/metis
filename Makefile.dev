@@ -28,7 +28,7 @@ TEMP += $(TEMPFILE) \
 #MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-4]'
 #MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-5]'
 #MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-6]'
-#MLPP_OPTS += -r 'BasicDebug|MetisDebug'
+MLPP_OPTS += -r 'BasicDebug|MetisDebug'
 #MLPP_OPTS += -r 'BasicDebug|MetisDebug|MetisTrace[0-9]'
 
 ###############################################################################
@@ -82,8 +82,6 @@ src/Print.sig: ../basic/src/Print.sig $(COPY) ; @$(COPY) $< $@
 src/Print.sml: ../basic/src/Print.sml $(COPY) ; @$(COPY) $< $@
 src/Random.sig: ../basic/src/Random.sig $(COPY) ; @$(COPY) $< $@
 src/Random.sml: ../basic/src/Random.sml $(COPY) ; @$(COPY) $< $@
-src/RandomMap.sml: ../basic/src/RandomMap.sml $(COPY) ; @$(COPY) $< $@
-src/RandomSet.sml: ../basic/src/RandomSet.sml $(COPY) ; @$(COPY) $< $@
 src/Set.sig: ../basic/src/Set.sig $(COPY) ; @$(COPY) $< $@
 src/Set.sml: ../basic/src/Set.sml $(COPY) ; @$(COPY) $< $@
 src/Sharing.sig: ../basic/src/Sharing.sig $(COPY) ; @$(COPY) $< $@
