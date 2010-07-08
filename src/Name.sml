@@ -79,11 +79,13 @@ end
 structure NameOrdered =
 struct type t = Name.name val compare = Name.compare end
 
+structure NameMap = KeyMap (NameOrdered);
+
 structure NameSet =
 struct
 
   local
-    structure S = ElementSet (NameOrdered);
+    structure S = ElementSet (NameMap);
   in
     open S;
   end;
@@ -94,5 +96,3 @@ struct
         (Print.ppBracket "{" "}" (Print.ppOpList "," Name.pp));
 
 end
-
-structure NameMap = KeyMap (NameOrdered);

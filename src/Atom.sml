@@ -242,6 +242,6 @@ end
 structure AtomOrdered =
 struct type t = Atom.atom val compare = Atom.compare end
 
-structure AtomSet = ElementSet (AtomOrdered);
-
 structure AtomMap = KeyMap (AtomOrdered);
+
+structure AtomSet = ElementSet (AtomMap);

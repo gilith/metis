@@ -28,7 +28,7 @@ TEMP += $(TEMPFILE) \
 #MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-4]'
 #MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-5]'
 #MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-6]'
-MLPP_OPTS += -r 'BasicDebug|MetisDebug'
+#MLPP_OPTS += -r 'BasicDebug|MetisDebug'
 #MLPP_OPTS += -r 'BasicDebug|MetisDebug|MetisTrace[0-9]'
 
 ###############################################################################

@@ -596,6 +596,6 @@ end
 structure FormulaOrdered =
 struct type t = Formula.formula val compare = Formula.compare end
 
-structure FormulaSet = ElementSet (FormulaOrdered);
-
 structure FormulaMap = KeyMap (FormulaOrdered);
+
+structure FormulaSet = ElementSet (FormulaMap);

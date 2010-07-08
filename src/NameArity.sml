@@ -54,24 +54,6 @@ end
 structure NameArityOrdered =
 struct type t = NameArity.nameArity val compare = NameArity.compare end
 
-structure NameAritySet =
-struct
-
-  local
-    structure S = ElementSet (NameArityOrdered);
-  in
-    open S;
-  end;
-
-  val allNullary = all NameArity.nullary;
-
-  val pp =
-      Print.ppMap
-        toList
-        (Print.ppBracket "{" "}" (Print.ppOpList "," NameArity.pp));
-
-end
-
 structure NameArityMap =
 struct
 
@@ -87,5 +69,23 @@ struct
       in
         mapPartial pk m1
       end;
+
+end
+
+structure NameAritySet =
+struct
+
+  local
+    structure S = ElementSet (NameArityMap);
+  in
+    open S;
+  end;
+
+  val allNullary = all NameArity.nullary;
+
+  val pp =
+      Print.ppMap
+        toList
+        (Print.ppBracket "{" "}" (Print.ppOpList "," NameArity.pp));
 
 end

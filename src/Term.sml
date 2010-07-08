@@ -719,6 +719,6 @@ end
 structure TermOrdered =
 struct type t = Term.term val compare = Term.compare end
 
-structure TermSet = ElementSet (TermOrdered);
-
 structure TermMap = KeyMap (TermOrdered);
+
+structure TermSet = ElementSet (TermMap);

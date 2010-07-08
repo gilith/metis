@@ -193,11 +193,13 @@ end
 structure LiteralOrdered =
 struct type t = Literal.literal val compare = Literal.compare end
 
+structure LiteralMap = KeyMap (LiteralOrdered);
+
 structure LiteralSet =
 struct
 
   local
-    structure S = ElementSet (LiteralOrdered);
+    structure S = ElementSet (LiteralMap);
   in
     open S;
   end;
@@ -283,11 +285,9 @@ struct
 
 end
 
-structure LiteralMap = KeyMap (LiteralOrdered);
-
 structure LiteralSetOrdered =
 struct type t = LiteralSet.set val compare = LiteralSet.compare end
 
-structure LiteralSetSet = ElementSet (LiteralSetOrdered);
-
 structure LiteralSetMap = KeyMap (LiteralSetOrdered);
+
+structure LiteralSetSet = ElementSet (LiteralSetMap);
