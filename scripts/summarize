@@ -84,6 +84,7 @@ while (my $line = <STDIN>) {
         $state = 'time';
     }
 
+#    if ($line eq 'Command terminated abnormally.') {
     if ($line =~ /Killed.*metis/) {
         ($state eq 'status') or ($state eq 'time') or
         ($state =~ /^proof\./) or ($state =~ /^saturation\./) or die;
