@@ -1,7 +1,3 @@
-Binarymap.sig
-Binarymap.sml
-Binaryset.sig
-Binaryset.sml
 ElementSet.sig
 ElementSet.sml
 Heap.sig
@@ -26,8 +22,6 @@ Print.sig
 Print.sml
 Random.sig
 Random.sml
-RandomMap.sml
-RandomSet.sml
 Set.sig
 Set.sml
 Sharing.sig
