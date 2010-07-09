@@ -9,13 +9,11 @@
 # Cleaning temporary files.
 ###############################################################################
 
-TEMPFILE = Makefile-temp-file
-
-TEMP += $(TEMPFILE) \
-        cnf_*.tptp saturation.tptp \
-	bin/mlton/*.ssa bin/mlton/*.ssa2 \
-        bin/mlton/benchmark \
-        mlmon.out profile-*
+TEMP += \
+  cnf_*.tptp saturation.tptp \
+  bin/mlton/*.ssa bin/mlton/*.ssa2 \
+  bin/mlton/benchmark \
+  mlmon.out profile-*
 
 ###############################################################################
 # The ML preprocessor.
@@ -245,10 +243,25 @@ status-test: $(METIS)
 #	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/BOO036-1.tptp | grep '^SZS status Satisfiable for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/KRS174+1.tptp | grep '^SZS status Theorem for'
 
+STD_BENCHMARK = scripts/benchmark
+
+$(STD_BENCHMARK): Makefile.dev
+	echo '#!/bin/bash' > $@
+	echo >> $@
+	echo "if ! test -x $(METIS) ; then echo \"cannot execute $(METIS): to build it type 'make mlton'\" ; exit 1 ; fi" >> $@
+	echo >> $@
+	echo ulimit -t $(TEST_TIME_LIMIT) >> $@
+	echo >> $@
+	find $(NONEQUALITY_SET)/*.tptp | perl -ne 'print STDOUT "time $(METIS) --show all $$_";' >> $@
+	echo >> $@
+	find $(EQUALITY_SET)/*.tptp | perl -ne 'print STDOUT "time $(METIS) --show all $$_";' >> $@
+	echo >> $@
+	echo "echo \"Completed benchmark of $(METIS)\"" >> $@
+	chmod +x $@
+
 .PHONY: std-test
-std-test: $(METIS)
-	ulimit -t $(TEST_TIME_LIMIT) ; find $(NONEQUALITY_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show all $$_");' 2>&1 | tee std-log
-	ulimit -t $(TEST_TIME_LIMIT) ; find $(EQUALITY_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show all $$_");' 2>&1 | tee -a std-log
+std-test: $(STD_BENCHMARK) $(METIS)
+	$(STD_BENCHMARK) 2>&1 | tee std-log
 
 .PHONY: tptp-test
 tptp-test: $(METIS)
@@ -334,7 +347,7 @@ tarball: doc/DONT-RELEASE Makefile.dev
 	cd .. ; tar cvzhf metis/release/metis.tar.gz --exclude-from metis/doc/DONT-RELEASE metis
 
 .PHONY: release
-release: release-stamp mosml mlton polyml status-test documentation
+release: release-stamp mosml mlton polyml status-test documentation $(STD_BENCHMARK)
 	rm -f $(RELEASE_DIR)/*.html $(RELEASE_DIR)/*.jpg $(RELEASE_DIR)/*.txt
 	cp -v doc/*.html doc/*.jpg doc/*.txt $(RELEASE_DIR)/
 	cp -v doc/favicon.ico $(METIS) $(RELEASE_DIR)/

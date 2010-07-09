@@ -41,7 +41,7 @@ while (my $line = <STDIN>) {
     }
 
     if ($line =~ /^------------+$/) {
-        ($state eq 'init') or die;
+        ($state eq 'init') or die "bad state: \"$state\"";
         $state = 'name';
         $status = 'Unknown';
     }
@@ -84,16 +84,17 @@ while (my $line = <STDIN>) {
         $state = 'time';
     }
 
-    if ($line eq 'Command terminated abnormally.') {
+    if ($line =~ /Killed.*metis/) {
         ($state eq 'status') or ($state eq 'time') or
         ($state =~ /^proof\./) or ($state =~ /^saturation\./) or die;
         $status = 'ResourceOut';
         $state = 'time';
     }
 
-    if ($line =~ /^ *([0-9.]+) real +[0-9.]+ user +[0-9.]+ sys *$/) {
-        ($state eq 'time') or die;
-        $time = $1;
+#    if ($line =~ /^ *([0-9.]+) real +[0-9.]+ user +[0-9.]+ sys *$/) {
+    if ($line =~ /^real[[:space:]]+([0-9]+)m([0-9.]+)s$/) {
+        ($state eq 'time') or die "bad state: \"$state\"";
+        $time = 60.0 * $1 + $2;
         $state = 'finished';
     }
 

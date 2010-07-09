@@ -1,3 +1,5 @@
+Running in basic DEBUG mode.
+Running in metis DEBUG mode.
 ---------------------------------------------------------------------------
 Problem: data/problems/all/MGT019+2.tptp
 
@@ -241,13 +243,13 @@ SZS output start Saturation for data/problems/all/SWV010+1.tptp
            (encrypt
               (triple a an_a_nonce (generate_expiration_time an_a_nonce))
               bt)))
-|- ~t_holds (key $_32 a) \/
+|- ~t_holds (key $_50 a) \/
    message
      (sent t a
         (triple
            (encrypt
               (quadruple b an_a_nonce (generate_key an_a_nonce)
-                 (generate_expiration_time an_a_nonce)) $_32)
+                 (generate_expiration_time an_a_nonce)) $_50)
            (encrypt
               (triple a (generate_key an_a_nonce)
                  (generate_expiration_time an_a_nonce)) bt)
