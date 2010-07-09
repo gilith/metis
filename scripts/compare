@@ -79,7 +79,7 @@ sub read_log {
     if ($input =~ /\.gz$/) {
         my $raw = $input;
         $input =~ s/\.gz$//;
-        (system("gzcat $raw | scripts/summarize -l > $input") == 0) or
+        (system("zcat $raw | scripts/summarize -l > $input") == 0) or
             die "compare: couldn't preprocess input:\n$!";
     }
 
