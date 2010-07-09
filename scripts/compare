@@ -88,16 +88,18 @@ sub read_log {
 
     while (my $line = <INPUT>) {
         chomp $line;
-        $line =~ /^[^ ]*\/[0-9]+-([[:alnum:]+._-]+)\.tptp ([[:alnum:]]+) ([[:digit:].]+)$/ or
-            die "compare: bad input line:\n$line\n";
-        my $name = $1;
-        my $status = $2;
-        my $time = $3;
-        if (exists ${$result}{$name}) {
-            die "compare: duplicate problem names: $name\n";
+        if ($line !~ /^#/) {
+            $line =~ /^[^ ]*\/[0-9]+-([[:alnum:]+._-]+)\.tptp ([[:alnum:]]+) ([[:digit:].]+)$/ or
+                die "compare: bad input line:\n$line\n";
+            my $name = $1;
+            my $status = $2;
+            my $time = $3;
+            if (exists ${$result}{$name}) {
+                die "compare: duplicate problem names: $name\n";
+            }
+            my $time_str = sprintf ("%.2f",$time);
+            ${$result}{$name} = [$time,$time_str,$status];
         }
-        my $time_str = sprintf ("%.2f",$time);
-        ${$result}{$name} = [$time,$time_str,$status];
     }
 
     close INPUT;
