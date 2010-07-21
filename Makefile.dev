@@ -11,7 +11,7 @@
 
 TEMP += \
   cnf_*.tptp saturation.tptp \
-  bin/mlton/*.ssa bin/mlton/*.ssa2 \
+  bin/mlton/*.ssa bin/mlton/*.ssa2 bin/mlton/basis.sml \
   bin/mlton/benchmark \
   mlmon.out profile-*
 
@@ -48,9 +48,10 @@ bin/mosml/Makefile.src: Makefile Makefile.dev $(MOSML_DEP) $(MLPP)
 ###############################################################################
 
 MLTON_OPTS += -verbose 1 -keep ssa -keep ssa2
+MLTON_OPTS += -const 'Exn.keepHistory true'
+#MLTON_OPTS += -show-basis basis.sml
 #MLTON_OPTS += -inline 100000
 #MLTON_OPTS += -const 'MLton.safe false' -const 'MLton.detectOverflow false'
-#MLTON_OPTS += -const 'Exn.keepHistory true'
 
 ###############################################################################
 # Moving source files around.
