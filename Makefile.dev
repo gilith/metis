@@ -116,16 +116,13 @@ TPTP_PROBLEM_DIR = test/tptp
 PROBLEMS2TPTP = bin/mosml/problems2tptp
 COPY_PROBLEM = scripts/copy_problem
 ALL_SET = $(PROBLEM_DIR)/all
-INSTANT_SET = $(PROBLEM_DIR)/instant
 NONEQUALITY_SET = $(PROBLEM_DIR)/nonequality
 EQUALITY_SET = $(PROBLEM_DIR)/equality
 TPTP_SET = $(PROBLEM_DIR)/tptp
 HOL_SET = $(PROBLEM_DIR)/hol
-BENCHMARK_SET = $(PROBLEM_DIR)/benchmark
-MLTON_BENCHMARK_SET = $(PROBLEM_DIR)/mlton-benchmark-20020924
 SATISFIABLE_SET = $(PROBLEM_DIR)/satisfiable
-TPTP_CNF_SET = $(PROBLEM_DIR)/tptp-cnf
-TPTP_FOF_SET = $(PROBLEM_DIR)/tptp-fof
+INSTANT_SET = $(PROBLEM_DIR)/instant
+BENCHMARK_SET = $(PROBLEM_DIR)/benchmark
 
 .PHONY: problems-all
 problems-all: $(PROBLEMS2TPTP)
@@ -155,6 +152,9 @@ problems: $(PROBLEMS2TPTP)
 	for p in `$(PROBLEMS2TPTP) --collection tptp --list` ; do $(COPY_PROBLEM) $(ALL_SET)/$$p.tptp $(TPTP_SET) ; done
 	mkdir $(HOL_SET)
 	for p in `$(PROBLEMS2TPTP) --collection hol --list` ; do $(COPY_PROBLEM) $(ALL_SET)/$$p.tptp $(HOL_SET) ; done
+	mkdir $(SATISFIABLE_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/LOGICPROOF_1999.tptp $(SATISFIABLE_SET)
+	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_2.tptp $(SATISFIABLE_SET)
 	mkdir $(INSTANT_SET)
 	@$(COPY_PROBLEM) $(ALL_SET)/TRUE.tptp $(INSTANT_SET)
 	@$(COPY_PROBLEM) $(ALL_SET)/SIMPLE.tptp $(INSTANT_SET)
@@ -176,28 +176,6 @@ problems: $(PROBLEMS2TPTP)
 	@$(COPY_PROBLEM) $(ALL_SET)/AGATHA.tptp $(BENCHMARK_SET)
 	@$(COPY_PROBLEM) $(ALL_SET)/JACOBSON_2.tptp $(BENCHMARK_SET)
 	@$(COPY_PROBLEM) $(ALL_SET)/WISHNU.tptp $(BENCHMARK_SET)
-	mkdir $(MLTON_BENCHMARK_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/P26.tptp $(MLTON_BENCHMARK_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/P46.tptp $(MLTON_BENCHMARK_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_1.tptp $(MLTON_BENCHMARK_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/LOS.tptp $(MLTON_BENCHMARK_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/STEAM_ROLLER.tptp $(MLTON_BENCHMARK_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/P48.tptp $(MLTON_BENCHMARK_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/P49.tptp $(MLTON_BENCHMARK_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/AGATHA.tptp $(MLTON_BENCHMARK_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/LCL009-1.tptp $(MLTON_BENCHMARK_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/COL060-3.tptp $(MLTON_BENCHMARK_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/COL058-2.tptp $(MLTON_BENCHMARK_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/LCL107-1.tptp $(MLTON_BENCHMARK_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/BOO021-1.tptp $(MLTON_BENCHMARK_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/GRP128-4.003.tptp $(MLTON_BENCHMARK_SET)
-	mkdir $(SATISFIABLE_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/LOGICPROOF_1999.tptp $(SATISFIABLE_SET)
-	@$(COPY_PROBLEM) $(ALL_SET)/GILMORE_2.tptp $(SATISFIABLE_SET)
-#	mkdir $(TPTP_CNF_SET)
-#	@(tptp1T CNF Unsatisfiable || tptp2T -pp Form CNF Status Unsatisfiable) | perl -n -e '$$l = $$_; chomp $$l; if ($$l =~ /^[A-Z]/) { $$l =~ s/[[:space:]].*$$//; $$l =~ s/^([A-Z]*)/\1\/\1/; (system ("$(COPY_PROBLEM) -l $(TPTP_PROBLEM_DIR)/$$l.tptp $(TPTP_CNF_SET)") == 0) or die; }'
-#	mkdir $(TPTP_FOF_SET)
-#	@(tptp1T FOF Theorem || tptp2T -pp Form FOF Status Theorem) | perl -n -e '$$l = $$_; chomp $$l; if ($$l =~ /^[A-Z]/) { $$l =~ s/[[:space:]].*$$//; $$l =~ s/^([A-Z]*)/\1\/\1/; (system ("$(COPY_PROBLEM) -l $(TPTP_PROBLEM_DIR)/$$l.tptp $(TPTP_FOF_SET)") == 0) or die; }'
 
 ###############################################################################
 # Testing Metis on the problem sets.
@@ -264,13 +242,8 @@ $(STD_BENCHMARK): Makefile.dev
 std-test: $(STD_BENCHMARK) $(METIS)
 	$(STD_BENCHMARK) 2>&1 | tee std-log
 
-.PHONY: tptp-test
-tptp-test: $(METIS)
-	ulimit -t $(TEST_TIME_LIMIT) ; find $(TPTP_CNF_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show proof --show saturation $$_");' 2>&1 | tee tptp-log
-#	ulimit -t $(TEST_TIME_LIMIT) ; find $(TPTP_FOF_SET)/*.tptp | perl -n -e 'system ("time $(METIS) --show name --show proof --show saturation $$_");' 2>&1 | tee -a tptp-log
-
 .PHONY: tests
-tests: status-test std-test tptp-test
+tests: status-test std-test
 
 ###############################################################################
 # Profiling using MLton.
