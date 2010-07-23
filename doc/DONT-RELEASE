@@ -2,8 +2,6 @@
 .gitignore
 metis/cnf_*.tptp
 metis/graph.png
-metis/data/problems/tptp-cnf
-metis/data/problems/tptp-fof
 metis/data/logs
 metis/doc/DONT-RELEASE
 metis/doc/TODO
@@ -22,4 +20,3 @@ metis/scripts/summarize
 metis/scripts/unproved
 metis/src/benchmark.sml
 metis/std-log
-metis/tptp-log
