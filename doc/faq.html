@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Frequently Asked Questions About Metis</title>
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+</head>
+
+<body>
+
+<h1>Frequently Asked Questions About Metis</h1>
+
+<h4>Where can I download Metis?</h4>
+
+<p>The most recent version of Metis can be downloaded from
+
+<a href="http://www.gilith.com/software/metis/"><tt>http://www.gilith.com/software/metis/</tt></a>.</p>
+
+<hr />
+
+<h4>Where is the Metis documentation?</h4>
+
+<p>The
+
+<a href="notes.html"><tt>doc/notes.html</tt></a>
+
+file of the Metis release contains a collection of links to
+documentation.</p>
+
+<p>Unfortunately there is no documentation for the source code of
+Metis, but one design goal of the code was to make it readable, and
+I'd be happy to answer questions about it emailed to
+
+<a href="mailto:joe@gilith.com">joe@gilith.com</a></p>
+
+<hr />
+
+<h4>What version of ML should I use to compile Metis?</h4>
+
+<p>I strongly recommend using MLton (or Poly/ML) over Moscow ML to run
+opentheory, for reasons of speed (MLton is about 10 times faster than
+Moscow ML).</p>
+
+<hr />
+
+<h4>Why are there no paramodulation steps in Metis proofs?</h4>
+
+<p>Metis is doing a paramodulation step internally, but this is broken
+down in the CNF refutation into one of six simple inference rules,
+which are described in
+
+<a href="logical-kernel.txt"><tt>doc/logical-kernel.txt</tt></a>
+
+and can be found in the Thm module of the source code.</p>
+
+<p>The approach of breaking proofs down into tiny inference rules is
+done to make it easier to replay the proofs when Metis is being used
+as a tactic in a higher order logic theorem prover, but it makes the
+proofs less readable.</p>
+
+<hr />
+
+<img src="metis.jpg" alt="Metis the moon of Jupiter" />
+
+</body>
+</html>

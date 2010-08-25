@@ -1,5 +1,3 @@
-Running in basic DEBUG mode.
-Running in metis DEBUG mode.
 ---------------------------------------------------------------------------
 Problem: data/problems/all/MGT019+2.tptp
 

@@ -28,7 +28,7 @@ val PROGRAM = "metis";
 
 val VERSION = "2.2";
 
-val versionString = PROGRAM^" "^VERSION^" (release 20100723)"^"\n";
+val versionString = PROGRAM^" "^VERSION^" (release 20100825)"^"\n";
 
 (* ------------------------------------------------------------------------- *)
 (* Program options.                                                          *)
@@ -488,9 +488,6 @@ end;
 
 val () =
 let
-  (*BasicDebug val () = print "Running in basic DEBUG mode.\n" *)
-  (*MetisDebug val () = print "Running in metis DEBUG mode.\n" *)
-
   val work = processOptions ()
 
   val () = if null work then usage "no input problem files" else ()
