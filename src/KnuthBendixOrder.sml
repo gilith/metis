@@ -99,7 +99,7 @@ fun weightLowerBound (w as Weight (m,c)) =
 val ppWeightList =
     let
       fun ppCoeff n =
-          if n < 0 then Print.sequence (Print.addString "~") (ppCoeff (~n))
+          if n < 0 then Print.sequence (Print.ppString "~") (ppCoeff (~n))
           else if n = 1 then Print.skip
           else Print.ppInt n
 

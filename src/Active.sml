@@ -321,7 +321,7 @@ val pp =
 local
   fun ppField f ppA a =
       Print.blockProgram Print.Inconsistent 2
-        [Print.addString (f ^ " ="),
+        [Print.ppString (f ^ " ="),
          Print.addBreak 1,
          ppA a];
 
@@ -342,21 +342,21 @@ local
 in
   fun pp (Active {clauses,rewrite,subterms,...}) =
       Print.blockProgram Print.Inconsistent 2
-        [Print.addString "Active",
+        [Print.ppString "Active",
          Print.addBreak 1,
          Print.blockProgram Print.Inconsistent 1
-           [Print.addString "{",
+           [Print.ppString "{",
             ppClauses clauses,
-            Print.addString ",",
+            Print.ppString ",",
             Print.addBreak 1,
             ppRewrite rewrite,
 (*MetisTrace5
-            Print.addString ",",
+            Print.ppString ",",
             Print.addBreak 1,
             ppSubterms subterms,
 *)
             Print.skip],
-         Print.addString "}"];
+         Print.ppString "}"];
 end;
 *)
 
