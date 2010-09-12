@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (c) 2007 Joe Hurd, All Rights Reserved
+# Copyright (c) 2007 Joe Hurd, distributed under the MIT license
 
 use strict;
 use warnings;

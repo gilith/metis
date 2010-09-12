@@ -1,21 +1,6 @@
 (* ========================================================================= *)
 (* METIS FIRST ORDER PROVER                                                  *)
-(*                                                                           *)
-(* Copyright (c) 2001 Joe Hurd                                               *)
-(*                                                                           *)
-(* Metis is free software; you can redistribute it and/or modify             *)
-(* it under the terms of the GNU General Public License as published by      *)
-(* the Free Software Foundation; either version 2 of the License, or         *)
-(* (at your option) any later version.                                       *)
-(*                                                                           *)
-(* Metis is distributed in the hope that it will be useful,                  *)
-(* but WITHOUT ANY WARRANTY; without even the implied warranty of            *)
-(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             *)
-(* GNU General Public License for more details.                              *)
-(*                                                                           *)
-(* You should have received a copy of the GNU General Public License         *)
-(* along with Metis; if not, write to the Free Software                      *)
-(* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *)
+(* Copyright (c) 2001 Joe Hurd, distributed under the MIT license            *)
 (* ========================================================================= *)
 
 open Useful;
@@ -26,9 +11,9 @@ open Useful;
 
 val PROGRAM = "metis";
 
-val VERSION = "2.2";
+val VERSION = "2.3";
 
-val versionString = PROGRAM^" "^VERSION^" (release 20100825)"^"\n";
+val versionString = PROGRAM^" "^VERSION^" (release 20100911)"^"\n";
 
 (* ------------------------------------------------------------------------- *)
 (* Program options.                                                          *)
