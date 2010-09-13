@@ -324,10 +324,13 @@ tarball: doc/DONT-RELEASE Makefile.dev
 release: release-stamp mosml mlton polyml status-test documentation $(STD_BENCHMARK)
 	rm -f $(RELEASE_DIR)/*.html $(RELEASE_DIR)/*.jpg $(RELEASE_DIR)/*.txt
 	cp -v doc/*.html doc/*.jpg doc/*.txt $(RELEASE_DIR)/
-	cp -v doc/favicon.ico doc/MIT-LICENSE $(METIS) $(RELEASE_DIR)/
+	cp -v doc/favicon.ico $(RELEASE_DIR)/
+	cp -v doc/MIT-LICENSE $(RELEASE_DIR)/
+	cp -v $(METIS) $(RELEASE_DIR)/
 	$(MAKE) tarball
 	rsync -azv --delete --checksum --size-only --exclude=.gitignore -e ssh $(RELEASE_DIR)/ gilith@login.gilith.com:public_html/software/metis
 	ssh gilith@login.gilith.com '/bin/bash -l scripts/install_metis'
+	echo Completed release
 
 .PHONY: hol-release
 hol-release: mosml
