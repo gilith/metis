@@ -158,7 +158,7 @@ local
   fun isTptpChar #"_" = true
     | isTptpChar c = Char.isAlphaNum c;
 
-  fun isTptpName l s = nonEmptyPred (existsPred l) (explode s);
+  fun isTptpName l s = nonEmptyPred (existsPred l) (String.explode s);
 
   fun isRegular (c,cs) =
       Char.isLower c andalso List.all isTptpChar cs;
@@ -175,14 +175,14 @@ in
   fun mkTptpVarName s =
       let
         val s =
-            case List.filter isTptpChar (explode s) of
+            case List.filter isTptpChar (String.explode s) of
               [] => [#"X"]
             | l as c :: cs =>
               if Char.isUpper c then l
               else if Char.isLower c then Char.toUpper c :: cs
               else #"X" :: l
       in
-        implode s
+        String.implode s
       end;
 
   val isTptpConstName = isTptpName [isRegular,isNumber,isDefined,isSystem]
@@ -735,7 +735,8 @@ local
   infixr 7 >>
   infixr 6 ||
 
-  val alphaNumToken = atLeastOne (some isAlphaNum) >> (AlphaNum o implode);
+  val alphaNumToken =
+      atLeastOne (some isAlphaNum) >> (AlphaNum o String.implode);
 
   val punctToken =
       let
@@ -759,7 +760,7 @@ local
             some (not o stopOn) >> singleton
       in
         exactChar #"'" ++ many quotedParser ++ exactChar #"'" >>
-        (fn (_,(l,_)) => Quote (implode (List.concat l)))
+        (fn (_,(l,_)) => Quote (String.implode (List.concat l)))
       end;
 
   val lexToken = alphaNumToken || punctToken || quoteToken;
@@ -779,7 +780,7 @@ val clauseFunctions =
     let
       fun funcs (lit,acc) = NameAritySet.union (functionsLiteral lit) acc
     in
-      foldl funcs NameAritySet.empty
+      List.foldl funcs NameAritySet.empty
     end;
 
 val clauseRelations =
@@ -789,14 +790,14 @@ val clauseRelations =
             NONE => acc
           | SOME r => NameAritySet.add acc r
     in
-      foldl rels NameAritySet.empty
+      List.foldl rels NameAritySet.empty
     end;
 
 val clauseFreeVars =
     let
       fun fvs (lit,acc) = NameSet.union (freeVarsLiteral lit) acc
     in
-      foldl fvs NameSet.empty
+      List.foldl fvs NameSet.empty
     end;
 
 fun clauseSubst sub lits = map (literalSubst sub) lits;
@@ -1208,14 +1209,14 @@ val formulasFunctions =
     let
       fun funcs (fm,acc) = NameAritySet.union (functionsFormula fm) acc
     in
-      foldl funcs NameAritySet.empty
+      List.foldl funcs NameAritySet.empty
     end;
 
 val formulasRelations =
     let
       fun rels (fm,acc) = NameAritySet.union (relationsFormula fm) acc
     in
-      foldl rels NameAritySet.empty
+      List.foldl rels NameAritySet.empty
     end;
 
 fun isCnfConjectureFormula fm =
@@ -1285,7 +1286,7 @@ local
 
   val stringParser = lowerParser || upperParser;
 
-  val numberParser = someAlphaNum (List.all Char.isDigit o explode);
+  val numberParser = someAlphaNum (List.all Char.isDigit o String.explode);
 
   fun somePunct p =
       maybe (fn Punct c => if p c then SOME c else NONE | _ => NONE);
@@ -1299,7 +1300,7 @@ local
       | f [x] = x
       | f (h :: t) = (h ++ f t) >> K ();
   in
-    fun symbolParser s = f (map punctParser (explode s));
+    fun symbolParser s = f (map punctParser (String.explode s));
   end;
 
   val definedParser =
@@ -1745,8 +1746,8 @@ fun mkLineComment "" = "%"
 fun destLineComment cs =
     case cs of
       [] => ""
-    | #"%" :: #" " :: rest => implode rest
-    | #"%" :: rest => implode rest
+    | #"%" :: #" " :: rest => String.implode rest
+    | #"%" :: rest => String.implode rest
     | _ => raise Error "Tptp.destLineComment";
 
 val isLineComment = can destLineComment;

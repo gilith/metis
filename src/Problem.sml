@@ -29,9 +29,9 @@ fun size prob =
       val cls = toClauses prob
     in
       {clauses = length cls,
-       literals = foldl lits 0 cls,
-       symbols = foldl syms 0 cls,
-       typedSymbols = foldl typedSyms 0 cls}
+       literals = List.foldl lits 0 cls,
+       symbols = List.foldl syms 0 cls,
+       typedSymbols = List.foldl typedSyms 0 cls}
     end;
 
 fun freeVars {axioms,conjecture} =

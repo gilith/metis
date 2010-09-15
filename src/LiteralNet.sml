@@ -39,7 +39,7 @@ fun insert {positive,negative} ((true,atm),a) =
   | insert {positive,negative} ((false,atm),a) =
     {positive = positive, negative = AtomNet.insert negative (atm,a)};
 
-fun fromList parm l = foldl (fn (lit_a,n) => insert n lit_a) (new parm) l;
+fun fromList parm l = List.foldl (fn (lit_a,n) => insert n lit_a) (new parm) l;
 
 fun filter pred {positive,negative} =
     {positive = AtomNet.filter pred positive,

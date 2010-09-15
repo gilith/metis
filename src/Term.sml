@@ -348,7 +348,7 @@ fun destApp tm =
 
 val isApp = can destApp;
 
-fun listMkApp (f,l) = foldl mkApp f l;
+fun listMkApp (f,l) = List.foldl mkApp f l;
 
 local
   fun strip tms tm =
@@ -582,31 +582,32 @@ local
 
   val isAlphaNum =
       let
-        val alphaNumChars = explode "_'"
+        val alphaNumChars = String.explode "_'"
       in
         fn c => mem c alphaNumChars orelse Char.isAlphaNum c
       end;
 
   local
-    val alphaNumToken = atLeastOne (some isAlphaNum) >> implode;
+    val alphaNumToken = atLeastOne (some isAlphaNum) >> String.implode;
 
     val symbolToken =
         let
           fun isNeg c = str c = !negation
 
-          val symbolChars = explode "<>=-*+/\\?@|!$%&#^:;~"
+          val symbolChars = String.explode "<>=-*+/\\?@|!$%&#^:;~"
 
           fun isSymbol c = mem c symbolChars
 
           fun isNonNegSymbol c = not (isNeg c) andalso isSymbol c
         in
           some isNeg >> str ||
-          (some isNonNegSymbol ++ many (some isSymbol)) >> (implode o op::)
+          (some isNonNegSymbol ++ many (some isSymbol)) >>
+          (String.implode o op::)
         end;
 
     val punctToken =
         let
-          val punctChars = explode "()[]{}.,"
+          val punctChars = String.explode "()[]{}.,"
 
           fun isPunct c = mem c punctChars
         in
@@ -679,7 +680,7 @@ local
                      some (Useful.equal ".")) >>++
                     (fn (_,(vs,_)) =>
                         term (StringSet.addList bv vs) >>
-                        (fn body => foldr bind body vs))
+                        (fn body => List.foldr bind body vs))
                   end
             in
               var ||
@@ -708,7 +709,7 @@ local
 in
   fun fromString input =
       let
-        val chars = Stream.fromList (explode input)
+        val chars = Stream.fromList (String.explode input)
 
         val tokens = everything (lexer >> singleton) chars
 

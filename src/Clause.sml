@@ -15,8 +15,17 @@ open Useful;
 val newId =
     let
       val r = ref 0
+
+      fun new () =
+          let
+            val ref n = r
+
+            val () = r := n + 1
+          in
+            n
+          end
     in
-      fn () => case r of ref n => let val () = r := n + 1 in n end
+      fn () => Portable.critical new ()
     end;
 
 (* ------------------------------------------------------------------------- *)
@@ -179,7 +188,7 @@ local
       let
         fun addTm ((path,tm),acc) = (lit,path,tm) :: acc
       in
-        foldl addTm acc (Literal.nonVarTypedSubterms lit)
+        List.foldl addTm acc (Literal.nonVarTypedSubterms lit)
       end;
 in
   fun largestSubterms cl = LiteralSet.foldl addLit [] (largestLiterals cl);

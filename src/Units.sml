@@ -47,7 +47,7 @@ fun add (units as Units net) (uTh as (lit,th)) =
         end
     end;
 
-val addList = foldl (fn (th,u) => add u th);
+val addList = List.foldl (fn (th,u) => add u th);
 
 (* ------------------------------------------------------------------------- *)
 (* Matching.                                                                 *)

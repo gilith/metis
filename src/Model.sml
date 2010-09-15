@@ -1190,7 +1190,7 @@ local
                 let
                   fun add (y,acc) = FunctionPerturbation (func_xs,y) :: acc
                 in
-                  foldl add acc target
+                  List.foldl add acc target
                 end
         in
           pertTerms M onTarget tms xs acc
