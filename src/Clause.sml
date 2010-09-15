@@ -60,7 +60,7 @@ fun toString cl = Print.toString pp cl;
 
 val default : parameters =
     {ordering = KnuthBendixOrder.default,
-     orderLiterals = PositiveLiteralOrder,
+     orderLiterals = UnsignedLiteralOrder,
      orderTerms = true};
 
 fun mk info = Clause info

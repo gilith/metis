@@ -94,44 +94,29 @@ SZS output start Saturation for data/problems/all/MGT019+2.tptp
 |- ~in_environment skolemFOFtoCNF_E_1 $To \/
    subpopulations first_movers efficient_producers skolemFOFtoCNF_E_1
      (skolemFOFtoCNF_T_1 $To)
-|- in_environment skolemFOFtoCNF_E_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)
-|- subpopulations first_movers efficient_producers skolemFOFtoCNF_E_1
-     (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1))
-|- greater_or_equal
-     (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1))
-     (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)
-|- skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1) =
-   skolemFOFtoCNF_To skolemFOFtoCNF_E_1 \/
-   greater (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1))
-     (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)
-|- ~greater_or_equal skolemFOFtoCNF_T
-      (skolemFOFtoCNF_To skolemFOFtoCNF_E) \/ ~stable skolemFOFtoCNF_E \/
-   greater_or_equal (founding_rate efficient_producers skolemFOFtoCNF_T)
-     (founding_rate first_movers skolemFOFtoCNF_T)
-|- greater_or_equal
-     (founding_rate efficient_producers
-        (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
-     (founding_rate first_movers
-        (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
-|- founding_rate efficient_producers
-     (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)) =
-   founding_rate first_movers
-     (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)) \/
-   greater
-     (founding_rate efficient_producers
-        (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
-     (founding_rate first_movers
-        (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
-|- ~greater
-      (disbanding_rate first_movers
-         (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
-      (disbanding_rate efficient_producers
-         (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1))) \/
-   greater
-     (growth_rate efficient_producers
-        (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
-     (growth_rate first_movers
-        (skolemFOFtoCNF_T_1 (skolemFOFtoCNF_To skolemFOFtoCNF_E_1)))
+|- ~in_environment skolemFOFtoCNF_E_1 $_5 \/
+   skolemFOFtoCNF_T_1 $_5 = $_5 \/ greater (skolemFOFtoCNF_T_1 $_5) $_5
+|- ~environment $_8 \/ ~greater_or_equal $_9 (skolemFOFtoCNF_To $_8) \/
+   ~stable $_8 \/
+   ~subpopulations first_movers efficient_producers $_8 $_9 \/
+   founding_rate efficient_producers $_9 =
+   founding_rate first_movers $_9 \/
+   greater (founding_rate efficient_producers $_9)
+     (founding_rate first_movers $_9)
+|- ~environment $_8 \/
+   ~greater (disbanding_rate first_movers $_9)
+      (disbanding_rate efficient_producers $_9) \/
+   ~greater_or_equal $_9 (skolemFOFtoCNF_To $_8) \/ ~stable $_8 \/
+   ~subpopulations first_movers efficient_producers $_8 $_9 \/
+   greater (growth_rate efficient_producers $_9)
+     (growth_rate first_movers $_9)
+|- ~environment $_12 \/
+   ~greater (disbanding_rate first_movers (skolemFOFtoCNF_T_1 $To))
+      (disbanding_rate efficient_producers (skolemFOFtoCNF_T_1 $To)) \/
+   ~greater_or_equal (skolemFOFtoCNF_T_1 $To) (skolemFOFtoCNF_To $_12) \/
+   ~in_environment skolemFOFtoCNF_E_1 $To \/ ~stable $_12 \/
+   ~subpopulations first_movers efficient_producers $_12
+      (skolemFOFtoCNF_T_1 $To)
 SZS output end Saturation for data/problems/all/MGT019+2.tptp
 
 ---------------------------------------------------------------------------
@@ -235,40 +220,31 @@ SZS output start Saturation for data/problems/all/SWV010+1.tptp
         (triple (encrypt (quadruple $U $X (generate_key $X) $Y) $X1)
            (encrypt (triple $W (generate_key $X) $Y) $Z) $V))
 |- b_stored (a, an_a_nonce)
-|- message
-     (sent b t
-        (triple b (generate_b_nonce an_a_nonce)
-           (encrypt
-              (triple a an_a_nonce (generate_expiration_time an_a_nonce))
-              bt)))
-|- ~t_holds (key $_50 a) \/
+|- ~a_stored ($_67, $_70) \/
+   ~message
+      (sent $_67 t
+         (triple $_67 $_68 (encrypt (triple a $_70 $_72) $_73))) \/
+   ~t_holds (key $_73 $_67) \/
    message
-     (sent t a
-        (triple
-           (encrypt
-              (quadruple b an_a_nonce (generate_key an_a_nonce)
-                 (generate_expiration_time an_a_nonce)) $_50)
-           (encrypt
-              (triple a (generate_key an_a_nonce)
-                 (generate_expiration_time an_a_nonce)) bt)
-           (generate_b_nonce an_a_nonce)))
-|- message
-     (sent t a
-        (triple
-           (encrypt
-              (quadruple b an_a_nonce (generate_key an_a_nonce)
-                 (generate_expiration_time an_a_nonce)) at)
-           (encrypt
-              (triple a (generate_key an_a_nonce)
-                 (generate_expiration_time an_a_nonce)) bt)
-           (generate_b_nonce an_a_nonce)))
-|- message
-     (sent a b
-        (encrypt
-           (triple a (generate_key an_a_nonce)
-              (generate_expiration_time an_a_nonce)) bt,
-         encrypt (generate_b_nonce an_a_nonce) (generate_key an_a_nonce)))
+     (sent a $_67
+        (encrypt (triple a (generate_key $_70) $_72) $_73,
+         encrypt $_68 (generate_key $_70)))
+|- ~a_stored ($_67, $_70) \/
+   ~message
+      (sent $_67 t
+         (triple $_67 $_68 (encrypt (triple a $_70 $_72) $_73))) \/
+   ~t_holds (key $_73 $_67) \/ a_holds (key (generate_key $_70) $_67)
+|- ~a_stored (b, $_76) \/ ~fresh_to_b $_76 \/
+   ~message (sent a b (a, $_76)) \/ a_holds (key (generate_key $_76) b)
 |- a_holds (key (generate_key an_a_nonce) b)
+|- ~a_stored (b, $_82) \/ ~b_stored (a, $Y) \/
+   ~message
+      (sent b t
+         (triple b (generate_b_nonce $Y)
+            (encrypt (triple a $_82 (generate_expiration_time $Y)) bt))) \/
+   b_holds (key (generate_key $_82) a)
+|- ~a_stored (b, $_86) \/ ~b_stored (a, $_86) \/ ~fresh_to_b $_86 \/
+   ~message (sent a b (a, $_86)) \/ b_holds (key (generate_key $_86) a)
 |- b_holds (key (generate_key an_a_nonce) a)
 SZS output end Saturation for data/problems/all/SWV010+1.tptp
 

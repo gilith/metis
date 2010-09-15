@@ -443,7 +443,9 @@ fun pp inputTerm =
             end
           | _ => NONE
 
-      fun iToken tok =
+      fun isI tm = Option.isSome (destI tm)
+
+      fun iToken (_,tok) =
           Print.program
             [(if tok = "," then Print.skip else Print.ppString " "),
              Print.ppString tok,
@@ -476,8 +478,6 @@ fun pp inputTerm =
           end
 
       fun functionName bv = Print.ppMap (checkFunctionName bv) Print.ppString
-
-      fun isI tm = Option.isSome (destI tm)
 
       fun stripNeg tm =
           case tm of
