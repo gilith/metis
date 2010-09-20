@@ -37,7 +37,15 @@ fun new parameters ths =
       val waiting = Waiting.new waitingParm cls
     in
       Resolution {parameters = parameters, active = active, waiting = waiting}
-    end;
+    end
+(*MetisDebug
+    handle e =>
+      let
+        val () = Print.trace Print.ppException "Resolution.new: exception" e
+      in
+        raise e
+      end;
+*)
 
 fun active (Resolution {active = a, ...}) = a;
 

@@ -766,8 +766,12 @@ local
   val lexToken = alphaNumToken || punctToken || quoteToken;
 
   val space = many (some Char.isSpace) >> K ();
+
+  val space1 = atLeastOne (some Char.isSpace) >> K ();
 in
-  val lexer = (space ++ lexToken ++ space) >> (fn ((),(tok,())) => tok);
+  val lexer =
+      (space ++ lexToken) >> (fn ((),tok) => [tok]) ||
+      space1 >> K [];
 end;
 
 (* ------------------------------------------------------------------------- *)
@@ -1699,7 +1703,7 @@ local
 
   fun parseChars parser chars =
       let
-        val tokens = Parse.everything (lexer >> singleton) chars
+        val tokens = Parse.everything lexer chars
       in
         Parse.everything (parser >> singleton) tokens
       end;

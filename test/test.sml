@@ -1142,6 +1142,8 @@ fun tptp f =
     end;
 
 val _ = tptp "PUZ001-1";
+val _ = tptp "NO_FORMULAS";
+val _ = tptp "SEPARATED_COMMENTS";
 val _ = tptp "NUMBERED_FORMULAS";
 val _ = tptp "DEFINED_TERMS";
 val _ = tptp "SYSTEM_TERMS";

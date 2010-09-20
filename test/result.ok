@@ -401,21 +401,21 @@ Finite models
 
 Model{8}
 
-0 + $x = $x                   | random sampling = 18% | exhaustive = 12%
-~$x + $x = 0                  | random sampling = 0%  | exhaustive = 0%
-$x + $y + $z = $x + ($y + $z) | random sampling = 12% | exhaustive = 15%
-$x + 0 = $x                   | random sampling = 0%  | exhaustive = 0%
-$x + ~$x = 0                  | random sampling = 13% | exhaustive = 12%
+0 + $x = $x                   | random sampling = 12% | exhaustive = 12%
+~$x + $x = 0                  | random sampling = 41% | exhaustive = 38%
+$x + $y + $z = $x + ($y + $z) | random sampling = 20% | exhaustive = 21%
+$x + 0 = $x                   | random sampling = 25% | exhaustive = 25%
+$x + ~$x = 0                  | random sampling = 6%  | exhaustive = 12%
 ~~$x = $x                     | random sampling = 0%  | exhaustive = 0%
 
 Model{8}
 
-0 + $x = $x                   | random sampling = 76% | exhaustive = 75%
-~$x + $x = 0                  | random sampling = 13% | exhaustive = 12%
-$x + $y + $z = $x + ($y + $z) | random sampling = 51% | exhaustive = 54%
-$x + 0 = $x                   | random sampling = 66% | exhaustive = 62%
-$x + ~$x = 0                  | random sampling = 27% | exhaustive = 25%
-~~$x = $x                     | random sampling = 30% | exhaustive = 25%
+0 + $x = $x                   | random sampling = 100% | exhaustive = 100%
+~$x + $x = 0                  | random sampling = 86%  | exhaustive = 88%
+$x + $y + $z = $x + ($y + $z) | random sampling = 46%  | exhaustive = 49%
+$x + 0 = $x                   | random sampling = 44%  | exhaustive = 50%
+$x + ~$x = 0                  | random sampling = 27%  | exhaustive = 25%
+~~$x = $x                     | random sampling = 32%  | exhaustive = 25%
 
 Model{8}
 
@@ -773,6 +773,12 @@ hates agatha agatha /\ hates agatha charles /\
 (!X. ~hates agatha X \/ hates butler X) /\
 (!X. ~lives X \/ richer X agatha \/ hates butler X) ==>
 killed butler agatha \/ killed charles agatha ==> F
+
+parsing NO_FORMULAS... ok
+F
+
+parsing SEPARATED_COMMENTS... ok
+F
 
 parsing NUMBERED_FORMULAS... ok
 p ==> p
