@@ -81,6 +81,7 @@ fun symEq lit th =
       else
         let
           val sub = Subst.fromList [(xVarName,x),(yVarName,y)]
+
           val symTh = Thm.subst sub symmetry
         in
           Thm.resolve lit th symTh
@@ -94,7 +95,7 @@ fun symEq lit th =
 
 type equation = (Term.term * Term.term) * Thm.thm;
 
-fun ppEquation (_,th) = Thm.pp th;
+fun ppEquation ((_,th) : equation) = Thm.pp th;
 
 val equationToString = Print.toString ppEquation;
 

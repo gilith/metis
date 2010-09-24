@@ -192,10 +192,15 @@ fun add (rw as Rewrite {known,...}) (id,eqn) =
     else
       let
         val Rewrite {order,redexes,subterms,waiting, ...} = rw
+
         val ort = orderToOrient (order (fst eqn))
+
         val known = IntMap.insert known (id,(eqn,ort))
+
         val redexes = addRedexes id (eqn,ort) redexes
+
         val waiting = IntSet.add waiting id
+
         val rw =
             Rewrite
               {order = order, known = known, redexes = redexes,
@@ -207,7 +212,11 @@ fun add (rw as Rewrite {known,...}) (id,eqn) =
         rw
       end;
 
-val addList = List.foldl (fn (eqn,rw) => add rw eqn);
+local
+  fun uncurriedAdd (eqn,rw) = add rw eqn;
+in
+  fun addList rw = List.foldl uncurriedAdd rw;
+end;
 
 (* ------------------------------------------------------------------------- *)
 (* Rewriting (the order must be a refinement of the rewrite order).          *)
@@ -667,6 +676,10 @@ in
     end;
 end;
 
-val rewrite = orderedRewrite (K (SOME GREATER));
+local
+  val order : reductionOrder = K (SOME GREATER);
+in
+  val rewrite = orderedRewrite order;
+end;
 
 end
