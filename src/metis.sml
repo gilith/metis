@@ -329,14 +329,16 @@ local
       end;
 
   fun mkTptpFilename filename =
-      case !TPTP of
-        NONE => filename
-      | SOME tptp =>
-        let
-          val tptp = stripSuffix (equal #"/") tptp
-        in
-          tptp ^ "/" ^ filename
-        end;
+      if isPrefix "/" filename then filename
+      else
+        case !TPTP of
+          NONE => filename
+        | SOME tptp =>
+          let
+            val tptp = stripSuffix (equal #"/") tptp
+          in
+            tptp ^ "/" ^ filename
+          end;
 
   fun readIncludes mapping seen formulas includes =
       case includes of
