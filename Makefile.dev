@@ -1,9 +1,9 @@
-###############################################################################
+#################################################################-*-makefile-*-
 # METIS DEVELOPMENT MAKEFILE
 # Copyright (c) 2001 Joe Hurd, distributed under the MIT license
 ###############################################################################
 
-.PRECIOUS: bin/mlton/%.sml bin/mlton/%.mlb
+.PRECIOUS: bin/mlton/%.sml bin/mlton/%.mlb bin/polyml/%.sml
 
 ###############################################################################
 # Cleaning temporary files.
@@ -20,12 +20,6 @@ TEMP += \
 ###############################################################################
 
 #MLPP_OPTS += -r 'MetisDebug'
-#MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-1]'
-#MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-2]'
-#MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-3]'
-#MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-4]'
-#MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-5]'
-#MLPP_OPTS += -r 'MetisDebug|MetisTrace[0-6]'
 MLPP_OPTS += -r 'BasicDebug|MetisDebug'
 #MLPP_OPTS += -r 'BasicDebug|MetisDebug|MetisTrace[0-9]'
 
