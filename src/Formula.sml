@@ -517,9 +517,9 @@ local
 
   fun promote (Term.Var v) = Atom (v,[])
     | promote (Term.Fn (f,tms)) =
-      if Name.equal f truthName andalso null tms then
+      if Name.equal f truthName andalso List.null tms then
         True
-      else if Name.equal f falsityName andalso null tms then
+      else if Name.equal f falsityName andalso List.null tms then
         False
       else if Name.toString f = !Term.negation andalso length tms = 1 then
         Not (promote (hd tms))
@@ -549,7 +549,7 @@ val parse = Parse.parseQuotation toString fromString;
 
 local
   fun add_asms asms goal =
-      if null asms then goal else Imp (listMkConj (rev asms), goal);
+      if List.null asms then goal else Imp (listMkConj (rev asms), goal);
 
   fun add_var_asms asms v goal = add_asms asms (Forall (v,goal));
 

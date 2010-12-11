@@ -368,7 +368,7 @@ local
 
         val Tptp.Problem {comments,includes,formulas} = problem
       in
-        if null includes then problem
+        if List.null includes then problem
         else
           let
             val seen = StringSet.empty
@@ -532,7 +532,7 @@ val () =
 let
   val work = processOptions ()
 
-  val () = if null work then usage "no input problem files" else ()
+  val () = if List.null work then usage "no input problem files" else ()
 
   val limit = newLimit ()
 

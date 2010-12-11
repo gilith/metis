@@ -211,7 +211,7 @@ fun everyConv [] tm = allConv tm
 
 fun rewrConv (eqn as ((x,y), eqTh)) path tm =
     if Term.equal x y then allConv tm
-    else if null path then (y,eqTh)
+    else if List.null path then (y,eqTh)
     else
       let
         val reflTh = Thm.refl tm

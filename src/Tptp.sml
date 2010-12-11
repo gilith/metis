@@ -1109,7 +1109,7 @@ in
         end
       | ProofFormulaSource {inference,parents} =>
         let
-          val isTaut = null parents
+          val isTaut = List.null parents
 
           val gen = if isTaut then GEN_INTRODUCED else GEN_INFERENCE
 
@@ -1982,7 +1982,7 @@ local
             let
               val subgoals = Formula.splitGoal goal
               val subgoals =
-                  if null subgoals then [Formula.True] else subgoals
+                  if List.null subgoals then [Formula.True] else subgoals
 
               val parents = [name]
             in
@@ -2017,11 +2017,11 @@ in
             | FofGoal goals => formulasToGoal goals
 
         val fm =
-            if null fofAxioms then fm
+            if List.null fofAxioms then fm
             else Formula.Imp (formulasToGoal fofAxioms, fm)
 
         val fm =
-            if null cnfAxioms then fm
+            if List.null cnfAxioms then fm
             else Formula.Imp (clausesToGoal cnfAxioms, fm)
       in
         fm
@@ -2141,8 +2141,8 @@ in
       let
         val Problem {comments,includes,formulas} = problem
 
-        val includesTop = null comments
-        val formulasTop = includesTop andalso null includes
+        val includesTop = List.null comments
+        val formulasTop = includesTop andalso List.null includes
       in
         Stream.toTextFile
           {filename = filename}
@@ -2338,7 +2338,7 @@ local
         val number = i - 1
 
         val (subgoal,formulas) =
-            if null pars then (NONE,formulas)
+            if List.null pars then (NONE,formulas)
             else
               let
                 val role = PlainRole

@@ -53,7 +53,7 @@ in
 
         val fm = Formula.False
         val fm =
-            if null conjecture then fm
+            if List.null conjecture then fm
             else Formula.Imp (clsToFm conjecture, fm)
         val fm = Formula.Imp (clsToFm axioms, fm)
       in
@@ -121,7 +121,7 @@ fun categorize prob =
       val horn =
           if List.exists LiteralSet.null cls then Trivial
           else if List.all (fn cl => LiteralSet.size cl = 1) cls then Unit
-          else 
+          else
             let
               fun pos cl = LiteralSet.count Literal.positive cl <= 1
               fun neg cl = LiteralSet.count Literal.negative cl <= 1

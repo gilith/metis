@@ -951,7 +951,7 @@ local
 
             val deps = List.filter (isUnproved proved) pars
           in
-            if null deps then
+            if List.null deps then
               let
                 val (fm,inf) = destThm th
 

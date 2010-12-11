@@ -1251,7 +1251,7 @@ local
   fun pertClause M V cl acc = LiteralSet.foldl (pertLiteral M V) acc cl;
 
   fun pickPerturb M perts =
-      if null perts then ()
+      if List.null perts then ()
       else perturb M (List.nth (perts, Portable.randomInt (length perts)));
 in
   fun perturbTerm M V (tm,target) =

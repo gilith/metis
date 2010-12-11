@@ -84,7 +84,7 @@ fun mkModelClause cl =
 val mkModelClauses = List.map mkModelClause;
 
 fun perturbModel M cls =
-    if null cls then K ()
+    if List.null cls then K ()
     else
       let
         val N = {size = Model.size M}
@@ -196,7 +196,7 @@ fun add' waiting dist mcls cls =
       val {models = modelParameters, ...} = parameters
 
 (*MetisDebug
-      val _ = not (null cls) orelse
+      val _ = not (List.null cls) orelse
               raise Bug "Waiting.add': null"
 
       val _ = length mcls = length cls orelse
@@ -220,7 +220,7 @@ fun add' waiting dist mcls cls =
     end;
 
 fun add waiting (dist,cls) =
-    if null cls then waiting
+    if List.null cls then waiting
     else
       let
 (*MetisTrace3
@@ -256,7 +256,7 @@ in
 
         val waiting = empty parameters mAxioms mConjecture
       in
-        if null axioms andalso null conjecture then waiting
+        if List.null axioms andalso List.null conjecture then waiting
         else add' waiting 0.0 (mAxioms @ mConjecture) (axioms @ conjecture)
       end
 (*MetisDebug
