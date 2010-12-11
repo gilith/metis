@@ -563,7 +563,7 @@ local
       | (true, Imp (f1,f2)) => split (f1 :: asms) true f2
       | (true, Iff (f1,f2)) =>
         split (f1 :: asms) true f2 @ split (f2 :: asms) true f1
-      | (true, Forall (v,f)) => map (add_var_asms asms v) (split [] true f)
+      | (true, Forall (v,f)) => List.map (add_var_asms asms v) (split [] true f)
         (* Negative splittables *)
       | (false,False) => []
       | (false, Not f) => split asms true f
@@ -573,7 +573,7 @@ local
       | (false, Imp (f1,f2)) => split asms true f1 @ split (f1 :: asms) false f2
       | (false, Iff (f1,f2)) =>
         split (f1 :: asms) false f2 @ split (f2 :: asms) false f1
-      | (false, Exists (v,f)) => map (add_var_asms asms v) (split [] false f)
+      | (false, Exists (v,f)) => List.map (add_var_asms asms v) (split [] false f)
         (* Unsplittables *)
       | _ => [add_asms asms (if pol then fm else Not fm)];
 in

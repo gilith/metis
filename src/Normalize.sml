@@ -955,7 +955,7 @@ local
               let
                 val (fm,inf) = destThm th
 
-                val fms = map (lookupProved proved) pars
+                val fms = List.map (lookupProved proved) pars
 
                 val acc = (fm,inf,fms) :: acc
 
@@ -1382,7 +1382,7 @@ fun cnf fm =
     let
       val cls = proveCnf [mkAxiom fm]
     in
-      map fst cls
+      List.map fst cls
     end;
 
 end

@@ -86,7 +86,7 @@ local
 
   fun ppField f ppA a =
       Print.blockProgram Print.Inconsistent 2
-        [Print.addString (f ^ " ="),
+        [Print.ppString (f ^ " ="),
          Print.addBreak 1,
          ppA a];
 
@@ -112,24 +112,24 @@ local
 in
   fun pp (Rewrite {known,redexes,subterms,waiting,...}) =
       Print.blockProgram Print.Inconsistent 2
-        [Print.addString "Rewrite",
+        [Print.ppString "Rewrite",
          Print.addBreak 1,
          Print.blockProgram Print.Inconsistent 1
-           [Print.addString "{",
+           [Print.ppString "{",
             ppKnown known,
 (*MetisTrace5
-            Print.addString ",",
+            Print.ppString ",",
             Print.addBreak 1,
             ppRedexes redexes,
-            Print.addString ",",
+            Print.ppString ",",
             Print.addBreak 1,
             ppSubterms subterms,
-            Print.addString ",",
+            Print.ppString ",",
             Print.addBreak 1,
             ppWaiting waiting,
 *)
             Print.skip],
-         Print.addString "}"]
+         Print.ppString "}"]
 end;
 *)
 
@@ -649,7 +649,7 @@ val reduce' = fn rw =>
       val ppResult = Print.ppPair pp (Print.ppList Print.ppInt)
       val () = Print.trace ppResult "Rewrite.reduce': result" result
 *)
-      val ths = map (fn (id,((_,th),_)) => (id,th)) (IntMap.toList known')
+      val ths = List.map (fn (id,((_,th),_)) => (id,th)) (IntMap.toList known')
       val _ =
           not (List.exists (uncurry (thmReducible order known')) ths) orelse
           raise Bug "Rewrite.reduce': not fully reduced"

@@ -31,7 +31,7 @@ val TEST = ref false;
 
 val extended_items = "all" :: ITEMS;
 
-val show_items = map (fn s => (s, ref false)) ITEMS;
+val show_items = List.map (fn s => (s, ref false)) ITEMS;
 
 fun show_ref s =
     case List.find (equal s o fst) show_items of
@@ -263,7 +263,7 @@ local
                        names = Tptp.noClauseNames,
                        roles = Tptp.noClauseRoles,
                        problem = {axioms = [],
-                                  conjecture = map Thm.clause ths}}
+                                  conjecture = List.map Thm.clause ths}}
 
                 val mapping =
                     Tptp.addVarSetMapping Tptp.defaultMapping
@@ -431,8 +431,8 @@ local
 
   fun refute limit {axioms,conjecture} =
       let
-        val axioms = map Thm.axiom axioms
-        and conjecture = map Thm.axiom conjecture
+        val axioms = List.map Thm.axiom axioms
+        and conjecture = List.map Thm.axiom conjecture
 
         val problem = {axioms = axioms, conjecture = conjecture}
 

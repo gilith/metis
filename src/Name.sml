@@ -33,7 +33,7 @@ local
 in
   fun newName () = numName (newInt ());
 
-  fun newNames n = map numName (newInts n);
+  fun newNames n = List.map numName (newInts n);
 end;
 
 fun variantPrime acceptable =

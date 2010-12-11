@@ -33,7 +33,7 @@ in
       Useful.mem (mkCollection collection) comments;
 
   fun mkProblems collection description problems =
-      map (mkProblem collection description) problems;
+      List.map (mkProblem collection description) problems;
 end;
 
 (* ========================================================================= *)

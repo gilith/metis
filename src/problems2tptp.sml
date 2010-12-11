@@ -34,7 +34,7 @@ fun checkProblems (problems : problem list) =
           if x <> x' then dups xs
           else raise Error ("duplicate problem name: " ^ x)
 
-      val names = sort String.compare (map #name problems)
+      val names = sort String.compare (List.map #name problems)
     in
       dups names
     end;

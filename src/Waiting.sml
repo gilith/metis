@@ -63,7 +63,7 @@ val pp =
 val pp =
     Print.ppMap
       (fn Waiting {clauses,...} =>
-          map (fn (w,(_,cl)) => (w, Clause.id cl, cl)) (Heap.toList clauses))
+          List.map (fn (w,(_,cl)) => (w, Clause.id cl, cl)) (Heap.toList clauses))
       (Print.ppList (Print.ppTriple Print.ppReal Print.ppInt Clause.pp));
 *)
 
@@ -81,7 +81,7 @@ fun mkModelClause cl =
       (fvs,lits)
     end;
 
-val mkModelClauses = map mkModelClause;
+val mkModelClauses = List.map mkModelClause;
 
 fun perturbModel M cls =
     if null cls then K ()
@@ -244,7 +244,7 @@ local
       let
         val {models = modelParameters, ...} = parameters
         val clauses = Heap.new cmp
-        and models = map (initialModel axioms conjecture) modelParameters
+        and models = List.map (initialModel axioms conjecture) modelParameters
       in
         Waiting {parameters = parameters, clauses = clauses, models = models}
       end;

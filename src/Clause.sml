@@ -261,7 +261,7 @@ fun factor (cl as Clause {parameters,thm,...}) =
 
       fun apply sub = new parameters (Thm.subst sub thm)
     in
-      map apply (Rule.factor' lits)
+      List.map apply (Rule.factor' lits)
     end;
 
 (*MetisTrace5

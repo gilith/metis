@@ -250,7 +250,7 @@ fun subtermConv conv i = pathConv conv [i];
 
 fun subtermsConv _ (tm as Term.Var _) = allConv tm
   | subtermsConv conv (tm as Term.Fn (_,a)) =
-    everyConv (map (subtermConv conv) (interval 0 (length a))) tm;
+    everyConv (List.map (subtermConv conv) (interval 0 (length a))) tm;
 
 (* ------------------------------------------------------------------------- *)
 (* Applying a conversion to every subterm, with some traversal strategy.     *)
@@ -364,7 +364,7 @@ fun argumentLiterule conv i = pathLiterule conv [i];
 
 fun allArgumentsLiterule conv lit =
     everyLiterule
-      (map (argumentLiterule conv) (interval 0 (Literal.arity lit))) lit;
+      (List.map (argumentLiterule conv) (interval 0 (Literal.arity lit))) lit;
 
 (* ------------------------------------------------------------------------- *)
 (* A rule takes one theorem and either deduces another or raises an Error    *)
@@ -780,7 +780,7 @@ fun factor th =
     let
       fun fact sub = removeSym (Thm.subst sub th)
     in
-      map fact (factor' (Thm.clause th))
+      List.map fact (factor' (Thm.clause th))
     end;
 
 end

@@ -84,7 +84,7 @@ fun iterate res =
       case Waiting.remove waiting of
         NONE =>
         let
-          val sat = Satisfiable (map Clause.thm (Active.saturation active))
+          val sat = Satisfiable (List.map Clause.thm (Active.saturation active))
         in
           Decided sat
         end

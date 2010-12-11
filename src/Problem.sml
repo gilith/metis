@@ -44,12 +44,12 @@ local
       Formula.listMkDisj (LiteralSet.transform Literal.toFormula cl);
 in
   fun toFormula prob =
-      Formula.listMkConj (map clauseToFormula (toClauses prob));
+      Formula.listMkConj (List.map clauseToFormula (toClauses prob));
 
   fun toGoal {axioms,conjecture} =
       let
         val clToFm = Formula.generalize o clauseToFormula
-        val clsToFm = Formula.listMkConj o map clToFm
+        val clsToFm = Formula.listMkConj o List.map clToFm
 
         val fm = Formula.False
         val fm =
