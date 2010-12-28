@@ -238,11 +238,11 @@ fun newVar () = Var (Name.newName ());
 fun newVars n = List.map Var (Name.newNames n);
 
 local
-  fun avoidAcceptable avoid n = not (NameSet.member n avoid);
+  fun avoid av n = NameSet.member n av;
 in
-  fun variantPrime avoid = Name.variantPrime (avoidAcceptable avoid);
+  fun variantPrime av = Name.variantPrime {avoid = avoid av};
 
-  fun variantNum avoid = Name.variantNum (avoidAcceptable avoid);
+  fun variantNum av = Name.variantNum {avoid = avoid av};
 end;
 
 (* ------------------------------------------------------------------------- *)
