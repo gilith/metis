@@ -138,10 +138,12 @@ MLTON_SRC = \
 
 METIS = bin/mlton/metis
 
+PROBLEMS2TPTP = bin/mlton/problems2tptp
+
 MLTON_TARGETS = \
   bin/mlton/selftest \
-  bin/mlton/problems2tptp \
-  $(METIS)
+  $(METIS) \
+  $(PROBLEMS2TPTP)
 
 bin/mlton/%.sml: $(MLTON_SRC) src/%.sml
 	@$(MLPP) $(MLPP_OPTS) -c mlton $^ > $@

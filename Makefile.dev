@@ -89,25 +89,11 @@ src/selftest.sml: test/test.sml $(COPY) ; @$(COPY) $< $@
 src/benchmark.sml: src/metis.sml $(COPY) ; @$(COPY) $< $@
 
 ###############################################################################
-# Counting the number of lines of code.
-###############################################################################
-
-LINES = scripts/ml_lines
-
-.PHONY: lines
-lines: $(LINES)
-	@echo
-	@echo -n 'Metis '
-	@$(LINES) $(SRC) src/metis.sml
-	@echo
-
-###############################################################################
 # Generating the problem sets.
 ###############################################################################
 
 PROBLEM_DIR = data/problems
 TPTP_PROBLEM_DIR = test/tptp
-PROBLEMS2TPTP = bin/mosml/problems2tptp
 COPY_PROBLEM = scripts/copy_problem
 ALL_SET = $(PROBLEM_DIR)/all
 NONEQUALITY_SET = $(PROBLEM_DIR)/nonequality
@@ -238,6 +224,32 @@ std-test: $(STD_BENCHMARK) $(METIS)
 
 .PHONY: tests
 tests: status-test std-test
+
+###############################################################################
+# Initialization following a repo clone.
+###############################################################################
+
+.PHONY: init
+init:
+	@echo
+	@echo '*************************************************'
+	@echo '* Initialize this development snapshot of Metis *'
+	@echo '*************************************************'
+	@echo
+	$(MAKE) problems
+
+###############################################################################
+# Counting the number of lines of code.
+###############################################################################
+
+LINES = scripts/ml_lines
+
+.PHONY: lines
+lines: $(LINES)
+	@echo
+	@echo -n 'Metis '
+	@$(LINES) $(SRC) src/metis.sml
+	@echo
 
 ###############################################################################
 # Profiling using MLton.
