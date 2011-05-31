@@ -22,7 +22,7 @@ TEMP = \
   $(MLTON_TARGETS) \
   bin/mlton/*.sml bin/mlton/*.mlb \
   $(POLYML_TARGETS) \
-  bin/polyml/*.sml bin/polyml/*.o
+  bin/polyml/*.sml bin/polyml/*.log bin/polyml/*.o
 
 .PHONY: clean
 clean:
@@ -204,7 +204,8 @@ bin/polyml/%.sml: src/%.sml $(POLYML_SRC)
 	@echo "in () end; PolyML.export(\"$(basename $(notdir $<))\", main);" >> $@
 
 bin/polyml/%.o: bin/polyml/%.sml
-	cd bin/polyml ; echo "use \"$(notdir $<)\";" | $(POLYML) $(POLYML_OPTS)
+	cd bin/polyml ; echo "use \"$(notdir $<)\";" | $(POLYML) $(POLYML_OPTS) > $(basename $(notdir $<)).log
+	@if test $@ -nt $< ; then echo 'compiled $@' ; else cat bin/polyml/$(basename $(notdir $<)).log ; exit 1 ; fi
 
 bin/polyml/%: bin/polyml/%.o
 	@echo
