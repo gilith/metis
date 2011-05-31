@@ -272,3 +272,220 @@ SZS output start Saturation for data/problems/all/SWV010+1.tptp
 |- b_holds (key (generate_key an_a_nonce) a)
 SZS output end Saturation for data/problems/all/SWV010+1.tptp
 
+---------------------------------------------------------------------------
+Problem: data/problems/all/NLP042+1.tptp
+
+Goal:
+(!U V. woman U V ==> female U V) /\
+(!U V. human_person U V ==> animate U V) /\
+(!U V. human_person U V ==> human U V) /\
+(!U V. organism U V ==> living U V) /\
+(!U V. organism U V ==> impartial U V) /\
+(!U V. organism U V ==> entity U V) /\
+(!U V. human_person U V ==> organism U V) /\
+(!U V. woman U V ==> human_person U V) /\
+(!U V. mia_forename U V ==> forename U V) /\
+(!U V. abstraction U V ==> unisex U V) /\
+(!U V. abstraction U V ==> general U V) /\
+(!U V. abstraction U V ==> nonhuman U V) /\
+(!U V. abstraction U V ==> thing U V) /\
+(!U V. relation U V ==> abstraction U V) /\
+(!U V. relname U V ==> relation U V) /\
+(!U V. forename U V ==> relname U V) /\
+(!U V. object U V ==> unisex U V) /\
+(!U V. object U V ==> impartial U V) /\
+(!U V. object U V ==> nonliving U V) /\
+(!U V. entity U V ==> existent U V) /\
+(!U V. entity U V ==> specific U V) /\ (!U V. entity U V ==> thing U V) /\
+(!U V. object U V ==> entity U V) /\
+(!U V. substance_matter U V ==> object U V) /\
+(!U V. food U V ==> substance_matter U V) /\
+(!U V. beverage U V ==> food U V) /\
+(!U V. shake_beverage U V ==> beverage U V) /\
+(!U V. order U V ==> event U V) /\
+(!U V. eventuality U V ==> unisex U V) /\
+(!U V. eventuality U V ==> nonexistent U V) /\
+(!U V. eventuality U V ==> specific U V) /\
+(!U V. thing U V ==> singleton U V) /\
+(!U V. eventuality U V ==> thing U V) /\
+(!U V. event U V ==> eventuality U V) /\ (!U V. act U V ==> event U V) /\
+(!U V. order U V ==> act U V) /\ (!U V. animate U V ==> ~nonliving U V) /\
+(!U V. existent U V ==> ~nonexistent U V) /\
+(!U V. nonhuman U V ==> ~human U V) /\
+(!U V. nonliving U V ==> ~living U V) /\
+(!U V. specific U V ==> ~general U V) /\
+(!U V. unisex U V ==> ~female U V) /\
+(!U V W.
+   entity U V /\ forename U W /\ of U W V ==>
+   ~?X. forename U X /\ ~(X = W) /\ of U X V) /\
+(!U V W X.
+   nonreflexive U V /\ agent U V W /\ patient U V X ==> ~(W = X)) ==>
+~?U.
+   actual_world U /\
+   ?V W X Y.
+     of U W V /\ woman U V /\ mia_forename U W /\ forename U W /\
+     shake_beverage U X /\ event U Y /\ agent U Y V /\ patient U Y X /\
+     past U Y /\ nonreflexive U Y /\ order U Y
+
+Clauses:
+(~woman $U $V \/ female $U $V) /\ (~human_person $U $V \/ animate $U $V) /\
+(~human_person $U $V \/ human $U $V) /\
+(~organism $U $V \/ living $U $V) /\
+(~organism $U $V \/ impartial $U $V) /\
+(~organism $U $V \/ entity $U $V) /\
+(~human_person $U $V \/ organism $U $V) /\
+(~woman $U $V \/ human_person $U $V) /\
+(~mia_forename $U $V \/ forename $U $V) /\
+(~abstraction $U $V \/ unisex $U $V) /\
+(~abstraction $U $V \/ general $U $V) /\
+(~abstraction $U $V \/ nonhuman $U $V) /\
+(~abstraction $U $V \/ thing $U $V) /\
+(~relation $U $V \/ abstraction $U $V) /\
+(~relname $U $V \/ relation $U $V) /\ (~forename $U $V \/ relname $U $V) /\
+(~object $U $V \/ unisex $U $V) /\ (~object $U $V \/ impartial $U $V) /\
+(~object $U $V \/ nonliving $U $V) /\ (~entity $U $V \/ existent $U $V) /\
+(~entity $U $V \/ specific $U $V) /\ (~entity $U $V \/ thing $U $V) /\
+(~object $U $V \/ entity $U $V) /\
+(~substance_matter $U $V \/ object $U $V) /\
+(~food $U $V \/ substance_matter $U $V) /\
+(~beverage $U $V \/ food $U $V) /\
+(~shake_beverage $U $V \/ beverage $U $V) /\
+(~order $U $V \/ event $U $V) /\ (~eventuality $U $V \/ unisex $U $V) /\
+(~eventuality $U $V \/ nonexistent $U $V) /\
+(~eventuality $U $V \/ specific $U $V) /\
+(~thing $U $V \/ singleton $U $V) /\ (~eventuality $U $V \/ thing $U $V) /\
+(~event $U $V \/ eventuality $U $V) /\ (~act $U $V \/ event $U $V) /\
+(~order $U $V \/ act $U $V) /\ (~animate $U $V \/ ~nonliving $U $V) /\
+(~existent $U $V \/ ~nonexistent $U $V) /\
+(~human $U $V \/ ~nonhuman $U $V) /\ (~living $U $V \/ ~nonliving $U $V) /\
+(~general $U $V \/ ~specific $U $V) /\ (~female $U $V \/ ~unisex $U $V) /\
+(~entity $U $V \/ ~forename $U $W \/ ~forename $U $X \/ ~of $U $W $V \/
+ ~of $U $X $V \/ $X = $W) /\
+(~($W = $X) \/ ~agent $U $V $W \/ ~nonreflexive $U $V \/
+ ~patient $U $V $X) /\ actual_world skolemFOFtoCNF_U /\
+agent skolemFOFtoCNF_U skolemFOFtoCNF_Y skolemFOFtoCNF_V /\
+event skolemFOFtoCNF_U skolemFOFtoCNF_Y /\
+forename skolemFOFtoCNF_U skolemFOFtoCNF_W /\
+mia_forename skolemFOFtoCNF_U skolemFOFtoCNF_W /\
+nonreflexive skolemFOFtoCNF_U skolemFOFtoCNF_Y /\
+of skolemFOFtoCNF_U skolemFOFtoCNF_W skolemFOFtoCNF_V /\
+order skolemFOFtoCNF_U skolemFOFtoCNF_Y /\
+past skolemFOFtoCNF_U skolemFOFtoCNF_Y /\
+patient skolemFOFtoCNF_U skolemFOFtoCNF_Y skolemFOFtoCNF_X /\
+shake_beverage skolemFOFtoCNF_U skolemFOFtoCNF_X /\
+woman skolemFOFtoCNF_U skolemFOFtoCNF_V
+
+SZS status CounterSatisfiable for data/problems/all/NLP042+1.tptp
+
+SZS output start Saturation for data/problems/all/NLP042+1.tptp
+|- ~woman $U $V \/ female $U $V
+|- ~human_person $U $V \/ animate $U $V
+|- ~human_person $U $V \/ human $U $V
+|- ~organism $U $V \/ living $U $V
+|- ~organism $U $V \/ impartial $U $V
+|- ~organism $U $V \/ entity $U $V
+|- ~human_person $U $V \/ organism $U $V
+|- ~woman $U $V \/ human_person $U $V
+|- ~mia_forename $U $V \/ forename $U $V
+|- ~abstraction $U $V \/ unisex $U $V
+|- ~abstraction $U $V \/ general $U $V
+|- ~abstraction $U $V \/ nonhuman $U $V
+|- ~abstraction $U $V \/ thing $U $V
+|- ~relation $U $V \/ abstraction $U $V
+|- ~relname $U $V \/ relation $U $V
+|- ~forename $U $V \/ relname $U $V
+|- ~object $U $V \/ unisex $U $V
+|- ~object $U $V \/ impartial $U $V
+|- ~object $U $V \/ nonliving $U $V
+|- ~entity $U $V \/ existent $U $V
+|- ~entity $U $V \/ specific $U $V
+|- ~entity $U $V \/ thing $U $V
+|- ~object $U $V \/ entity $U $V
+|- ~substance_matter $U $V \/ object $U $V
+|- ~food $U $V \/ substance_matter $U $V
+|- ~beverage $U $V \/ food $U $V
+|- ~shake_beverage $U $V \/ beverage $U $V
+|- ~order $U $V \/ event $U $V
+|- ~eventuality $U $V \/ unisex $U $V
+|- ~eventuality $U $V \/ nonexistent $U $V
+|- ~eventuality $U $V \/ specific $U $V
+|- ~thing $U $V \/ singleton $U $V
+|- ~eventuality $U $V \/ thing $U $V
+|- ~event $U $V \/ eventuality $U $V
+|- ~act $U $V \/ event $U $V
+|- ~order $U $V \/ act $U $V
+|- ~animate $U $V \/ ~nonliving $U $V
+|- ~existent $U $V \/ ~nonexistent $U $V
+|- ~human $U $V \/ ~nonhuman $U $V
+|- ~living $U $V \/ ~nonliving $U $V
+|- ~general $U $V \/ ~specific $U $V
+|- ~female $U $V \/ ~unisex $U $V
+|- ~entity $U $V \/ ~forename $U $W \/ ~forename $U $X \/ ~of $U $W $V \/
+   ~of $U $X $V \/ $X = $W
+|- ~agent $U $V $X \/ ~nonreflexive $U $V \/ ~patient $U $V $X
+|- actual_world skolemFOFtoCNF_U
+|- agent skolemFOFtoCNF_U skolemFOFtoCNF_Y skolemFOFtoCNF_V
+|- event skolemFOFtoCNF_U skolemFOFtoCNF_Y
+|- forename skolemFOFtoCNF_U skolemFOFtoCNF_W
+|- mia_forename skolemFOFtoCNF_U skolemFOFtoCNF_W
+|- nonreflexive skolemFOFtoCNF_U skolemFOFtoCNF_Y
+|- of skolemFOFtoCNF_U skolemFOFtoCNF_W skolemFOFtoCNF_V
+|- order skolemFOFtoCNF_U skolemFOFtoCNF_Y
+|- past skolemFOFtoCNF_U skolemFOFtoCNF_Y
+|- patient skolemFOFtoCNF_U skolemFOFtoCNF_Y skolemFOFtoCNF_X
+|- shake_beverage skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- woman skolemFOFtoCNF_U skolemFOFtoCNF_V
+|- female skolemFOFtoCNF_U skolemFOFtoCNF_V
+|- human_person skolemFOFtoCNF_U skolemFOFtoCNF_V
+|- organism skolemFOFtoCNF_U skolemFOFtoCNF_V
+|- human skolemFOFtoCNF_U skolemFOFtoCNF_V
+|- animate skolemFOFtoCNF_U skolemFOFtoCNF_V
+|- entity skolemFOFtoCNF_U skolemFOFtoCNF_V
+|- impartial skolemFOFtoCNF_U skolemFOFtoCNF_V
+|- living skolemFOFtoCNF_U skolemFOFtoCNF_V
+|- relname skolemFOFtoCNF_U skolemFOFtoCNF_W
+|- relation skolemFOFtoCNF_U skolemFOFtoCNF_W
+|- abstraction skolemFOFtoCNF_U skolemFOFtoCNF_W
+|- thing skolemFOFtoCNF_U skolemFOFtoCNF_W
+|- nonhuman skolemFOFtoCNF_U skolemFOFtoCNF_W
+|- general skolemFOFtoCNF_U skolemFOFtoCNF_W
+|- unisex skolemFOFtoCNF_U skolemFOFtoCNF_W
+|- existent skolemFOFtoCNF_U skolemFOFtoCNF_V
+|- specific skolemFOFtoCNF_U skolemFOFtoCNF_V
+|- thing skolemFOFtoCNF_U skolemFOFtoCNF_V
+|- beverage skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- food skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- substance_matter skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- object skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- entity skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- nonliving skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- impartial skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- unisex skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- thing skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- specific skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- existent skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- singleton skolemFOFtoCNF_U skolemFOFtoCNF_V
+|- singleton skolemFOFtoCNF_U skolemFOFtoCNF_W
+|- singleton skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- eventuality skolemFOFtoCNF_U skolemFOFtoCNF_Y
+|- thing skolemFOFtoCNF_U skolemFOFtoCNF_Y
+|- specific skolemFOFtoCNF_U skolemFOFtoCNF_Y
+|- nonexistent skolemFOFtoCNF_U skolemFOFtoCNF_Y
+|- unisex skolemFOFtoCNF_U skolemFOFtoCNF_Y
+|- singleton skolemFOFtoCNF_U skolemFOFtoCNF_Y
+|- act skolemFOFtoCNF_U skolemFOFtoCNF_Y
+|- ~animate skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- ~existent skolemFOFtoCNF_U skolemFOFtoCNF_Y
+|- ~human skolemFOFtoCNF_U skolemFOFtoCNF_W
+|- ~living skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- ~general skolemFOFtoCNF_U skolemFOFtoCNF_V
+|- ~general skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- ~general skolemFOFtoCNF_U skolemFOFtoCNF_Y
+|- ~female skolemFOFtoCNF_U skolemFOFtoCNF_W
+|- ~female skolemFOFtoCNF_U skolemFOFtoCNF_X
+|- ~female skolemFOFtoCNF_U skolemFOFtoCNF_Y
+|- ~agent skolemFOFtoCNF_U skolemFOFtoCNF_Y skolemFOFtoCNF_X
+|- ~forename skolemFOFtoCNF_U $_198 \/
+   ~of skolemFOFtoCNF_U $_198 skolemFOFtoCNF_V \/ $_198 = skolemFOFtoCNF_W
+SZS output end Saturation for data/problems/all/NLP042+1.tptp
+

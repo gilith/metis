@@ -113,8 +113,11 @@ problems-all: $(PROBLEMS2TPTP)
 	@cp $(TPTP_PROBLEM_DIR)/LCL009-1.tptp $(ALL_SET)
 	@cp $(TPTP_PROBLEM_DIR)/LCL107-1.tptp $(ALL_SET)
 	@cp $(TPTP_PROBLEM_DIR)/MGT019+2.tptp $(ALL_SET)
+	@cp $(TPTP_PROBLEM_DIR)/NLP042+1.tptp $(ALL_SET)
 	@cp $(TPTP_PROBLEM_DIR)/PUZ001-1.tptp $(ALL_SET)
+	@cp $(TPTP_PROBLEM_DIR)/SEU140+2.tptp $(ALL_SET)
 	@cp $(TPTP_PROBLEM_DIR)/SWV010+1.tptp $(ALL_SET)
+	@cp $(TPTP_PROBLEM_DIR)/SWV017+1.tptp $(ALL_SET)
 	@cp $(TPTP_PROBLEM_DIR)/SYN075-1.tptp $(ALL_SET)
 	@cp $(TPTP_PROBLEM_DIR)/SYN075+1.tptp $(ALL_SET)
 
@@ -184,22 +187,25 @@ status-test: $(METIS)
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) test/tptp/BLOCK_COMMENTS.tptp | grep '^SZS status Theorem for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) --tptp test/tptp test/tptp/INCLUDE_DIRECTIVE.tptp | grep '^SZS status Theorem for'
 # Testing the prover on CASC sample problems
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(ALL_SET)/MGT019+2.tptp | grep '^SZS status CounterSatisfiable for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(ALL_SET)/NLP042+1.tptp | grep '^SZS status CounterSatisfiable for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(ALL_SET)/SEU140+2.tptp | grep '^SZS status Theorem for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(ALL_SET)/SWV010+1.tptp | grep '^SZS status Satisfiable for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(ALL_SET)/SWV017+1.tptp | grep '^SZS status Satisfiable for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(ALL_SET)/SYN075-1.tptp | grep '^SZS status Unsatisfiable for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(ALL_SET)/SYN075+1.tptp | grep '^SZS status Theorem for'
-	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(ALL_SET)/MGT019+2.tptp | grep '^SZS status CounterSatisfiable for'
-	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(ALL_SET)/SWV010+1.tptp | grep '^SZS status Satisfiable for'
 # Testing the prover on TPTP problems
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/BOO001-1.tptp | grep '^SZS status Unsatisfiable for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/BOO003-4.tptp | grep '^SZS status Unsatisfiable for'
+	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/BOO027-1.tptp | grep '^SZS status Satisfiable for'
+# Neither unordered nor positive literal selection can seem to detect this
+#	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/BOO036-1.tptp | grep '^SZS status Satisfiable for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/KRS063+1.tptp | grep '^SZS status Unsatisfiable for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/KRS018+1.tptp | grep '^SZS status Satisfiable for'
 # Unordered literal selection can't seem to detect this
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/MGT031-1.tptp | grep '^SZS status Satisfiable for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/MGT041-2.tptp | grep '^SZS status Unsatisfiable for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/NLP114-1.tptp | grep '^SZS status Satisfiable for'
-	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/BOO003-4.tptp | grep '^SZS status Unsatisfiable for'
-	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/BOO001-1.tptp | grep '^SZS status Unsatisfiable for'
-	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/BOO027-1.tptp | grep '^SZS status Satisfiable for'
-# Neither unordered nor positive literal selection can seem to detect this
-#	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/BOO036-1.tptp | grep '^SZS status Satisfiable for'
 	@ulimit -t $(TEST_TIME_LIMIT) ; $(METIS) $(TPTP_PROBLEM_DIR)/KRS174+1.tptp | grep '^SZS status Theorem for'
 
 STD_BENCHMARK = scripts/benchmark
@@ -296,11 +302,13 @@ EXAMPLE_CNF_PROOF = \
   data/problems/all/SYN075-1.tptp
 
 EXAMPLE_FOF_PROOF = \
-  data/problems/all/SYN075+1.tptp
+  data/problems/all/SYN075+1.tptp \
+  data/problems/all/SEU140+2.tptp
 
 EXAMPLE_FOF_MODEL = \
   data/problems/all/MGT019+2.tptp \
-  data/problems/all/SWV010+1.tptp
+  data/problems/all/SWV010+1.tptp \
+  data/problems/all/NLP042+1.tptp
 
 .PHONY: release-stamp
 release-stamp: $(RELEASE_STAMP)
