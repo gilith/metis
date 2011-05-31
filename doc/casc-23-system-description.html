@@ -1,0 +1,80 @@
+<HR><!------------------------------------------------------------------------>
+<H2>Metis 2.3</H2>
+J. Hurd<BR>
+Galois, Inc., USA<BR>
+
+<H3>Architecture</H3>
+
+<p>Metis 2.3 [Hur03] is a proof tactic used in the
+
+<a href="http://hol.sourceforge.net/">HOL4</a>
+
+interactive theorem prover. It works by converting a higher order
+logic goal to a set of clauses in first order logic, with the property
+that a refutation of the clause set can be translated to a higher
+order logic proof of the original goal.</p>
+
+<p>Experiments with various first order calculi [Hur03] have shown
+a <em>given clause algorithm</em> and ordered resolution to best suit
+this application, and that is what Metis 2.3 implements. Since
+equality often appears in interactive theorem prover goals, Metis 2.3
+also implements the ordered paramodulation calculus.</p>
+
+<H3>Strategies</H3>
+
+<p>Metis 2.3 uses a fixed strategy for every input problem. Negative
+literals are always chosen over positive literals, and terms are
+ordered using the Knuth-Bendix ordering with uniform symbol weight and
+precedence favouring reduced arity.</p>
+
+<H3>Implementation</H3>
+
+<p>Metis 2.3 is written in Standard ML, for ease of integration with
+HOL4. It uses indexes for resolution, paramodulation, (forward)
+subsumption and demodulation. It keeps the <em>Active</em> clause set
+reduced with respect to all the unit equalities so far derived.</p>
+
+<p>In addition to standard age and size measures, Metis 2.3 uses
+finite models to weight clauses in the <em>Passive</em> set. When
+integrated with higher order logic, an interpretation of known
+functions and relations is manually constructed to make many of their
+standard properties valid in the finite model. For example, the domain
+of the model is the set <em>{0,...,7}</em>, and the higher order logic
+arithmetic functions are interpreted in the model modulo <em>8</em>.
+Unknown functions and relations are interpreted randomly, but with a
+bias towards making supporting theorems valid in the model. The finite
+model strategy carries over to TPTP problems, by manually interpreting
+a collection of functions and relations that appear in TPTP axiom
+files in such a way as to make the axioms valid in the model.</p>
+
+<p>Metis 2.3 reads problems in TPTP format and outputs detailed proofs
+in TSTP format, where each refutation step is one of 6 simple
+inference rules. Metis 2.3 implements a complete calculus, so when the
+set of clauses is saturated it can soundly declare the input problem
+to be unprovable (and outputs the saturation set).</p>
+
+<p>Metis 2.3 is free software, released under the MIT license. It can
+be downloaded from
+<PRE>
+    <A HREF="http://www.gilith.com/software/metis">http://www.gilith.com/software/metis</A></PRE></p>
+
+<H3>Expected Competition Performance</H3>
+
+<p>There have been only minor changes to Metis 2.3 since CASC J5, so
+it is expected to perform at approximately the same level in CASC 23
+and end up in the lower third of the table.</p>
+
+<H3>References</H3>
+<dl>
+<dt>Hur03</dt>
+<dd> Hurd J. (September 2003),
+     <STRONG><a href="http://www.gilith.com/research/papers/">First-Order Proof Tactics in Higher-Order Logic Theorem Provers</a></STRONG>,
+     Archer M., Di Vito B., Mu&ntilde;oz C.,
+     <EM>Design and Application of Strategies/Tactics in Higher Order Logics (STRATA 2003)</EM>
+     (Rome, Italy),
+     pp.56-68,
+     NASA Technical Report CP-2003-212448,
+     NASA.</dd>
+</dl>
+
+<HR><!------------------------------------------------------------------------>
