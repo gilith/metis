@@ -324,7 +324,7 @@ documentation: doc/example-cnf-proof.txt doc/example-fof-proof.txt doc/example-f
 .PHONY: tarball
 tarball: doc/DONT-RELEASE Makefile.dev
 	$(MAKE) clean
-	cd .. ; tar cvzhf metis/release/metis.tar.gz --exclude-from metis/doc/DONT-RELEASE metis
+	cd .. ; COPYFILE_DISABLE=true tar cvzhf metis/release/metis.tar.gz --exclude-from metis/doc/DONT-RELEASE metis
 
 .PHONY: release
 release: release-stamp mosml mlton polyml status-test documentation $(STD_BENCHMARK)
