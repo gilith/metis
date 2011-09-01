@@ -373,7 +373,7 @@ local
           let
             val seen = StringSet.empty
 
-            val includes = rev includes
+            val includes = List.rev includes
 
             val formulas = readIncludes mapping seen formulas includes
           in
@@ -454,7 +454,7 @@ local
 
           val () =
               if !TEST then ()
-              else display_proof filename tptp (rev acc)
+              else display_proof filename tptp (List.rev acc)
         in
           true
         end
