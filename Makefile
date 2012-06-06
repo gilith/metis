@@ -201,7 +201,7 @@ bin/polyml/%.sml: src/%.sml $(POLYML_SRC)
 	@$(MLPP) $(MLPP_OPTS) -c polyml $(POLYML_SRC) > $@
 	@echo 'fun main () = let' >> $@
 	@$(MLPP) $(MLPP_OPTS) -c polyml $< >> $@
-	@echo "in () end; PolyML.export(\"$(basename $(notdir $<))\", main);" >> $@
+	@echo "in () end handle e => TextIO.output (TextIO.stdErr, \"FATAL EXCEPTION:\\\\n\"^ exnMessage e); PolyML.export(\"$(basename $(notdir $<))\", main);" >> $@
 
 bin/polyml/%.o: bin/polyml/%.sml
 	cd bin/polyml ; echo "use \"$(notdir $<)\";" | $(POLYML) $(POLYML_OPTS) > $(basename $(notdir $<)).log

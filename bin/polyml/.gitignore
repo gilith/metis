@@ -1,5 +1,6 @@
-*.sml
+*.log
 *.o
+*.sml
 metis
 problems2tptp
 selftest
