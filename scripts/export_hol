@@ -111,7 +111,7 @@ sub export_file {
                 print OUTPUT ".";
                 $line = $3;
             }
-        
+
             print OUTPUT "$line\n";
         }
     }
