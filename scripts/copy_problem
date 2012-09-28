@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (c) 2007 Joe Hurd, distributed under the MIT license
+# Copyright (c) 2007 Joe Leslie-Hurd, distributed under the MIT license
 
 use strict;
 use warnings;
@@ -86,7 +86,7 @@ Waiting to rear their ugly heads.
 
 =head1 AUTHORS
 
-Joe Hurd <joe@gilith.com>
+Joe Leslie-Hurd <joe@gilith.com>
 
 =head1 SEE ALSO
 
