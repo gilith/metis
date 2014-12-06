@@ -177,15 +177,9 @@ mlton: mlton-info $(MLTON_TARGETS)
 # Building using Poly/ML.
 ###############################################################################
 
-POLYML = poly
+POLYML = polyc
 
 POLYML_OPTS =
-
-ifeq ($(shell uname), Darwin)
-  POLYML_LINK_OPTS = -lpolymain -lpolyml -segprot POLY rwx rwx
-else
-  POLYML_LINK_OPTS = -lpolymain -lpolyml
-endif
 
 POLYML_SRC = \
   src/Random.sig src/Random.sml \
@@ -201,28 +195,24 @@ bin/polyml/%.sml: src/%.sml $(POLYML_SRC)
 	@$(MLPP) $(MLPP_OPTS) -c polyml $(POLYML_SRC) > $@
 	@echo 'fun main () = let' >> $@
 	@$(MLPP) $(MLPP_OPTS) -c polyml $< >> $@
-	@echo "in () end handle e => (TextIO.output (TextIO.stdErr, \"FATAL EXCEPTION:\\\\n\"^ exnMessage e); OS.Process.exit OS.Process.failure); PolyML.export(\"$(basename $(notdir $<))\", main);" >> $@
+	@echo "in () end handle e => (TextIO.output (TextIO.stdErr, \"FATAL EXCEPTION:\\\\n\"^ exnMessage e); OS.Process.exit OS.Process.failure);" >> $@
 
-bin/polyml/%.o: bin/polyml/%.sml
-	cd bin/polyml ; echo "use \"$(notdir $<)\";" | $(POLYML) $(POLYML_OPTS) > $(basename $(notdir $<)).log
-	@if test $@ -nt $< ; then echo 'compiled $@' ; else cat bin/polyml/$(basename $(notdir $<)).log ; exit 1 ; fi
-
-bin/polyml/%: bin/polyml/%.o
+bin/polyml/%: bin/polyml/%.sml
 	@echo
-	@echo '*****************************'
-	@echo '* Compile a Poly/ML program *'
-	@echo '*****************************'
+	@echo '+---------------------------+'
+	@echo '| Compile a Poly/ML program |'
+	@echo '+---------------------------+'
 	@echo
 	@echo $@
-	cd bin/polyml && $(CC) -o $(notdir $@) $(notdir $<) $(POLYML_LINK_OPTS)
+	cd bin/polyml && $(POLYML) $(POLYML_OPTS) -o $(notdir $@) $(notdir $<)
 	@echo
 
 .PHONY: polyml-info
 polyml-info:
 	@echo
-	@echo '***************************************'
-	@echo '* Build and test the Poly/ML programs *'
-	@echo '***************************************'
+	@echo '+-------------------------------------+'
+	@echo '| Build and test the Poly/ML programs |'
+	@echo '+-------------------------------------+'
 	@echo
 
 .PHONY: polyml
