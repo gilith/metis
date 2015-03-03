@@ -103,13 +103,23 @@ datatype formulaBody =
   | FofFormulaBody of Formula.formula
 
 (* ------------------------------------------------------------------------- *)
+(* Extra TPTP inferences.                                                    *)
+(* ------------------------------------------------------------------------- *)
+
+datatype inference =
+    StripInference
+  | NegateInference
+
+val nameInference : inference -> string
+
+(* ------------------------------------------------------------------------- *)
 (* TPTP formula sources.                                                     *)
 (* ------------------------------------------------------------------------- *)
 
 datatype formulaSource =
     NoFormulaSource
   | StripFormulaSource of
-      {inference : string,
+      {inference : inference,
        parents : formulaName list}
   | NormalizeFormulaSource of
       {inference : Normalize.inference,

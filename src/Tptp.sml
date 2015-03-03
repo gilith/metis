@@ -886,13 +886,26 @@ fun ppFormulaBody mapping body =
     | FofFormulaBody fm => ppFof mapping (Formula.generalize fm);
 
 (* ------------------------------------------------------------------------- *)
+(* Extra TPTP inferences.                                                    *)
+(* ------------------------------------------------------------------------- *)
+
+datatype inference =
+    StripInference
+  | NegateInference;
+
+fun nameInference inf =
+    case inf of
+      StripInference => "strip"
+    | NegateInference => "negate";
+
+(* ------------------------------------------------------------------------- *)
 (* TPTP formula sources.                                                     *)
 (* ------------------------------------------------------------------------- *)
 
 datatype formulaSource =
     NoFormulaSource
   | StripFormulaSource of
-      {inference : string,
+      {inference : inference,
        parents : formulaName list}
   | NormalizeFormulaSource of
       {inference : Normalize.inference,
@@ -982,8 +995,6 @@ fun freeVarsFormulaSource source =
 local
   val GEN_INFERENCE = "inference"
   and GEN_INTRODUCED = "introduced";
-
-  fun nameStrip inf = inf;
 
   fun ppStrip mapping inf = Print.skip;
 
@@ -1075,7 +1086,7 @@ in
         let
           val gen = GEN_INFERENCE
 
-          val name = nameStrip inference
+          val name = nameInference inference
         in
           Print.inconsistentBlock (size gen + 1)
             [Print.ppString gen,
@@ -2347,7 +2358,7 @@ local
 
                 val source =
                     StripFormulaSource
-                      {inference = "strip",
+                      {inference = StripInference,
                        parents = pars}
 
                 val formula =
@@ -2487,7 +2498,7 @@ local
               let
                 val source =
                     StripFormulaSource
-                      {inference = "negate",
+                      {inference = NegateInference,
                        parents = [name]}
 
                 val prefix = "negate_" ^ Int.toString number ^ "_"
