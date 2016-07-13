@@ -1,0 +1,113 @@
+#!/usr/bin/perl
+
+# Copyright (c) 2006 Joe Leslie-Hurd, distributed under the MIT license
+
+use strict;
+use warnings;
+use Pod::Usage;
+use Getopt::Std;
+
+use vars qw($opt_h);
+
+getopts('h');
+
+if ($opt_h)
+{
+    pod2usage({-exitval => 2,
+	       -verbose => 2});
+}
+
+# Autoflush STDIN
+$|++;
+
+my $dir = "bin/mosml";
+
+my $uis = "";
+my $dir_uis = "";
+my $dir_uos = "";
+
+for my $file (@ARGV) {
+    if ($file =~ /^src\/(\w+)\.sig$/) {
+        my $old = $1;
+        my $new = "$old-sig";
+        print "$dir/$new.sml: $file $dir/Makefile.src ; \@\$(MLPP) \$(MLPP_OPTS) -c mosml \$< >\$@\n\n";
+        print "$dir/$new.ui:$dir_uis $dir/$new.sml" . '
+	@echo compiling ' . "$old.sig" . '
+	@cd ' . $dir . ' ; $(MOSMLC)' . "$uis $new.sml\n\n";
+        $uis .= " $new.ui";
+        $dir_uis .= " $dir/$new.ui";
+        $dir_uos .= " $dir/$new.uo";
+    }
+    elsif ($file =~ /^src\/(\w+)\.sml$/) {
+        my $old = $1;
+        my $new = "$old";
+        $new =~ s/^PortableMosml$/Portable/;
+        print "$dir/$new.sml: $file $dir/Makefile.src ; \@\$(MLPP) \$(MLPP_OPTS) -c mosml \$< >\$@\n\n";
+        print "$dir/$new.ui:$dir_uis $dir/$new.sml" . '
+	@echo compiling ' . "$new.sml" . '
+	@cd ' . $dir . ' ; $(MOSMLC)' . "$uis $new.sml\n\n";
+        $uis .= " $new.ui";
+        $dir_uis .= " $dir/$new.ui";
+        $dir_uos .= " $dir/$new.uo";
+    }
+    elsif ($file =~ /^$dir\/(\w+)$/) {
+        my $old = $1;
+        my $new = "$old";
+        print "$dir/$new.sml: src/$new.sml \$(EXTRA_SRC) $dir/Makefile.src ; \@\$(MLPP) \$(MLPP_OPTS) -c mosml \$< >\$@\n\n";
+        print "$dir/$new:$dir_uis $dir/$new.sml" . '
+	@echo
+	@echo \'+-----------------------------+\'
+	@echo \'| Compile a Moscow ML program |\'
+	@echo \'+-----------------------------+\'
+	@echo
+	@echo compiling ' . $new . '
+	@' . "cd $dir ; \$(MOSMLC) -standalone -o $new$uis $new.sml" . '
+	@echo' . "\n\n";
+    }
+}
+
+print "MOSML_OBJ = $dir_uis\n\n";
+
+__END__
+
+=pod
+
+=head1 NAME
+
+mosml.pl - generate Makefile dependencies for the Moscow ML compiler
+
+=head1 SYNOPSIS
+
+mosml.pl [-h] source-file ...
+
+=head1 ARGUMENTS
+
+The recognized flags are described below:
+
+=over 2
+
+=item B<-h>
+
+Produce this documentation.
+
+=back
+
+=head1 DESCRIPTION
+
+Creates Makefile dependencies to compile sml files with the Moscow ML
+compiler. These dependencies simply assume that a source file depends
+on all of the previous ones.
+
+=head1 BUGS
+
+Waiting to rear their ugly heads.
+
+=head1 AUTHORS
+
+Joe Leslie-Hurd <joe@gilith.com>
+
+=head1 SEE ALSO
+
+Perl(1).
+
+=cut

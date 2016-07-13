@@ -1,0 +1,115 @@
+#!/usr/bin/perl
+
+# Copyright (c) 2007 Joe Leslie-Hurd, distributed under the MIT license
+
+use strict;
+use warnings;
+
+use IO::Handle;
+STDOUT->autoflush(1);
+
+sub pluralize {
+    (scalar @_ == 2) or die;
+    my ($num, $thing) = @_;
+
+    return ("$num " . (($num == 1) ? $thing : ($thing . "s")));
+}
+
+sub file_types {
+    my @files = @_;
+
+    my $sigsml_pairs = 0;
+    my $sml_orphans = 0;
+    my %sigs = ();
+
+    while (0 < scalar @files) {
+        my $file = shift @files;
+
+        if ($file =~ /\.sig$/) {
+            $sigs{$file} = 1;
+        }
+        elsif ($file =~ /\.sml$/) {
+            my $sig = $file; $sig =~ s/(-mlton)?\.sml$/.sig/ or die;
+            if (defined($sigs{$sig})) {
+                delete $sigs{$sig};
+                ++$sigsml_pairs;
+            }
+            else {
+                ++$sml_orphans;
+            }
+        }
+        else {
+            die "mllines: unknown file type $file\n";
+        }
+    }
+
+    my $sig_orphans = scalar (keys %sigs);
+    return ($sigsml_pairs, $sig_orphans, $sml_orphans);
+}
+
+sub analyze {
+    my @files = @_;
+
+    my $blank = 0;
+    my $comment = 0;
+    my $code = 0;
+    my $depth = 0;
+
+    while (0 < scalar @files) {
+        my $file = shift @files;
+
+        open my $INPUT, "$file" or
+            die "Couldn't open $file: $!\n";
+
+        while (my $line = <$INPUT>) {
+            chomp $line;
+
+            if ($line =~ /^\s*$/) { ++$blank; next; }
+
+            my $actual = "";
+
+            while ($line =~ /\(\*|\*\)/) {
+                my $start = $line;
+                $line = "";
+                while ($start =~ /^(.*)(\(\*|\*\))(.+)$/) {
+                    $start = $1 . $2;
+                    $line = $3 . $line;
+                }
+                if ($start =~ /^(.*)\(\*$/) {
+                    if ($depth == 0) { $actual = $actual . $1; }
+                    ++$depth;
+                }
+                elsif ($start =~ /^(.*)\*\)$/) {
+                    if ($depth == 0) { die; }
+                    --$depth;
+                }
+                else { die; }
+            }
+
+            if ($depth == 0) { $actual = $actual . $line; }
+
+            if ($actual =~ /^\s*$/) { ++$comment; } else { ++$code; }
+
+#            print STDOUT "$actual\n";
+        }
+
+        close $INPUT;
+    }
+
+    return ($blank, $comment, $code);
+}
+
+my ($sigsml, $sig, $sml) = file_types @ARGV;
+
+print STDOUT ("(" . (pluralize $sigsml, "sig/sml pair")
+              . " + " . (pluralize $sig, "sig file")
+              . " + " . (pluralize $sml, "sml file")
+              . ")\n");
+
+my ($blank, $comment, $code) = analyze @ARGV;
+my $total = $comment + $blank + $code;
+
+print STDOUT "    blank lines:   $blank\n";
+print STDOUT "    comment lines: $comment\n";
+print STDOUT "--> code lines:    $code <--\n";
+print STDOUT "    total lines:   $total\n";

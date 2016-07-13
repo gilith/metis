@@ -25,8 +25,8 @@ PROBLEMS2TPTP = bin/mlton/problems2tptp
 TEMP += \
   cnf_*.tptp saturation.tptp \
   bin/mlton/*.ssa bin/mlton/*.ssa2 bin/mlton/basis.sml \
-  bin/mlton/benchmark \
-  mlmon.out profile-*
+  bin/mlton/benchmark mlmon.out profile-* \
+  $(STD_BENCHMARK) std-log
 
 ###############################################################################
 # The ML preprocessor.
@@ -249,7 +249,7 @@ STD_BENCHMARK = scripts/benchmark
 $(STD_BENCHMARK): Makefile.dev
 	echo '#!/bin/bash' > $@
 	echo >> $@
-	echo "if ! test -x $(METIS) ; then echo \"cannot execute $(METIS): to build it type 'make mlton'\" ; exit 1 ; fi" >> $@
+	echo "if ! test -x $(METIS) ; then echo \"cannot execute $(METIS)\" ; exit 1 ; fi" >> $@
 	echo >> $@
 	echo ulimit -t $(TEST_TIME_LIMIT) >> $@
 	echo >> $@
@@ -274,10 +274,11 @@ tests: status-test std-test
 .PHONY: init
 init:
 	@echo
-	@echo '+-----------------------------------------------+'
-	@echo '| Initialize this development snapshot of Metis |'
-	@echo '+-----------------------------------------------+'
+	@echo '+----------------------------------------------+'
+	@echo '| Initialize this development version of Metis |'
+	@echo '+----------------------------------------------+'
 	@echo
+	@$(COPY) LICENSE doc/MIT-LICENSE
 	$(MAKE) problems
 
 ###############################################################################
@@ -304,9 +305,9 @@ profile-time.mlb: bin/mlton/benchmark.sml
 
 profile-time: profile-time.mlb
 	@echo
-	@echo '***************************************************'
-	@echo '* Compile the metis benchmark with time profiling *'
-	@echo '***************************************************'
+	@echo '+-------------------------------------------------+'
+	@echo '| Compile the Metis benchmark with time profiling |'
+	@echo '+-------------------------------------------------+'
 	@echo
 	$(MLTON) $(MLTON_OPTS) -profile time -profile-stack true -profile-branch true $<
 	@echo
@@ -375,7 +376,7 @@ release: release-stamp mosml mlton polyml status-test documentation $(STD_BENCHM
 	rm -f $(RELEASE_DIR)/*.html $(RELEASE_DIR)/*.jpg $(RELEASE_DIR)/*.txt
 	cp -v doc/*.html doc/*.jpg doc/*.txt $(RELEASE_DIR)/
 	cp -v doc/favicon.ico $(RELEASE_DIR)/
-	cp -v LICENSE $(RELEASE_DIR)/MIT-LICENSE
+	cp -v doc/MIT-LICENSE $(RELEASE_DIR)/
 	$(MAKE) tarball
 	rsync -azv --delete --checksum --size-only --exclude=.gitignore -e ssh $(RELEASE_DIR)/ gilith@login.gilith.com:public_html/software/metis
 	ssh gilith@login.gilith.com '/bin/bash -l bin/install_metis'

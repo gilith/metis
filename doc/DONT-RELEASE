@@ -1,13 +1,11 @@
 .git
 .gitignore
-metis/cnf_*.tptp
-metis/graph.png
-metis/data/logs
+metis/LICENSE
+metis/Makefile.dev
+metis/README.md
 metis/doc/DONT-RELEASE
 metis/doc/TODO
-metis/Makefile.dev
 metis/release
-metis/saturation.tptp
 metis/scripts/compare
 metis/scripts/copy_problem
 metis/scripts/copy_src
@@ -19,4 +17,3 @@ metis/scripts/release_stamp
 metis/scripts/summarize
 metis/scripts/unproved
 metis/src/benchmark.sml
-metis/std-log

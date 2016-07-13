@@ -1,0 +1,2100 @@
+---------------------------------------------------------------------------
+Problem: data/problems/all/SYN075+1.tptp
+
+Goal:
+(?Z W. !X Y. big_f X Y <=> X = Z /\ Y = W) ==>
+?W. !Y. (?Z. !X. big_f X Y <=> X = Z) <=> Y = W
+
+Clauses:
+(~big_f $X $Y \/ $X = skolemFOFtoCNF_Z) /\
+(~big_f $X $Y \/ $Y = skolemFOFtoCNF_W) /\
+(~($X = skolemFOFtoCNF_Z) \/ ~($Y = skolemFOFtoCNF_W) \/ big_f $X $Y) /\
+(~($X = skolemFOFtoCNF_Z_1 $W) \/ skolemFOFtoCNF_Y $W = $W \/
+ big_f $X (skolemFOFtoCNF_Y $W)) /\
+(~(skolemFOFtoCNF_X $W $Z = $Z) \/ ~(skolemFOFtoCNF_Y $W = $W) \/
+ ~big_f (skolemFOFtoCNF_X $W $Z) (skolemFOFtoCNF_Y $W)) /\
+(~(skolemFOFtoCNF_Y $W = $W) \/ skolemFOFtoCNF_X $W $Z = $Z \/
+ big_f (skolemFOFtoCNF_X $W $Z) (skolemFOFtoCNF_Y $W)) /\
+(~big_f $X (skolemFOFtoCNF_Y $W) \/ $X = skolemFOFtoCNF_Z_1 $W \/
+ skolemFOFtoCNF_Y $W = $W)
+
+SZS status Theorem for data/problems/all/SYN075+1.tptp
+
+SZS output start CNFRefutation for data/problems/all/SYN075+1.tptp
+fof(pel52_1, axiom,
+    (? [Z, W] : ! [X, Y] : (big_f(X, Y) <=> (X = Z & Y = W)))).
+
+fof(pel52, conjecture,
+    (? [W] : ! [Y] : (? [Z] : ! [X] : (big_f(X, Y) <=> X = Z) <=> Y = W))).
+
+fof(subgoal_0, plain,
+    (? [W] : ! [Y] : (? [Z] : ! [X] : (big_f(X, Y) <=> X = Z) <=> Y = W)),
+    inference(strip, [], [pel52])).
+
+fof(negate_0_0, plain,
+    (~
+       ? [W] :
+         ! [Y] : (? [Z] : ! [X] : (big_f(X, Y) <=> X = Z) <=> Y = W)),
+    inference(negate, [], [subgoal_0])).
+
+fof(normalize_0_0, plain,
+    (! [W] :
+       ? [Y] : (Y != W <=> ? [Z] : ! [X] : (X != Z <=> ~ big_f(X, Y)))),
+    inference(canonicalize, [], [negate_0_0])).
+
+fof(normalize_0_1, plain,
+    (! [W] :
+       ? [Y] : (Y != W <=> ? [Z] : ! [X] : (X != Z <=> ~ big_f(X, Y)))),
+    inference(specialize, [], [normalize_0_0])).
+
+fof(normalize_0_2, plain,
+    (! [W] :
+       (skolemFOFtoCNF_Y(W) != W <=>
+        ? [Z] : ! [X] : (X != Z <=> ~ big_f(X, skolemFOFtoCNF_Y(W))))),
+    inference(skolemize, [], [normalize_0_1])).
+
+fof(normalize_0_3, plain,
+    (! [W, X, Z] :
+       ((X != skolemFOFtoCNF_Z_1(W) | skolemFOFtoCNF_Y(W) = W |
+         big_f(X, skolemFOFtoCNF_Y(W))) &
+        (skolemFOFtoCNF_X(W, Z) != Z | skolemFOFtoCNF_Y(W) != W |
+         ~ big_f(skolemFOFtoCNF_X(W, Z), skolemFOFtoCNF_Y(W))) &
+        (skolemFOFtoCNF_Y(W) != W | skolemFOFtoCNF_X(W, Z) = Z |
+         big_f(skolemFOFtoCNF_X(W, Z), skolemFOFtoCNF_Y(W))) &
+        (~ big_f(X, skolemFOFtoCNF_Y(W)) | X = skolemFOFtoCNF_Z_1(W) |
+         skolemFOFtoCNF_Y(W) = W))),
+    inference(clausify, [], [normalize_0_2])).
+
+fof(normalize_0_4, plain,
+    (! [W, Z] :
+       (skolemFOFtoCNF_X(W, Z) != Z | skolemFOFtoCNF_Y(W) != W |
+        ~ big_f(skolemFOFtoCNF_X(W, Z), skolemFOFtoCNF_Y(W)))),
+    inference(conjunct, [], [normalize_0_3])).
+
+fof(normalize_0_5, plain,
+    (? [W, Z] : ! [X, Y] : (~ big_f(X, Y) <=> (X != Z | Y != W))),
+    inference(canonicalize, [], [pel52_1])).
+
+fof(normalize_0_6, plain,
+    (! [X, Y] :
+       (~ big_f(X, Y) <=>
+        (X != skolemFOFtoCNF_Z | Y != skolemFOFtoCNF_W))),
+    inference(skolemize, [], [normalize_0_5])).
+
+fof(normalize_0_7, plain,
+    (! [X, Y] :
+       (~ big_f(X, Y) <=>
+        (X != skolemFOFtoCNF_Z | Y != skolemFOFtoCNF_W))),
+    inference(specialize, [], [normalize_0_6])).
+
+fof(normalize_0_8, plain,
+    (! [X, Y] :
+       ((~ big_f(X, Y) | X = skolemFOFtoCNF_Z) &
+        (~ big_f(X, Y) | Y = skolemFOFtoCNF_W) &
+        (X != skolemFOFtoCNF_Z | Y != skolemFOFtoCNF_W | big_f(X, Y)))),
+    inference(clausify, [], [normalize_0_7])).
+
+fof(normalize_0_9, plain,
+    (! [X, Y] : (~ big_f(X, Y) | X = skolemFOFtoCNF_Z)),
+    inference(conjunct, [], [normalize_0_8])).
+
+fof(normalize_0_10, plain,
+    (! [W, Z] :
+       (skolemFOFtoCNF_Y(W) != W | skolemFOFtoCNF_X(W, Z) = Z |
+        big_f(skolemFOFtoCNF_X(W, Z), skolemFOFtoCNF_Y(W)))),
+    inference(conjunct, [], [normalize_0_3])).
+
+fof(normalize_0_11, plain,
+    (! [W, X] :
+       (X != skolemFOFtoCNF_Z_1(W) | skolemFOFtoCNF_Y(W) = W |
+        big_f(X, skolemFOFtoCNF_Y(W)))),
+    inference(conjunct, [], [normalize_0_3])).
+
+fof(normalize_0_12, plain,
+    (! [X, Y] : (~ big_f(X, Y) | Y = skolemFOFtoCNF_W)),
+    inference(conjunct, [], [normalize_0_8])).
+
+fof(normalize_0_13, plain,
+    (! [X, Y] :
+       (X != skolemFOFtoCNF_Z | Y != skolemFOFtoCNF_W | big_f(X, Y))),
+    inference(conjunct, [], [normalize_0_8])).
+
+cnf(refute_0_0, plain,
+    (skolemFOFtoCNF_X(W, Z) != Z | skolemFOFtoCNF_Y(W) != W |
+     ~ big_f(skolemFOFtoCNF_X(W, Z), skolemFOFtoCNF_Y(W))),
+    inference(canonicalize, [], [normalize_0_4])).
+
+cnf(refute_0_1, plain,
+    (skolemFOFtoCNF_X(W, Z) != Z | ~ big_f(Z, skolemFOFtoCNF_Y(W)) |
+     big_f(skolemFOFtoCNF_X(W, Z), skolemFOFtoCNF_Y(W))),
+    introduced(tautology,
+               [equality,
+                [$cnf(~ big_f(skolemFOFtoCNF_X(W, Z),
+                        skolemFOFtoCNF_Y(W))), [0], $fot(Z)]])).
+
+cnf(refute_0_2, plain,
+    (skolemFOFtoCNF_Y(W) != W | ~ big_f(Z, W) |
+     big_f(Z, skolemFOFtoCNF_Y(W))),
+    introduced(tautology,
+               [equality,
+                [$cnf(~ big_f(Z, skolemFOFtoCNF_Y(W))), [1], $fot(W)]])).
+
+cnf(refute_0_3, plain,
+    (skolemFOFtoCNF_X(W, Z) != Z | skolemFOFtoCNF_Y(W) != W |
+     ~ big_f(Z, W) | big_f(skolemFOFtoCNF_X(W, Z), skolemFOFtoCNF_Y(W))),
+    inference(resolve, [$cnf(big_f(Z, skolemFOFtoCNF_Y(W)))],
+              [refute_0_2, refute_0_1])).
+
+cnf(refute_0_4, plain,
+    (skolemFOFtoCNF_X(W, Z) != Z | skolemFOFtoCNF_Y(W) != W |
+     ~ big_f(Z, W)),
+    inference(resolve,
+              [$cnf(big_f(skolemFOFtoCNF_X(W, Z), skolemFOFtoCNF_Y(W)))],
+              [refute_0_3, refute_0_0])).
+
+cnf(refute_0_5, plain,
+    (skolemFOFtoCNF_X(skolemFOFtoCNF_W, skolemFOFtoCNF_Z) !=
+     skolemFOFtoCNF_Z |
+     skolemFOFtoCNF_Y(skolemFOFtoCNF_W) != skolemFOFtoCNF_W |
+     ~ big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_W)),
+    inference(subst, [],
+              [refute_0_4 :
+               [bind(W, $fot(skolemFOFtoCNF_W)),
+                bind(Z, $fot(skolemFOFtoCNF_Z))]])).
+
+cnf(refute_0_6, plain, (~ big_f(X, Y) | X = skolemFOFtoCNF_Z),
+    inference(canonicalize, [], [normalize_0_9])).
+
+cnf(refute_0_7, plain,
+    (~ big_f(skolemFOFtoCNF_X(skolemFOFtoCNF_W, X_21), skolemFOFtoCNF_W) |
+     skolemFOFtoCNF_X(skolemFOFtoCNF_W, X_21) = skolemFOFtoCNF_Z),
+    inference(subst, [],
+              [refute_0_6 :
+               [bind(X, $fot(skolemFOFtoCNF_X(skolemFOFtoCNF_W, X_21))),
+                bind(Y, $fot(skolemFOFtoCNF_W))]])).
+
+cnf(refute_0_8, plain,
+    (skolemFOFtoCNF_Y(W) != W | skolemFOFtoCNF_X(W, Z) = Z |
+     big_f(skolemFOFtoCNF_X(W, Z), skolemFOFtoCNF_Y(W))),
+    inference(canonicalize, [], [normalize_0_10])).
+
+cnf(refute_0_9, plain,
+    (skolemFOFtoCNF_Y(W) != W |
+     ~ big_f(skolemFOFtoCNF_X(W, Z), skolemFOFtoCNF_Y(W)) |
+     big_f(skolemFOFtoCNF_X(W, Z), W)),
+    introduced(tautology,
+               [equality,
+                [$cnf(big_f(skolemFOFtoCNF_X(W, Z), skolemFOFtoCNF_Y(W))),
+                 [1], $fot(W)]])).
+
+cnf(refute_0_10, plain,
+    (skolemFOFtoCNF_Y(W) != W | skolemFOFtoCNF_X(W, Z) = Z |
+     big_f(skolemFOFtoCNF_X(W, Z), W)),
+    inference(resolve,
+              [$cnf(big_f(skolemFOFtoCNF_X(W, Z), skolemFOFtoCNF_Y(W)))],
+              [refute_0_8, refute_0_9])).
+
+cnf(refute_0_11, plain,
+    (skolemFOFtoCNF_Y(skolemFOFtoCNF_W) != skolemFOFtoCNF_W |
+     skolemFOFtoCNF_X(skolemFOFtoCNF_W, X_20) = X_20 |
+     big_f(skolemFOFtoCNF_X(skolemFOFtoCNF_W, X_20), skolemFOFtoCNF_W)),
+    inference(subst, [],
+              [refute_0_10 :
+               [bind(W, $fot(skolemFOFtoCNF_W)), bind(Z, $fot(X_20))]])).
+
+cnf(refute_0_12, plain,
+    (X != skolemFOFtoCNF_Z_1(W) | skolemFOFtoCNF_Y(W) = W |
+     big_f(X, skolemFOFtoCNF_Y(W))),
+    inference(canonicalize, [], [normalize_0_11])).
+
+cnf(refute_0_13, plain,
+    (skolemFOFtoCNF_Z_1(W) != skolemFOFtoCNF_Z_1(W) |
+     skolemFOFtoCNF_Y(W) = W |
+     big_f(skolemFOFtoCNF_Z_1(W), skolemFOFtoCNF_Y(W))),
+    inference(subst, [],
+              [refute_0_12 : [bind(X, $fot(skolemFOFtoCNF_Z_1(W)))]])).
+
+cnf(refute_0_14, plain, (skolemFOFtoCNF_Z_1(W) = skolemFOFtoCNF_Z_1(W)),
+    introduced(tautology, [refl, [$fot(skolemFOFtoCNF_Z_1(W))]])).
+
+cnf(refute_0_15, plain,
+    (skolemFOFtoCNF_Y(W) = W |
+     big_f(skolemFOFtoCNF_Z_1(W), skolemFOFtoCNF_Y(W))),
+    inference(resolve,
+              [$cnf($equal(skolemFOFtoCNF_Z_1(W), skolemFOFtoCNF_Z_1(W)))],
+              [refute_0_14, refute_0_13])).
+
+cnf(refute_0_16, plain,
+    (~ big_f(skolemFOFtoCNF_Z_1(W), skolemFOFtoCNF_Y(W)) |
+     skolemFOFtoCNF_Z_1(W) = skolemFOFtoCNF_Z),
+    inference(subst, [],
+              [refute_0_6 :
+               [bind(X, $fot(skolemFOFtoCNF_Z_1(W))),
+                bind(Y, $fot(skolemFOFtoCNF_Y(W)))]])).
+
+cnf(refute_0_17, plain,
+    (skolemFOFtoCNF_Y(W) = W | skolemFOFtoCNF_Z_1(W) = skolemFOFtoCNF_Z),
+    inference(resolve,
+              [$cnf(big_f(skolemFOFtoCNF_Z_1(W), skolemFOFtoCNF_Y(W)))],
+              [refute_0_15, refute_0_16])).
+
+cnf(refute_0_18, plain,
+    (skolemFOFtoCNF_Z_1(W) != skolemFOFtoCNF_Z |
+     ~ big_f(skolemFOFtoCNF_Z_1(W), skolemFOFtoCNF_Y(W)) |
+     big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_Y(W))),
+    introduced(tautology,
+               [equality,
+                [$cnf(big_f(skolemFOFtoCNF_Z_1(W), skolemFOFtoCNF_Y(W))),
+                 [0], $fot(skolemFOFtoCNF_Z)]])).
+
+cnf(refute_0_19, plain,
+    (~ big_f(skolemFOFtoCNF_Z_1(W), skolemFOFtoCNF_Y(W)) |
+     skolemFOFtoCNF_Y(W) = W |
+     big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_Y(W))),
+    inference(resolve,
+              [$cnf($equal(skolemFOFtoCNF_Z_1(W), skolemFOFtoCNF_Z))],
+              [refute_0_17, refute_0_18])).
+
+cnf(refute_0_20, plain,
+    (skolemFOFtoCNF_Y(W) = W |
+     big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_Y(W))),
+    inference(resolve,
+              [$cnf(big_f(skolemFOFtoCNF_Z_1(W), skolemFOFtoCNF_Y(W)))],
+              [refute_0_15, refute_0_19])).
+
+cnf(refute_0_21, plain, (~ big_f(X, Y) | Y = skolemFOFtoCNF_W),
+    inference(canonicalize, [], [normalize_0_12])).
+
+cnf(refute_0_22, plain,
+    (~ big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_Y(W)) |
+     skolemFOFtoCNF_Y(W) = skolemFOFtoCNF_W),
+    inference(subst, [],
+              [refute_0_21 :
+               [bind(X, $fot(skolemFOFtoCNF_Z)),
+                bind(Y, $fot(skolemFOFtoCNF_Y(W)))]])).
+
+cnf(refute_0_23, plain,
+    (skolemFOFtoCNF_Y(W) = W | skolemFOFtoCNF_Y(W) = skolemFOFtoCNF_W),
+    inference(resolve,
+              [$cnf(big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_Y(W)))],
+              [refute_0_20, refute_0_22])).
+
+cnf(refute_0_24, plain,
+    (skolemFOFtoCNF_Y(skolemFOFtoCNF_W) = skolemFOFtoCNF_W),
+    inference(subst, [],
+              [refute_0_23 : [bind(W, $fot(skolemFOFtoCNF_W))]])).
+
+cnf(refute_0_25, plain,
+    (skolemFOFtoCNF_W != skolemFOFtoCNF_W |
+     skolemFOFtoCNF_Y(skolemFOFtoCNF_W) != skolemFOFtoCNF_W |
+     skolemFOFtoCNF_Y(skolemFOFtoCNF_W) = skolemFOFtoCNF_W),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(skolemFOFtoCNF_Y(skolemFOFtoCNF_W),
+                        skolemFOFtoCNF_W)), [0, 0],
+                 $fot(skolemFOFtoCNF_W)]])).
+
+cnf(refute_0_26, plain,
+    (skolemFOFtoCNF_W != skolemFOFtoCNF_W |
+     skolemFOFtoCNF_Y(skolemFOFtoCNF_W) = skolemFOFtoCNF_W),
+    inference(resolve,
+              [$cnf($equal(skolemFOFtoCNF_Y(skolemFOFtoCNF_W),
+                      skolemFOFtoCNF_W))], [refute_0_24, refute_0_25])).
+
+cnf(refute_0_27, plain,
+    (skolemFOFtoCNF_W != skolemFOFtoCNF_W |
+     skolemFOFtoCNF_X(skolemFOFtoCNF_W, X_20) = X_20 |
+     big_f(skolemFOFtoCNF_X(skolemFOFtoCNF_W, X_20), skolemFOFtoCNF_W)),
+    inference(resolve,
+              [$cnf($equal(skolemFOFtoCNF_Y(skolemFOFtoCNF_W),
+                      skolemFOFtoCNF_W))], [refute_0_26, refute_0_11])).
+
+cnf(refute_0_28, plain, (skolemFOFtoCNF_W = skolemFOFtoCNF_W),
+    introduced(tautology, [refl, [$fot(skolemFOFtoCNF_W)]])).
+
+cnf(refute_0_29, plain,
+    (skolemFOFtoCNF_X(skolemFOFtoCNF_W, X_20) = X_20 |
+     big_f(skolemFOFtoCNF_X(skolemFOFtoCNF_W, X_20), skolemFOFtoCNF_W)),
+    inference(resolve, [$cnf($equal(skolemFOFtoCNF_W, skolemFOFtoCNF_W))],
+              [refute_0_28, refute_0_27])).
+
+cnf(refute_0_30, plain,
+    (skolemFOFtoCNF_X(skolemFOFtoCNF_W, X_21) = X_21 |
+     big_f(skolemFOFtoCNF_X(skolemFOFtoCNF_W, X_21), skolemFOFtoCNF_W)),
+    inference(subst, [], [refute_0_29 : [bind(X_20, $fot(X_21))]])).
+
+cnf(refute_0_31, plain,
+    (skolemFOFtoCNF_X(skolemFOFtoCNF_W, X_21) = X_21 |
+     skolemFOFtoCNF_X(skolemFOFtoCNF_W, X_21) = skolemFOFtoCNF_Z),
+    inference(resolve,
+              [$cnf(big_f(skolemFOFtoCNF_X(skolemFOFtoCNF_W, X_21),
+                      skolemFOFtoCNF_W))], [refute_0_30, refute_0_7])).
+
+cnf(refute_0_32, plain,
+    (skolemFOFtoCNF_X(skolemFOFtoCNF_W, skolemFOFtoCNF_Z) =
+     skolemFOFtoCNF_Z),
+    inference(subst, [],
+              [refute_0_31 : [bind(X_21, $fot(skolemFOFtoCNF_Z))]])).
+
+cnf(refute_0_33, plain,
+    (skolemFOFtoCNF_X(skolemFOFtoCNF_W, skolemFOFtoCNF_Z) !=
+     skolemFOFtoCNF_Z | skolemFOFtoCNF_Z != skolemFOFtoCNF_Z |
+     skolemFOFtoCNF_X(skolemFOFtoCNF_W, skolemFOFtoCNF_Z) =
+     skolemFOFtoCNF_Z),
+    introduced(tautology,
+               [equality,
+                [$cnf(~ $equal(skolemFOFtoCNF_X(skolemFOFtoCNF_W,
+                          skolemFOFtoCNF_Z), skolemFOFtoCNF_Z)), [0],
+                 $fot(skolemFOFtoCNF_Z)]])).
+
+cnf(refute_0_34, plain,
+    (skolemFOFtoCNF_Z != skolemFOFtoCNF_Z |
+     skolemFOFtoCNF_X(skolemFOFtoCNF_W, skolemFOFtoCNF_Z) =
+     skolemFOFtoCNF_Z),
+    inference(resolve,
+              [$cnf($equal(skolemFOFtoCNF_X(skolemFOFtoCNF_W,
+                        skolemFOFtoCNF_Z), skolemFOFtoCNF_Z))],
+              [refute_0_32, refute_0_33])).
+
+cnf(refute_0_35, plain,
+    (skolemFOFtoCNF_Y(skolemFOFtoCNF_W) != skolemFOFtoCNF_W |
+     skolemFOFtoCNF_Z != skolemFOFtoCNF_Z |
+     ~ big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_W)),
+    inference(resolve,
+              [$cnf($equal(skolemFOFtoCNF_X(skolemFOFtoCNF_W,
+                        skolemFOFtoCNF_Z), skolemFOFtoCNF_Z))],
+              [refute_0_34, refute_0_5])).
+
+cnf(refute_0_36, plain, (skolemFOFtoCNF_Z = skolemFOFtoCNF_Z),
+    introduced(tautology, [refl, [$fot(skolemFOFtoCNF_Z)]])).
+
+cnf(refute_0_37, plain,
+    (skolemFOFtoCNF_Y(skolemFOFtoCNF_W) != skolemFOFtoCNF_W |
+     ~ big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_W)),
+    inference(resolve, [$cnf($equal(skolemFOFtoCNF_Z, skolemFOFtoCNF_Z))],
+              [refute_0_36, refute_0_35])).
+
+cnf(refute_0_38, plain,
+    (skolemFOFtoCNF_W != skolemFOFtoCNF_W |
+     ~ big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_W)),
+    inference(resolve,
+              [$cnf($equal(skolemFOFtoCNF_Y(skolemFOFtoCNF_W),
+                      skolemFOFtoCNF_W))], [refute_0_26, refute_0_37])).
+
+cnf(refute_0_39, plain, (~ big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_W)),
+    inference(resolve, [$cnf($equal(skolemFOFtoCNF_W, skolemFOFtoCNF_W))],
+              [refute_0_28, refute_0_38])).
+
+cnf(refute_0_40, plain,
+    (X != skolemFOFtoCNF_Z | Y != skolemFOFtoCNF_W | big_f(X, Y)),
+    inference(canonicalize, [], [normalize_0_13])).
+
+cnf(refute_0_41, plain,
+    (skolemFOFtoCNF_W != skolemFOFtoCNF_W |
+     skolemFOFtoCNF_Z != skolemFOFtoCNF_Z |
+     big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_W)),
+    inference(subst, [],
+              [refute_0_40 :
+               [bind(X, $fot(skolemFOFtoCNF_Z)),
+                bind(Y, $fot(skolemFOFtoCNF_W))]])).
+
+cnf(refute_0_42, plain,
+    (skolemFOFtoCNF_Z != skolemFOFtoCNF_Z |
+     big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_W)),
+    inference(resolve, [$cnf($equal(skolemFOFtoCNF_W, skolemFOFtoCNF_W))],
+              [refute_0_28, refute_0_41])).
+
+cnf(refute_0_43, plain, (big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_W)),
+    inference(resolve, [$cnf($equal(skolemFOFtoCNF_Z, skolemFOFtoCNF_Z))],
+              [refute_0_36, refute_0_42])).
+
+cnf(refute_0_44, plain, ($false),
+    inference(resolve, [$cnf(big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_W))],
+              [refute_0_43, refute_0_39])).
+SZS output end CNFRefutation for data/problems/all/SYN075+1.tptp
+
+---------------------------------------------------------------------------
+Problem: data/problems/all/SEU140+2.tptp
+
+Goal:
+(!A B. in A B ==> ~in B A) /\
+(!A B. proper_subset A B ==> ~proper_subset B A) /\
+(!A B. set_union2 A B = set_union2 B A) /\
+(!A B. set_intersection2 A B = set_intersection2 B A) /\
+(!A B. A = B <=> subset A B /\ subset B A) /\
+(!A. A = empty_set <=> !B. ~in B A) /\
+(!A B C. C = set_union2 A B <=> !D. in D C <=> in D A \/ in D B) /\
+(!A B. subset A B <=> !C. in C A ==> in C B) /\
+(!A B C. C = set_intersection2 A B <=> !D. in D C <=> in D A /\ in D B) /\
+(!A B C. C = set_difference A B <=> !D. in D C <=> in D A /\ ~in D B) /\
+(!A B. disjoint A B <=> set_intersection2 A B = empty_set) /\
+(!A B. proper_subset A B <=> subset A B /\ ~(A = B)) /\ T /\ T /\ T /\ T /\
+empty empty_set /\ (!A B. ~empty A ==> ~empty (set_union2 A B)) /\
+(!A B. ~empty A ==> ~empty (set_union2 B A)) /\
+(!A B. set_union2 A A = A) /\ (!A B. set_intersection2 A A = A) /\
+(!A B. ~proper_subset A A) /\
+(!A B. set_difference A B = empty_set <=> subset A B) /\ (?A. empty A) /\
+(?A. ~empty A) /\ (!A B. subset A A) /\
+(!A B. disjoint A B ==> disjoint B A) /\
+(!A B. subset A B ==> set_union2 A B = B) /\
+(!A B. subset (set_intersection2 A B) A) /\
+(!A B C. subset A B /\ subset A C ==> subset A (set_intersection2 B C)) /\
+(!A. set_union2 A empty_set = A) /\
+(!A B C. subset A B /\ subset B C ==> subset A C) /\
+(!A B C.
+   subset A B ==>
+   subset (set_intersection2 A C) (set_intersection2 B C)) /\
+(!A B. subset A B ==> set_intersection2 A B = A) /\
+(!A. set_intersection2 A empty_set = empty_set) /\
+(!A B. (!C. in C A <=> in C B) ==> A = B) /\ (!A. subset empty_set A) /\
+(!A B C.
+   subset A B ==> subset (set_difference A C) (set_difference B C)) /\
+(!A B. subset (set_difference A B) A) /\
+(!A B. set_difference A B = empty_set <=> subset A B) /\
+(!A B. set_union2 A (set_difference B A) = set_union2 A B) /\
+(!A. set_difference A empty_set = A) /\
+(!A B.
+   ~(~disjoint A B /\ !C. ~(in C A /\ in C B)) /\
+   ~((?C. in C A /\ in C B) /\ disjoint A B)) /\
+(!A. subset A empty_set ==> A = empty_set) /\
+(!A B. set_difference (set_union2 A B) B = set_difference A B) /\
+(!A B. subset A B ==> B = set_union2 A (set_difference B A)) /\
+(!A B. set_difference A (set_difference A B) = set_intersection2 A B) /\
+(!A. set_difference empty_set A = empty_set) /\
+(!A B.
+   ~(~disjoint A B /\ !C. ~in C (set_intersection2 A B)) /\
+   ~((?C. in C (set_intersection2 A B)) /\ disjoint A B)) /\
+(!A B. ~(subset A B /\ proper_subset B A)) /\
+(!A. empty A ==> A = empty_set) /\ (!A B. ~(in A B /\ empty B)) /\
+(!A B. subset A (set_union2 A B)) /\
+(!A B. ~(empty A /\ ~(A = B) /\ empty B)) /\
+(!A B C. subset A B /\ subset C B ==> subset (set_union2 A C) B) ==>
+!A B C. subset A B /\ disjoint B C ==> disjoint A C
+
+Clauses:
+(~in $A $B \/ ~in $B $A) /\
+(~proper_subset $A $B \/ ~proper_subset $B $A) /\
+set_union2 $A $B = set_union2 $B $A /\
+set_intersection2 $A $B = set_intersection2 $B $A /\
+(~($A = $B) \/ subset $A $B) /\ (~($A = $B) \/ subset $B $A) /\
+(~subset $A $B \/ ~subset $B $A \/ $A = $B) /\
+(~($A = empty_set) \/ ~in $B $A) /\
+($A = empty_set \/ in (skolemFOFtoCNF_B $A) $A) /\
+(~($C = set_union2 $A $B) \/ ~in $D $A \/ in $D $C) /\
+(~($C = set_union2 $A $B) \/ ~in $D $B \/ in $D $C) /\
+(~in (skolemFOFtoCNF_D $A $B $C) $A \/
+ ~in (skolemFOFtoCNF_D $A $B $C) $C \/ $C = set_union2 $A $B) /\
+(~in (skolemFOFtoCNF_D $A $B $C) $B \/
+ ~in (skolemFOFtoCNF_D $A $B $C) $C \/ $C = set_union2 $A $B) /\
+(~($C = set_union2 $A $B) \/ ~in $D $C \/ in $D $A \/ in $D $B) /\
+($C = set_union2 $A $B \/ in (skolemFOFtoCNF_D $A $B $C) $A \/
+ in (skolemFOFtoCNF_D $A $B $C) $B \/ in (skolemFOFtoCNF_D $A $B $C) $C) /\
+(~in (skolemFOFtoCNF_C $A $B) $B \/ subset $A $B) /\
+(in (skolemFOFtoCNF_C $A $B) $A \/ subset $A $B) /\
+(~in $C $A \/ ~subset $A $B \/ in $C $B) /\
+(~($C = set_intersection2 $A $B) \/ ~in $D $C \/ in $D $A) /\
+(~($C = set_intersection2 $A $B) \/ ~in $D $C \/ in $D $B) /\
+($C = set_intersection2 $A $B \/ in (skolemFOFtoCNF_D_1 $A $B $C) $A \/
+ in (skolemFOFtoCNF_D_1 $A $B $C) $C) /\
+($C = set_intersection2 $A $B \/ in (skolemFOFtoCNF_D_1 $A $B $C) $B \/
+ in (skolemFOFtoCNF_D_1 $A $B $C) $C) /\
+(~($C = set_intersection2 $A $B) \/ ~in $D $A \/ ~in $D $B \/ in $D $C) /\
+(~in (skolemFOFtoCNF_D_1 $A $B $C) $A \/
+ ~in (skolemFOFtoCNF_D_1 $A $B $C) $B \/
+ ~in (skolemFOFtoCNF_D_1 $A $B $C) $C \/ $C = set_intersection2 $A $B) /\
+(~($C = set_difference $A $B) \/ ~in $D $B \/ ~in $D $C) /\
+(~($C = set_difference $A $B) \/ ~in $D $C \/ in $D $A) /\
+(~in (skolemFOFtoCNF_D_2 $A $B $C) $B \/ $C = set_difference $A $B \/
+ in (skolemFOFtoCNF_D_2 $A $B $C) $C) /\
+($C = set_difference $A $B \/ in (skolemFOFtoCNF_D_2 $A $B $C) $A \/
+ in (skolemFOFtoCNF_D_2 $A $B $C) $C) /\
+(~($C = set_difference $A $B) \/ ~in $D $A \/ in $D $B \/ in $D $C) /\
+(~in (skolemFOFtoCNF_D_2 $A $B $C) $A \/
+ ~in (skolemFOFtoCNF_D_2 $A $B $C) $C \/ $C = set_difference $A $B \/
+ in (skolemFOFtoCNF_D_2 $A $B $C) $B) /\
+(~(set_intersection2 $A $B = empty_set) \/ disjoint $A $B) /\
+(~disjoint $A $B \/ set_intersection2 $A $B = empty_set) /\
+(~($A = $B) \/ ~proper_subset $A $B) /\
+(~proper_subset $A $B \/ subset $A $B) /\
+(~subset $A $B \/ $A = $B \/ proper_subset $A $B) /\ empty empty_set /\
+(~empty (set_union2 $A $B) \/ empty $A) /\
+(~empty (set_union2 $B $A) \/ empty $A) /\ set_union2 $A $A = $A /\
+set_intersection2 $A $A = $A /\ ~proper_subset $A $A /\
+(~(set_difference $A $B = empty_set) \/ subset $A $B) /\
+(~subset $A $B \/ set_difference $A $B = empty_set) /\
+empty skolemFOFtoCNF_A /\ ~empty skolemFOFtoCNF_A_1 /\ subset $A $A /\
+(~disjoint $A $B \/ disjoint $B $A) /\
+(~subset $A $B \/ set_union2 $A $B = $B) /\
+subset (set_intersection2 $A $B) $A /\
+(~subset $A $B \/ ~subset $A $C \/ subset $A (set_intersection2 $B $C)) /\
+set_union2 $A empty_set = $A /\
+(~subset $A $B \/ ~subset $B $C \/ subset $A $C) /\
+(~subset $A $B \/
+ subset (set_intersection2 $A $C) (set_intersection2 $B $C)) /\
+(~subset $A $B \/ set_intersection2 $A $B = $A) /\
+set_intersection2 $A empty_set = empty_set /\
+(~in (skolemFOFtoCNF_C_1 $A $B) $A \/ ~in (skolemFOFtoCNF_C_1 $A $B) $B \/
+ $A = $B) /\
+($A = $B \/ in (skolemFOFtoCNF_C_1 $A $B) $A \/
+ in (skolemFOFtoCNF_C_1 $A $B) $B) /\ subset empty_set $A /\
+(~subset $A $B \/ subset (set_difference $A $C) (set_difference $B $C)) /\
+subset (set_difference $A $B) $A /\
+set_union2 $A (set_difference $B $A) = set_union2 $A $B /\
+set_difference $A empty_set = $A /\
+(~disjoint $A $B \/ ~in $C $A \/ ~in $C $B) /\
+(disjoint $A $B \/ in (skolemFOFtoCNF_C_2 $A $B) $A) /\
+(disjoint $A $B \/ in (skolemFOFtoCNF_C_2 $A $B) $B) /\
+(~subset $A empty_set \/ $A = empty_set) /\
+set_difference (set_union2 $A $B) $B = set_difference $A $B /\
+(~subset $A $B \/ $B = set_union2 $A (set_difference $B $A)) /\
+set_difference $A (set_difference $A $B) = set_intersection2 $A $B /\
+set_difference empty_set $A = empty_set /\
+(~disjoint $A $B \/ ~in $C (set_intersection2 $A $B)) /\
+(disjoint $A $B \/
+ in (skolemFOFtoCNF_C_3 $A $B) (set_intersection2 $A $B)) /\
+(~proper_subset $B $A \/ ~subset $A $B) /\ (~empty $A \/ $A = empty_set) /\
+(~empty $B \/ ~in $A $B) /\ subset $A (set_union2 $A $B) /\
+(~empty $A \/ ~empty $B \/ $A = $B) /\
+(~subset $A $B \/ ~subset $C $B \/ subset (set_union2 $A $C) $B) /\
+~disjoint skolemFOFtoCNF_A_2 skolemFOFtoCNF_C_4 /\
+disjoint skolemFOFtoCNF_B_1 skolemFOFtoCNF_C_4 /\
+subset skolemFOFtoCNF_A_2 skolemFOFtoCNF_B_1
+
+SZS status Theorem for data/problems/all/SEU140+2.tptp
+
+SZS output start CNFRefutation for data/problems/all/SEU140+2.tptp
+fof(commutativity_k2_xboole_0, axiom,
+    (! [A, B] : set_union2(A, B) = set_union2(B, A))).
+
+fof(d3_xboole_0, axiom,
+    (! [A, B, C] :
+       (C = set_intersection2(A, B) <=>
+        ! [D] : (in(D, C) <=> (in(D, A) & in(D, B)))))).
+
+fof(d4_xboole_0, axiom,
+    (! [A, B, C] :
+       (C = set_difference(A, B) <=>
+        ! [D] : (in(D, C) <=> (in(D, A) & ~ in(D, B)))))).
+
+fof(d7_xboole_0, axiom,
+    (! [A, B] : (disjoint(A, B) <=> set_intersection2(A, B) = empty_set))).
+
+fof(symmetry_r1_xboole_0, axiom,
+    (! [A, B] : (disjoint(A, B) => disjoint(B, A)))).
+
+fof(t12_xboole_1, lemma,
+    (! [A, B] : (subset(A, B) => set_union2(A, B) = B))).
+
+fof(t1_boole, axiom, (! [A] : set_union2(A, empty_set) = A)).
+
+fof(t2_boole, axiom,
+    (! [A] : set_intersection2(A, empty_set) = empty_set)).
+
+fof(t36_xboole_1, lemma, (! [A, B] : subset(set_difference(A, B), A))).
+
+fof(t39_xboole_1, lemma,
+    (! [A, B] : set_union2(A, set_difference(B, A)) = set_union2(A, B))).
+
+fof(t3_boole, axiom, (! [A] : set_difference(A, empty_set) = A)).
+
+fof(t3_xboole_0, lemma,
+    (! [A, B] :
+       (~ (~ disjoint(A, B) & ! [C] : ~ (in(C, A) & in(C, B))) &
+        ~ (? [C] : (in(C, A) & in(C, B)) & disjoint(A, B))))).
+
+fof(t40_xboole_1, lemma,
+    (! [A, B] :
+       set_difference(set_union2(A, B), B) = set_difference(A, B))).
+
+fof(t48_xboole_1, lemma,
+    (! [A, B] :
+       set_difference(A, set_difference(A, B)) = set_intersection2(A, B))).
+
+fof(t63_xboole_1, conjecture,
+    (! [A, B, C] : ((subset(A, B) & disjoint(B, C)) => disjoint(A, C)))).
+
+fof(subgoal_0, plain,
+    (! [A, B, C] : ((subset(A, B) & disjoint(B, C)) => disjoint(A, C))),
+    inference(strip, [], [t63_xboole_1])).
+
+fof(negate_0_0, plain,
+    (~ ! [A, B, C] : ((subset(A, B) & disjoint(B, C)) => disjoint(A, C))),
+    inference(negate, [], [subgoal_0])).
+
+fof(normalize_0_0, plain, (! [A, B] : (~ disjoint(A, B) | disjoint(B, A))),
+    inference(canonicalize, [], [symmetry_r1_xboole_0])).
+
+fof(normalize_0_1, plain, (! [A, B] : (~ disjoint(A, B) | disjoint(B, A))),
+    inference(specialize, [], [normalize_0_0])).
+
+fof(normalize_0_2, plain,
+    (! [A, B] : (~ disjoint(A, B) | ! [C] : (~ in(C, A) | ~ in(C, B))) &
+     ! [A, B] : (disjoint(A, B) | ? [C] : (in(C, A) & in(C, B)))),
+    inference(canonicalize, [], [t3_xboole_0])).
+
+fof(normalize_0_3, plain,
+    (! [A, B] : (disjoint(A, B) | ? [C] : (in(C, A) & in(C, B)))),
+    inference(conjunct, [], [normalize_0_2])).
+
+fof(normalize_0_4, plain,
+    (! [A, B] : (disjoint(A, B) | ? [C] : (in(C, A) & in(C, B)))),
+    inference(specialize, [], [normalize_0_3])).
+
+fof(normalize_0_5, plain,
+    (! [A, B] :
+       ((disjoint(A, B) | in(skolemFOFtoCNF_C_2(A, B), A)) &
+        (disjoint(A, B) | in(skolemFOFtoCNF_C_2(A, B), B)))),
+    inference(clausify, [], [normalize_0_4])).
+
+fof(normalize_0_6, plain,
+    (! [A, B] : (disjoint(A, B) | in(skolemFOFtoCNF_C_2(A, B), B))),
+    inference(conjunct, [], [normalize_0_5])).
+
+fof(normalize_0_7, plain,
+    (! [A, B, C] :
+       (C != set_intersection2(A, B) <=>
+        ? [D] : (~ in(D, C) <=> (in(D, A) & in(D, B))))),
+    inference(canonicalize, [], [d3_xboole_0])).
+
+fof(normalize_0_8, plain,
+    (! [A, B, C] :
+       (C != set_intersection2(A, B) <=>
+        ? [D] : (~ in(D, C) <=> (in(D, A) & in(D, B))))),
+    inference(specialize, [], [normalize_0_7])).
+
+fof(normalize_0_9, plain,
+    (! [A, B, C, D] :
+       ((C != set_intersection2(A, B) | ~ in(D, C) | in(D, A)) &
+        (C != set_intersection2(A, B) | ~ in(D, C) | in(D, B)) &
+        (C = set_intersection2(A, B) | in(skolemFOFtoCNF_D_1(A, B, C), A) |
+         in(skolemFOFtoCNF_D_1(A, B, C), C)) &
+        (C = set_intersection2(A, B) | in(skolemFOFtoCNF_D_1(A, B, C), B) |
+         in(skolemFOFtoCNF_D_1(A, B, C), C)) &
+        (C != set_intersection2(A, B) | ~ in(D, A) | ~ in(D, B) |
+         in(D, C)) &
+        (~ in(skolemFOFtoCNF_D_1(A, B, C), A) |
+         ~ in(skolemFOFtoCNF_D_1(A, B, C), B) |
+         ~ in(skolemFOFtoCNF_D_1(A, B, C), C) |
+         C = set_intersection2(A, B)))),
+    inference(clausify, [], [normalize_0_8])).
+
+fof(normalize_0_10, plain,
+    (! [A, B, C, D] :
+       (C != set_intersection2(A, B) | ~ in(D, C) | in(D, B))),
+    inference(conjunct, [], [normalize_0_9])).
+
+fof(normalize_0_11, plain,
+    (! [A, B] :
+       set_difference(A, set_difference(A, B)) = set_intersection2(A, B)),
+    inference(canonicalize, [], [t48_xboole_1])).
+
+fof(normalize_0_12, plain,
+    (! [A, B] :
+       set_difference(A, set_difference(A, B)) = set_intersection2(A, B)),
+    inference(specialize, [], [normalize_0_11])).
+
+fof(normalize_0_13, plain,
+    (! [A, B] :
+       set_difference(set_union2(A, B), B) = set_difference(A, B)),
+    inference(canonicalize, [], [t40_xboole_1])).
+
+fof(normalize_0_14, plain,
+    (! [A, B] :
+       set_difference(set_union2(A, B), B) = set_difference(A, B)),
+    inference(specialize, [], [normalize_0_13])).
+
+fof(normalize_0_15, plain,
+    (! [A, B] : set_union2(A, set_difference(B, A)) = set_union2(A, B)),
+    inference(canonicalize, [], [t39_xboole_1])).
+
+fof(normalize_0_16, plain,
+    (! [A, B] : set_union2(A, set_difference(B, A)) = set_union2(A, B)),
+    inference(specialize, [], [normalize_0_15])).
+
+fof(normalize_0_17, plain,
+    (! [A, B] : set_union2(A, B) = set_union2(B, A)),
+    inference(canonicalize, [], [commutativity_k2_xboole_0])).
+
+fof(normalize_0_18, plain,
+    (! [A, B] : set_union2(A, B) = set_union2(B, A)),
+    inference(specialize, [], [normalize_0_17])).
+
+fof(normalize_0_19, plain, (! [A] : set_difference(A, empty_set) = A),
+    inference(canonicalize, [], [t3_boole])).
+
+fof(normalize_0_20, plain, (! [A] : set_difference(A, empty_set) = A),
+    inference(specialize, [], [normalize_0_19])).
+
+fof(normalize_0_21, plain,
+    (! [A] : set_intersection2(A, empty_set) = empty_set),
+    inference(canonicalize, [], [t2_boole])).
+
+fof(normalize_0_22, plain,
+    (! [A] : set_intersection2(A, empty_set) = empty_set),
+    inference(specialize, [], [normalize_0_21])).
+
+fof(normalize_0_23, plain,
+    (? [A, B, C] : (~ disjoint(A, C) & disjoint(B, C) & subset(A, B))),
+    inference(canonicalize, [], [negate_0_0])).
+
+fof(normalize_0_24, plain,
+    (~ disjoint(skolemFOFtoCNF_A_2, skolemFOFtoCNF_C_4) &
+     disjoint(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4) &
+     subset(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)),
+    inference(skolemize, [], [normalize_0_23])).
+
+fof(normalize_0_25, plain,
+    (subset(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)),
+    inference(conjunct, [], [normalize_0_24])).
+
+fof(normalize_0_26, plain,
+    (! [A, B] : (~ subset(A, B) | set_union2(A, B) = B)),
+    inference(canonicalize, [], [t12_xboole_1])).
+
+fof(normalize_0_27, plain,
+    (! [A, B] : (~ subset(A, B) | set_union2(A, B) = B)),
+    inference(specialize, [], [normalize_0_26])).
+
+fof(normalize_0_28, plain,
+    (! [A, B] : (disjoint(A, B) | in(skolemFOFtoCNF_C_2(A, B), A))),
+    inference(conjunct, [], [normalize_0_5])).
+
+fof(normalize_0_29, plain,
+    (! [A, B, C] :
+       (C != set_difference(A, B) <=>
+        ? [D] : (~ in(D, C) <=> (~ in(D, B) & in(D, A))))),
+    inference(canonicalize, [], [d4_xboole_0])).
+
+fof(normalize_0_30, plain,
+    (! [A, B, C] :
+       (C != set_difference(A, B) <=>
+        ? [D] : (~ in(D, C) <=> (~ in(D, B) & in(D, A))))),
+    inference(specialize, [], [normalize_0_29])).
+
+fof(normalize_0_31, plain,
+    (! [A, B, C, D] :
+       ((C != set_difference(A, B) | ~ in(D, B) | ~ in(D, C)) &
+        (C != set_difference(A, B) | ~ in(D, C) | in(D, A)) &
+        (~ in(skolemFOFtoCNF_D_2(A, B, C), B) | C = set_difference(A, B) |
+         in(skolemFOFtoCNF_D_2(A, B, C), C)) &
+        (C = set_difference(A, B) | in(skolemFOFtoCNF_D_2(A, B, C), A) |
+         in(skolemFOFtoCNF_D_2(A, B, C), C)) &
+        (C != set_difference(A, B) | ~ in(D, A) | in(D, B) | in(D, C)) &
+        (~ in(skolemFOFtoCNF_D_2(A, B, C), A) |
+         ~ in(skolemFOFtoCNF_D_2(A, B, C), C) | C = set_difference(A, B) |
+         in(skolemFOFtoCNF_D_2(A, B, C), B)))),
+    inference(clausify, [], [normalize_0_30])).
+
+fof(normalize_0_32, plain,
+    (! [A, B, C, D] :
+       (C != set_difference(A, B) | ~ in(D, B) | ~ in(D, C))),
+    inference(conjunct, [], [normalize_0_31])).
+
+fof(normalize_0_33, plain, (! [A, B] : subset(set_difference(A, B), A)),
+    inference(canonicalize, [], [t36_xboole_1])).
+
+fof(normalize_0_34, plain, (! [A, B] : subset(set_difference(A, B), A)),
+    inference(specialize, [], [normalize_0_33])).
+
+fof(normalize_0_35, plain,
+    (disjoint(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4)),
+    inference(conjunct, [], [normalize_0_24])).
+
+fof(normalize_0_36, plain,
+    (! [A, B] :
+       (set_intersection2(A, B) != empty_set <=> ~ disjoint(A, B))),
+    inference(canonicalize, [], [d7_xboole_0])).
+
+fof(normalize_0_37, plain,
+    (! [A, B] :
+       (set_intersection2(A, B) != empty_set <=> ~ disjoint(A, B))),
+    inference(specialize, [], [normalize_0_36])).
+
+fof(normalize_0_38, plain,
+    (! [A, B] :
+       ((set_intersection2(A, B) != empty_set | disjoint(A, B)) &
+        (~ disjoint(A, B) | set_intersection2(A, B) = empty_set))),
+    inference(clausify, [], [normalize_0_37])).
+
+fof(normalize_0_39, plain,
+    (! [A, B] : (~ disjoint(A, B) | set_intersection2(A, B) = empty_set)),
+    inference(conjunct, [], [normalize_0_38])).
+
+fof(normalize_0_40, plain, (! [A] : set_union2(A, empty_set) = A),
+    inference(canonicalize, [], [t1_boole])).
+
+fof(normalize_0_41, plain, (! [A] : set_union2(A, empty_set) = A),
+    inference(specialize, [], [normalize_0_40])).
+
+fof(normalize_0_42, plain,
+    (~ disjoint(skolemFOFtoCNF_A_2, skolemFOFtoCNF_C_4)),
+    inference(conjunct, [], [normalize_0_24])).
+
+cnf(refute_0_0, plain, (~ disjoint(A, B) | disjoint(B, A)),
+    inference(canonicalize, [], [normalize_0_1])).
+
+cnf(refute_0_1, plain,
+    (~ disjoint(skolemFOFtoCNF_C_4, skolemFOFtoCNF_A_2) |
+     disjoint(skolemFOFtoCNF_A_2, skolemFOFtoCNF_C_4)),
+    inference(subst, [],
+              [refute_0_0 :
+               [bind(A, $fot(skolemFOFtoCNF_C_4)),
+                bind(B, $fot(skolemFOFtoCNF_A_2))]])).
+
+cnf(refute_0_2, plain, (disjoint(A, B) | in(skolemFOFtoCNF_C_2(A, B), B)),
+    inference(canonicalize, [], [normalize_0_6])).
+
+cnf(refute_0_3, plain,
+    (disjoint(A, skolemFOFtoCNF_A_2) |
+     in(skolemFOFtoCNF_C_2(A, skolemFOFtoCNF_A_2), skolemFOFtoCNF_A_2)),
+    inference(subst, [],
+              [refute_0_2 : [bind(B, $fot(skolemFOFtoCNF_A_2))]])).
+
+cnf(refute_0_4, plain,
+    (C != set_intersection2(A, B) | ~ in(D, C) | in(D, B)),
+    inference(canonicalize, [], [normalize_0_10])).
+
+cnf(refute_0_5, plain,
+    (set_intersection2(A, B) != set_intersection2(A, B) |
+     ~ in(D, set_intersection2(A, B)) | in(D, B)),
+    inference(subst, [],
+              [refute_0_4 : [bind(C, $fot(set_intersection2(A, B)))]])).
+
+cnf(refute_0_6, plain, (set_intersection2(A, B) = set_intersection2(A, B)),
+    introduced(tautology, [refl, [$fot(set_intersection2(A, B))]])).
+
+cnf(refute_0_7, plain, (~ in(D, set_intersection2(A, B)) | in(D, B)),
+    inference(resolve,
+              [$cnf($equal(set_intersection2(A, B),
+                      set_intersection2(A, B)))],
+              [refute_0_6, refute_0_5])).
+
+cnf(refute_0_8, plain,
+    (~
+       in(X_311,
+         set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)) |
+     in(X_311, skolemFOFtoCNF_B_1)),
+    inference(subst, [],
+              [refute_0_7 :
+               [bind(A, $fot(skolemFOFtoCNF_A_2)),
+                bind(B, $fot(skolemFOFtoCNF_B_1)),
+                bind(D, $fot(X_311))]])).
+
+cnf(refute_0_9, plain,
+    (set_difference(A, set_difference(A, B)) = set_intersection2(A, B)),
+    inference(canonicalize, [], [normalize_0_12])).
+
+cnf(refute_0_10, plain,
+    (set_difference(skolemFOFtoCNF_A_2,
+       set_difference(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)) =
+     set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)),
+    inference(subst, [],
+              [refute_0_9 :
+               [bind(A, $fot(skolemFOFtoCNF_A_2)),
+                bind(B, $fot(skolemFOFtoCNF_B_1))]])).
+
+cnf(refute_0_11, plain,
+    (set_difference(set_union2(A, B), B) = set_difference(A, B)),
+    inference(canonicalize, [], [normalize_0_14])).
+
+cnf(refute_0_12, plain,
+    (set_difference(set_union2(set_union2(X_80, X_79),
+         set_union2(X_79, X_80)), set_union2(X_79, X_80)) =
+     set_difference(set_union2(X_80, X_79), set_union2(X_79, X_80))),
+    inference(subst, [],
+              [refute_0_11 :
+               [bind(A, $fot(set_union2(X_80, X_79))),
+                bind(B, $fot(set_union2(X_79, X_80)))]])).
+
+cnf(refute_0_13, plain,
+    (set_union2(A, set_difference(B, A)) = set_union2(A, B)),
+    inference(canonicalize, [], [normalize_0_16])).
+
+cnf(refute_0_14, plain,
+    (set_union2(A, set_difference(set_union2(X_65, A), A)) =
+     set_union2(A, set_union2(X_65, A))),
+    inference(subst, [],
+              [refute_0_13 : [bind(B, $fot(set_union2(X_65, A)))]])).
+
+cnf(refute_0_15, plain,
+    (set_difference(set_union2(X_65, A), A) = set_difference(X_65, A)),
+    inference(subst, [],
+              [refute_0_11 : [bind(A, $fot(X_65)), bind(B, $fot(A))]])).
+
+cnf(refute_0_16, plain,
+    (set_difference(set_union2(X_65, A), A) != set_difference(X_65, A) |
+     set_union2(A, set_difference(set_union2(X_65, A), A)) !=
+     set_union2(A, set_union2(X_65, A)) |
+     set_union2(A, set_difference(X_65, A)) =
+     set_union2(A, set_union2(X_65, A))),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_union2(A,
+                          set_difference(set_union2(X_65, A), A)),
+                        set_union2(A, set_union2(X_65, A)))), [0, 1],
+                 $fot(set_difference(X_65, A))]])).
+
+cnf(refute_0_17, plain,
+    (set_union2(A, set_difference(set_union2(X_65, A), A)) !=
+     set_union2(A, set_union2(X_65, A)) |
+     set_union2(A, set_difference(X_65, A)) =
+     set_union2(A, set_union2(X_65, A))),
+    inference(resolve,
+              [$cnf($equal(set_difference(set_union2(X_65, A), A),
+                      set_difference(X_65, A)))],
+              [refute_0_15, refute_0_16])).
+
+cnf(refute_0_18, plain,
+    (set_union2(A, set_difference(X_65, A)) =
+     set_union2(A, set_union2(X_65, A))),
+    inference(resolve,
+              [$cnf($equal(set_union2(A,
+                        set_difference(set_union2(X_65, A), A)),
+                      set_union2(A, set_union2(X_65, A))))],
+              [refute_0_14, refute_0_17])).
+
+cnf(refute_0_19, plain,
+    (set_union2(A, set_difference(X_65, A)) = set_union2(A, X_65)),
+    inference(subst, [], [refute_0_13 : [bind(B, $fot(X_65))]])).
+
+cnf(refute_0_20, plain,
+    (set_union2(A, set_difference(X_65, A)) != set_union2(A, X_65) |
+     set_union2(A, set_difference(X_65, A)) !=
+     set_union2(A, set_union2(X_65, A)) |
+     set_union2(A, X_65) = set_union2(A, set_union2(X_65, A))),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_union2(A, set_difference(X_65, A)),
+                        set_union2(A, set_union2(X_65, A)))), [0],
+                 $fot(set_union2(A, X_65))]])).
+
+cnf(refute_0_21, plain,
+    (set_union2(A, set_difference(X_65, A)) !=
+     set_union2(A, set_union2(X_65, A)) |
+     set_union2(A, X_65) = set_union2(A, set_union2(X_65, A))),
+    inference(resolve,
+              [$cnf($equal(set_union2(A, set_difference(X_65, A)),
+                      set_union2(A, X_65)))], [refute_0_19, refute_0_20])).
+
+cnf(refute_0_22, plain,
+    (set_union2(A, X_65) = set_union2(A, set_union2(X_65, A))),
+    inference(resolve,
+              [$cnf($equal(set_union2(A, set_difference(X_65, A)),
+                      set_union2(A, set_union2(X_65, A))))],
+              [refute_0_18, refute_0_21])).
+
+cnf(refute_0_23, plain,
+    (set_union2(set_union2(X_76, X_65), X_65) =
+     set_union2(set_union2(X_76, X_65),
+       set_union2(X_65, set_union2(X_76, X_65)))),
+    inference(subst, [],
+              [refute_0_22 : [bind(A, $fot(set_union2(X_76, X_65)))]])).
+
+cnf(refute_0_24, plain,
+    (set_union2(X_65, X_76) = set_union2(X_65, set_union2(X_76, X_65))),
+    inference(subst, [],
+              [refute_0_22 :
+               [bind(A, $fot(X_65)), bind(X_65, $fot(X_76))]])).
+
+cnf(refute_0_25, plain, (X = X), introduced(tautology, [refl, [$fot(X)]])).
+
+cnf(refute_0_26, plain, (X != X | X != Y | Y = X),
+    introduced(tautology, [equality, [$cnf($equal(X, X)), [0], $fot(Y)]])).
+
+cnf(refute_0_27, plain, (X != Y | Y = X),
+    inference(resolve, [$cnf($equal(X, X))], [refute_0_25, refute_0_26])).
+
+cnf(refute_0_28, plain,
+    (set_union2(X_65, X_76) != set_union2(X_65, set_union2(X_76, X_65)) |
+     set_union2(X_65, set_union2(X_76, X_65)) = set_union2(X_65, X_76)),
+    inference(subst, [],
+              [refute_0_27 :
+               [bind(X, $fot(set_union2(X_65, X_76))),
+                bind(Y,
+                     $fot(set_union2(X_65, set_union2(X_76, X_65))))]])).
+
+cnf(refute_0_29, plain,
+    (set_union2(X_65, set_union2(X_76, X_65)) = set_union2(X_65, X_76)),
+    inference(resolve,
+              [$cnf($equal(set_union2(X_65, X_76),
+                      set_union2(X_65, set_union2(X_76, X_65))))],
+              [refute_0_24, refute_0_28])).
+
+cnf(refute_0_30, plain,
+    (set_union2(X_65, set_union2(X_76, X_65)) != set_union2(X_65, X_76) |
+     set_union2(set_union2(X_76, X_65), X_65) !=
+     set_union2(set_union2(X_76, X_65),
+       set_union2(X_65, set_union2(X_76, X_65))) |
+     set_union2(set_union2(X_76, X_65), X_65) =
+     set_union2(set_union2(X_76, X_65), set_union2(X_65, X_76))),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_union2(set_union2(X_76, X_65), X_65),
+                        set_union2(set_union2(X_76, X_65),
+                          set_union2(X_65, set_union2(X_76, X_65))))),
+                 [1, 1], $fot(set_union2(X_65, X_76))]])).
+
+cnf(refute_0_31, plain,
+    (set_union2(set_union2(X_76, X_65), X_65) !=
+     set_union2(set_union2(X_76, X_65),
+       set_union2(X_65, set_union2(X_76, X_65))) |
+     set_union2(set_union2(X_76, X_65), X_65) =
+     set_union2(set_union2(X_76, X_65), set_union2(X_65, X_76))),
+    inference(resolve,
+              [$cnf($equal(set_union2(X_65, set_union2(X_76, X_65)),
+                      set_union2(X_65, X_76)))],
+              [refute_0_29, refute_0_30])).
+
+cnf(refute_0_32, plain,
+    (set_union2(set_union2(X_76, X_65), X_65) =
+     set_union2(set_union2(X_76, X_65), set_union2(X_65, X_76))),
+    inference(resolve,
+              [$cnf($equal(set_union2(set_union2(X_76, X_65), X_65),
+                      set_union2(set_union2(X_76, X_65),
+                        set_union2(X_65, set_union2(X_76, X_65)))))],
+              [refute_0_23, refute_0_31])).
+
+cnf(refute_0_33, plain, (set_union2(A, B) = set_union2(B, A)),
+    inference(canonicalize, [], [normalize_0_18])).
+
+cnf(refute_0_34, plain,
+    (set_union2(A, B) != set_union2(B, A) |
+     set_union2(B, A) = set_union2(A, B)),
+    inference(subst, [],
+              [refute_0_27 :
+               [bind(X, $fot(set_union2(A, B))),
+                bind(Y, $fot(set_union2(B, A)))]])).
+
+cnf(refute_0_35, plain, (set_union2(B, A) = set_union2(A, B)),
+    inference(resolve, [$cnf($equal(set_union2(A, B), set_union2(B, A)))],
+              [refute_0_33, refute_0_34])).
+
+cnf(refute_0_36, plain,
+    (set_union2(set_union2(X_76, X_65), X_65) =
+     set_union2(X_65, set_union2(X_76, X_65))),
+    inference(subst, [],
+              [refute_0_35 :
+               [bind(A, $fot(X_65)),
+                bind(B, $fot(set_union2(X_76, X_65)))]])).
+
+cnf(refute_0_37, plain, (Y != X | Y != Z | X = Z),
+    introduced(tautology, [equality, [$cnf($equal(Y, Z)), [0], $fot(X)]])).
+
+cnf(refute_0_38, plain, (X != Y | Y != Z | X = Z),
+    inference(resolve, [$cnf($equal(Y, X))], [refute_0_27, refute_0_37])).
+
+cnf(refute_0_39, plain,
+    (set_union2(X_65, set_union2(X_76, X_65)) != set_union2(X_65, X_76) |
+     set_union2(set_union2(X_76, X_65), X_65) !=
+     set_union2(X_65, set_union2(X_76, X_65)) |
+     set_union2(set_union2(X_76, X_65), X_65) = set_union2(X_65, X_76)),
+    inference(subst, [],
+              [refute_0_38 :
+               [bind(X, $fot(set_union2(set_union2(X_76, X_65), X_65))),
+                bind(Y, $fot(set_union2(X_65, set_union2(X_76, X_65)))),
+                bind(Z, $fot(set_union2(X_65, X_76)))]])).
+
+cnf(refute_0_40, plain,
+    (set_union2(X_65, set_union2(X_76, X_65)) != set_union2(X_65, X_76) |
+     set_union2(set_union2(X_76, X_65), X_65) = set_union2(X_65, X_76)),
+    inference(resolve,
+              [$cnf($equal(set_union2(set_union2(X_76, X_65), X_65),
+                      set_union2(X_65, set_union2(X_76, X_65))))],
+              [refute_0_36, refute_0_39])).
+
+cnf(refute_0_41, plain,
+    (set_union2(set_union2(X_76, X_65), X_65) = set_union2(X_65, X_76)),
+    inference(resolve,
+              [$cnf($equal(set_union2(X_65, set_union2(X_76, X_65)),
+                      set_union2(X_65, X_76)))],
+              [refute_0_29, refute_0_40])).
+
+cnf(refute_0_42, plain,
+    (set_union2(set_union2(X_76, X_65), X_65) != set_union2(X_65, X_76) |
+     set_union2(set_union2(X_76, X_65), X_65) !=
+     set_union2(set_union2(X_76, X_65), set_union2(X_65, X_76)) |
+     set_union2(X_65, X_76) =
+     set_union2(set_union2(X_76, X_65), set_union2(X_65, X_76))),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_union2(set_union2(X_76, X_65), X_65),
+                        set_union2(set_union2(X_76, X_65),
+                          set_union2(X_65, X_76)))), [0],
+                 $fot(set_union2(X_65, X_76))]])).
+
+cnf(refute_0_43, plain,
+    (set_union2(set_union2(X_76, X_65), X_65) !=
+     set_union2(set_union2(X_76, X_65), set_union2(X_65, X_76)) |
+     set_union2(X_65, X_76) =
+     set_union2(set_union2(X_76, X_65), set_union2(X_65, X_76))),
+    inference(resolve,
+              [$cnf($equal(set_union2(set_union2(X_76, X_65), X_65),
+                      set_union2(X_65, X_76)))],
+              [refute_0_41, refute_0_42])).
+
+cnf(refute_0_44, plain,
+    (set_union2(X_65, X_76) =
+     set_union2(set_union2(X_76, X_65), set_union2(X_65, X_76))),
+    inference(resolve,
+              [$cnf($equal(set_union2(set_union2(X_76, X_65), X_65),
+                      set_union2(set_union2(X_76, X_65),
+                        set_union2(X_65, X_76))))],
+              [refute_0_32, refute_0_43])).
+
+cnf(refute_0_45, plain,
+    (set_union2(X_79, X_80) =
+     set_union2(set_union2(X_80, X_79), set_union2(X_79, X_80))),
+    inference(subst, [],
+              [refute_0_44 :
+               [bind(X_65, $fot(X_79)), bind(X_76, $fot(X_80))]])).
+
+cnf(refute_0_46, plain,
+    (set_union2(X_79, X_80) !=
+     set_union2(set_union2(X_80, X_79), set_union2(X_79, X_80)) |
+     set_union2(set_union2(X_80, X_79), set_union2(X_79, X_80)) =
+     set_union2(X_79, X_80)),
+    inference(subst, [],
+              [refute_0_27 :
+               [bind(X, $fot(set_union2(X_79, X_80))),
+                bind(Y,
+                     $fot(set_union2(set_union2(X_80, X_79),
+                            set_union2(X_79, X_80))))]])).
+
+cnf(refute_0_47, plain,
+    (set_union2(set_union2(X_80, X_79), set_union2(X_79, X_80)) =
+     set_union2(X_79, X_80)),
+    inference(resolve,
+              [$cnf($equal(set_union2(X_79, X_80),
+                      set_union2(set_union2(X_80, X_79),
+                        set_union2(X_79, X_80))))],
+              [refute_0_45, refute_0_46])).
+
+cnf(refute_0_48, plain,
+    (set_difference(set_union2(set_union2(X_80, X_79),
+         set_union2(X_79, X_80)), set_union2(X_79, X_80)) !=
+     set_difference(set_union2(X_80, X_79), set_union2(X_79, X_80)) |
+     set_union2(set_union2(X_80, X_79), set_union2(X_79, X_80)) !=
+     set_union2(X_79, X_80) |
+     set_difference(set_union2(X_79, X_80), set_union2(X_79, X_80)) =
+     set_difference(set_union2(X_80, X_79), set_union2(X_79, X_80))),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_difference(set_union2(set_union2(X_80,
+                              X_79), set_union2(X_79, X_80)),
+                          set_union2(X_79, X_80)),
+                        set_difference(set_union2(X_80, X_79),
+                          set_union2(X_79, X_80)))), [0, 0],
+                 $fot(set_union2(X_79, X_80))]])).
+
+cnf(refute_0_49, plain,
+    (set_difference(set_union2(set_union2(X_80, X_79),
+         set_union2(X_79, X_80)), set_union2(X_79, X_80)) !=
+     set_difference(set_union2(X_80, X_79), set_union2(X_79, X_80)) |
+     set_difference(set_union2(X_79, X_80), set_union2(X_79, X_80)) =
+     set_difference(set_union2(X_80, X_79), set_union2(X_79, X_80))),
+    inference(resolve,
+              [$cnf($equal(set_union2(set_union2(X_80, X_79),
+                        set_union2(X_79, X_80)), set_union2(X_79, X_80)))],
+              [refute_0_47, refute_0_48])).
+
+cnf(refute_0_50, plain,
+    (set_difference(set_union2(X_79, X_80), set_union2(X_79, X_80)) =
+     set_difference(set_union2(X_80, X_79), set_union2(X_79, X_80))),
+    inference(resolve,
+              [$cnf($equal(set_difference(set_union2(set_union2(X_80,
+                            X_79), set_union2(X_79, X_80)),
+                        set_union2(X_79, X_80)),
+                      set_difference(set_union2(X_80, X_79),
+                        set_union2(X_79, X_80))))],
+              [refute_0_12, refute_0_49])).
+
+cnf(refute_0_51, plain,
+    (set_difference(X_50, set_difference(X_50, empty_set)) =
+     set_intersection2(X_50, empty_set)),
+    inference(subst, [],
+              [refute_0_9 :
+               [bind(A, $fot(X_50)), bind(B, $fot(empty_set))]])).
+
+cnf(refute_0_52, plain, (set_difference(A, empty_set) = A),
+    inference(canonicalize, [], [normalize_0_20])).
+
+cnf(refute_0_53, plain, (set_difference(X_50, empty_set) = X_50),
+    inference(subst, [], [refute_0_52 : [bind(A, $fot(X_50))]])).
+
+cnf(refute_0_54, plain,
+    (set_difference(X_50, empty_set) != X_50 |
+     set_difference(X_50, set_difference(X_50, empty_set)) !=
+     set_intersection2(X_50, empty_set) |
+     set_difference(X_50, X_50) = set_intersection2(X_50, empty_set)),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_difference(X_50,
+                          set_difference(X_50, empty_set)),
+                        set_intersection2(X_50, empty_set))), [0, 1],
+                 $fot(X_50)]])).
+
+cnf(refute_0_55, plain,
+    (set_difference(X_50, set_difference(X_50, empty_set)) !=
+     set_intersection2(X_50, empty_set) |
+     set_difference(X_50, X_50) = set_intersection2(X_50, empty_set)),
+    inference(resolve,
+              [$cnf($equal(set_difference(X_50, empty_set), X_50))],
+              [refute_0_53, refute_0_54])).
+
+cnf(refute_0_56, plain,
+    (set_difference(X_50, X_50) = set_intersection2(X_50, empty_set)),
+    inference(resolve,
+              [$cnf($equal(set_difference(X_50,
+                        set_difference(X_50, empty_set)),
+                      set_intersection2(X_50, empty_set)))],
+              [refute_0_51, refute_0_55])).
+
+cnf(refute_0_57, plain, (set_intersection2(A, empty_set) = empty_set),
+    inference(canonicalize, [], [normalize_0_22])).
+
+cnf(refute_0_58, plain, (set_intersection2(X_50, empty_set) = empty_set),
+    inference(subst, [], [refute_0_57 : [bind(A, $fot(X_50))]])).
+
+cnf(refute_0_59, plain,
+    (set_difference(X_50, X_50) != set_intersection2(X_50, empty_set) |
+     set_intersection2(X_50, empty_set) != empty_set |
+     set_difference(X_50, X_50) = empty_set),
+    introduced(tautology,
+               [equality,
+                [$cnf(~ $equal(set_difference(X_50, X_50), empty_set)),
+                 [0], $fot(set_intersection2(X_50, empty_set))]])).
+
+cnf(refute_0_60, plain,
+    (set_difference(X_50, X_50) != set_intersection2(X_50, empty_set) |
+     set_difference(X_50, X_50) = empty_set),
+    inference(resolve,
+              [$cnf($equal(set_intersection2(X_50, empty_set),
+                      empty_set))], [refute_0_58, refute_0_59])).
+
+cnf(refute_0_61, plain, (set_difference(X_50, X_50) = empty_set),
+    inference(resolve,
+              [$cnf($equal(set_difference(X_50, X_50),
+                      set_intersection2(X_50, empty_set)))],
+              [refute_0_56, refute_0_60])).
+
+cnf(refute_0_62, plain,
+    (set_difference(set_union2(X_79, X_80), set_union2(X_79, X_80)) =
+     empty_set),
+    inference(subst, [],
+              [refute_0_61 : [bind(X_50, $fot(set_union2(X_79, X_80)))]])).
+
+cnf(refute_0_63, plain,
+    (set_difference(set_union2(X_79, X_80), set_union2(X_79, X_80)) !=
+     empty_set |
+     set_difference(set_union2(X_79, X_80), set_union2(X_79, X_80)) !=
+     set_difference(set_union2(X_80, X_79), set_union2(X_79, X_80)) |
+     empty_set =
+     set_difference(set_union2(X_80, X_79), set_union2(X_79, X_80))),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_difference(set_union2(X_79, X_80),
+                          set_union2(X_79, X_80)),
+                        set_difference(set_union2(X_80, X_79),
+                          set_union2(X_79, X_80)))), [0],
+                 $fot(empty_set)]])).
+
+cnf(refute_0_64, plain,
+    (set_difference(set_union2(X_79, X_80), set_union2(X_79, X_80)) !=
+     set_difference(set_union2(X_80, X_79), set_union2(X_79, X_80)) |
+     empty_set =
+     set_difference(set_union2(X_80, X_79), set_union2(X_79, X_80))),
+    inference(resolve,
+              [$cnf($equal(set_difference(set_union2(X_79, X_80),
+                        set_union2(X_79, X_80)), empty_set))],
+              [refute_0_62, refute_0_63])).
+
+cnf(refute_0_65, plain,
+    (set_difference(set_union2(A, set_union2(X_76, A)),
+       set_union2(X_76, A)) = set_difference(A, set_union2(X_76, A))),
+    inference(subst, [],
+              [refute_0_11 : [bind(B, $fot(set_union2(X_76, A)))]])).
+
+cnf(refute_0_66, plain,
+    (set_union2(A, X_76) = set_union2(A, set_union2(X_76, A))),
+    inference(subst, [], [refute_0_22 : [bind(X_65, $fot(X_76))]])).
+
+cnf(refute_0_67, plain,
+    (set_union2(A, X_76) != set_union2(A, set_union2(X_76, A)) |
+     set_union2(A, set_union2(X_76, A)) = set_union2(A, X_76)),
+    inference(subst, [],
+              [refute_0_27 :
+               [bind(X, $fot(set_union2(A, X_76))),
+                bind(Y, $fot(set_union2(A, set_union2(X_76, A))))]])).
+
+cnf(refute_0_68, plain,
+    (set_union2(A, set_union2(X_76, A)) = set_union2(A, X_76)),
+    inference(resolve,
+              [$cnf($equal(set_union2(A, X_76),
+                      set_union2(A, set_union2(X_76, A))))],
+              [refute_0_66, refute_0_67])).
+
+cnf(refute_0_69, plain,
+    (set_difference(set_union2(A, set_union2(X_76, A)),
+       set_union2(X_76, A)) != set_difference(A, set_union2(X_76, A)) |
+     set_union2(A, set_union2(X_76, A)) != set_union2(A, X_76) |
+     set_difference(set_union2(A, X_76), set_union2(X_76, A)) =
+     set_difference(A, set_union2(X_76, A))),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_difference(set_union2(A,
+                            set_union2(X_76, A)), set_union2(X_76, A)),
+                        set_difference(A, set_union2(X_76, A)))), [0, 0],
+                 $fot(set_union2(A, X_76))]])).
+
+cnf(refute_0_70, plain,
+    (set_difference(set_union2(A, set_union2(X_76, A)),
+       set_union2(X_76, A)) != set_difference(A, set_union2(X_76, A)) |
+     set_difference(set_union2(A, X_76), set_union2(X_76, A)) =
+     set_difference(A, set_union2(X_76, A))),
+    inference(resolve,
+              [$cnf($equal(set_union2(A, set_union2(X_76, A)),
+                      set_union2(A, X_76)))], [refute_0_68, refute_0_69])).
+
+cnf(refute_0_71, plain,
+    (set_difference(set_union2(A, X_76), set_union2(X_76, A)) =
+     set_difference(A, set_union2(X_76, A))),
+    inference(resolve,
+              [$cnf($equal(set_difference(set_union2(A,
+                          set_union2(X_76, A)), set_union2(X_76, A)),
+                      set_difference(A, set_union2(X_76, A))))],
+              [refute_0_65, refute_0_70])).
+
+cnf(refute_0_72, plain,
+    (set_difference(set_union2(X_80, X_79), set_union2(X_79, X_80)) =
+     set_difference(X_80, set_union2(X_79, X_80))),
+    inference(subst, [],
+              [refute_0_71 :
+               [bind(A, $fot(X_80)), bind(X_76, $fot(X_79))]])).
+
+cnf(refute_0_73, plain,
+    (empty_set !=
+     set_difference(set_union2(X_80, X_79), set_union2(X_79, X_80)) |
+     set_difference(set_union2(X_80, X_79), set_union2(X_79, X_80)) !=
+     set_difference(X_80, set_union2(X_79, X_80)) |
+     empty_set = set_difference(X_80, set_union2(X_79, X_80))),
+    introduced(tautology,
+               [equality,
+                [$cnf(~ $equal(empty_set,
+                        set_difference(X_80, set_union2(X_79, X_80)))),
+                 [0],
+                 $fot(set_difference(set_union2(X_80, X_79),
+                        set_union2(X_79, X_80)))]])).
+
+cnf(refute_0_74, plain,
+    (empty_set !=
+     set_difference(set_union2(X_80, X_79), set_union2(X_79, X_80)) |
+     empty_set = set_difference(X_80, set_union2(X_79, X_80))),
+    inference(resolve,
+              [$cnf($equal(set_difference(set_union2(X_80, X_79),
+                        set_union2(X_79, X_80)),
+                      set_difference(X_80, set_union2(X_79, X_80))))],
+              [refute_0_72, refute_0_73])).
+
+cnf(refute_0_75, plain,
+    (set_difference(set_union2(X_79, X_80), set_union2(X_79, X_80)) !=
+     set_difference(set_union2(X_80, X_79), set_union2(X_79, X_80)) |
+     empty_set = set_difference(X_80, set_union2(X_79, X_80))),
+    inference(resolve,
+              [$cnf($equal(empty_set,
+                      set_difference(set_union2(X_80, X_79),
+                        set_union2(X_79, X_80))))],
+              [refute_0_64, refute_0_74])).
+
+cnf(refute_0_76, plain,
+    (empty_set = set_difference(X_80, set_union2(X_79, X_80))),
+    inference(resolve,
+              [$cnf($equal(set_difference(set_union2(X_79, X_80),
+                        set_union2(X_79, X_80)),
+                      set_difference(set_union2(X_80, X_79),
+                        set_union2(X_79, X_80))))],
+              [refute_0_50, refute_0_75])).
+
+cnf(refute_0_77, plain,
+    (empty_set = set_difference(X_82, set_union2(X_81, X_82))),
+    inference(subst, [],
+              [refute_0_76 :
+               [bind(X_79, $fot(X_81)), bind(X_80, $fot(X_82))]])).
+
+cnf(refute_0_78, plain, (set_union2(X_82, X_81) = set_union2(X_81, X_82)),
+    inference(subst, [],
+              [refute_0_33 : [bind(A, $fot(X_82)), bind(B, $fot(X_81))]])).
+
+cnf(refute_0_79, plain,
+    (set_union2(X_82, X_81) != set_union2(X_81, X_82) |
+     set_union2(X_81, X_82) = set_union2(X_82, X_81)),
+    inference(subst, [],
+              [refute_0_27 :
+               [bind(X, $fot(set_union2(X_82, X_81))),
+                bind(Y, $fot(set_union2(X_81, X_82)))]])).
+
+cnf(refute_0_80, plain, (set_union2(X_81, X_82) = set_union2(X_82, X_81)),
+    inference(resolve,
+              [$cnf($equal(set_union2(X_82, X_81),
+                      set_union2(X_81, X_82)))],
+              [refute_0_78, refute_0_79])).
+
+cnf(refute_0_81, plain,
+    (empty_set != set_difference(X_82, set_union2(X_81, X_82)) |
+     set_union2(X_81, X_82) != set_union2(X_82, X_81) |
+     empty_set = set_difference(X_82, set_union2(X_82, X_81))),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(empty_set,
+                        set_difference(X_82, set_union2(X_81, X_82)))),
+                 [1, 1], $fot(set_union2(X_82, X_81))]])).
+
+cnf(refute_0_82, plain,
+    (empty_set != set_difference(X_82, set_union2(X_81, X_82)) |
+     empty_set = set_difference(X_82, set_union2(X_82, X_81))),
+    inference(resolve,
+              [$cnf($equal(set_union2(X_81, X_82),
+                      set_union2(X_82, X_81)))],
+              [refute_0_80, refute_0_81])).
+
+cnf(refute_0_83, plain,
+    (empty_set = set_difference(X_82, set_union2(X_82, X_81))),
+    inference(resolve,
+              [$cnf($equal(empty_set,
+                      set_difference(X_82, set_union2(X_81, X_82))))],
+              [refute_0_77, refute_0_82])).
+
+cnf(refute_0_84, plain,
+    (empty_set =
+     set_difference(skolemFOFtoCNF_A_2,
+       set_union2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1))),
+    inference(subst, [],
+              [refute_0_83 :
+               [bind(X_81, $fot(skolemFOFtoCNF_B_1)),
+                bind(X_82, $fot(skolemFOFtoCNF_A_2))]])).
+
+cnf(refute_0_85, plain, (subset(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)),
+    inference(canonicalize, [], [normalize_0_25])).
+
+cnf(refute_0_86, plain, (~ subset(A, B) | set_union2(A, B) = B),
+    inference(canonicalize, [], [normalize_0_27])).
+
+cnf(refute_0_87, plain,
+    (~ subset(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) |
+     set_union2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) =
+     skolemFOFtoCNF_B_1),
+    inference(subst, [],
+              [refute_0_86 :
+               [bind(A, $fot(skolemFOFtoCNF_A_2)),
+                bind(B, $fot(skolemFOFtoCNF_B_1))]])).
+
+cnf(refute_0_88, plain,
+    (set_union2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) =
+     skolemFOFtoCNF_B_1),
+    inference(resolve,
+              [$cnf(subset(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1))],
+              [refute_0_85, refute_0_87])).
+
+cnf(refute_0_89, plain,
+    (empty_set !=
+     set_difference(skolemFOFtoCNF_A_2,
+       set_union2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)) |
+     set_union2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) !=
+     skolemFOFtoCNF_B_1 |
+     empty_set = set_difference(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(empty_set,
+                        set_difference(skolemFOFtoCNF_A_2,
+                          set_union2(skolemFOFtoCNF_A_2,
+                            skolemFOFtoCNF_B_1)))), [1, 1],
+                 $fot(skolemFOFtoCNF_B_1)]])).
+
+cnf(refute_0_90, plain,
+    (empty_set !=
+     set_difference(skolemFOFtoCNF_A_2,
+       set_union2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)) |
+     empty_set = set_difference(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)),
+    inference(resolve,
+              [$cnf($equal(set_union2(skolemFOFtoCNF_A_2,
+                        skolemFOFtoCNF_B_1), skolemFOFtoCNF_B_1))],
+              [refute_0_88, refute_0_89])).
+
+cnf(refute_0_91, plain,
+    (empty_set = set_difference(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)),
+    inference(resolve,
+              [$cnf($equal(empty_set,
+                      set_difference(skolemFOFtoCNF_A_2,
+                        set_union2(skolemFOFtoCNF_A_2,
+                          skolemFOFtoCNF_B_1))))],
+              [refute_0_84, refute_0_90])).
+
+cnf(refute_0_92, plain,
+    (empty_set != set_difference(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) |
+     set_difference(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) = empty_set),
+    inference(subst, [],
+              [refute_0_27 :
+               [bind(X, $fot(empty_set)),
+                bind(Y,
+                     $fot(set_difference(skolemFOFtoCNF_A_2,
+                            skolemFOFtoCNF_B_1)))]])).
+
+cnf(refute_0_93, plain,
+    (set_difference(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) = empty_set),
+    inference(resolve,
+              [$cnf($equal(empty_set,
+                      set_difference(skolemFOFtoCNF_A_2,
+                        skolemFOFtoCNF_B_1)))],
+              [refute_0_91, refute_0_92])).
+
+cnf(refute_0_94, plain,
+    (set_difference(skolemFOFtoCNF_A_2,
+       set_difference(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)) !=
+     set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) |
+     set_difference(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) != empty_set |
+     set_difference(skolemFOFtoCNF_A_2, empty_set) =
+     set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_difference(skolemFOFtoCNF_A_2,
+                          set_difference(skolemFOFtoCNF_A_2,
+                            skolemFOFtoCNF_B_1)),
+                        set_intersection2(skolemFOFtoCNF_A_2,
+                          skolemFOFtoCNF_B_1))), [0, 1],
+                 $fot(empty_set)]])).
+
+cnf(refute_0_95, plain,
+    (set_difference(skolemFOFtoCNF_A_2,
+       set_difference(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)) !=
+     set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) |
+     set_difference(skolemFOFtoCNF_A_2, empty_set) =
+     set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)),
+    inference(resolve,
+              [$cnf($equal(set_difference(skolemFOFtoCNF_A_2,
+                        skolemFOFtoCNF_B_1), empty_set))],
+              [refute_0_93, refute_0_94])).
+
+cnf(refute_0_96, plain,
+    (set_difference(skolemFOFtoCNF_A_2, empty_set) =
+     set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)),
+    inference(resolve,
+              [$cnf($equal(set_difference(skolemFOFtoCNF_A_2,
+                        set_difference(skolemFOFtoCNF_A_2,
+                          skolemFOFtoCNF_B_1)),
+                      set_intersection2(skolemFOFtoCNF_A_2,
+                        skolemFOFtoCNF_B_1)))],
+              [refute_0_10, refute_0_95])).
+
+cnf(refute_0_97, plain,
+    (set_difference(skolemFOFtoCNF_A_2, empty_set) = skolemFOFtoCNF_A_2),
+    inference(subst, [],
+              [refute_0_52 : [bind(A, $fot(skolemFOFtoCNF_A_2))]])).
+
+cnf(refute_0_98, plain,
+    (set_difference(skolemFOFtoCNF_A_2, empty_set) !=
+     set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) |
+     set_difference(skolemFOFtoCNF_A_2, empty_set) != skolemFOFtoCNF_A_2 |
+     skolemFOFtoCNF_A_2 =
+     set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_difference(skolemFOFtoCNF_A_2, empty_set),
+                        set_intersection2(skolemFOFtoCNF_A_2,
+                          skolemFOFtoCNF_B_1))), [0],
+                 $fot(skolemFOFtoCNF_A_2)]])).
+
+cnf(refute_0_99, plain,
+    (set_difference(skolemFOFtoCNF_A_2, empty_set) !=
+     set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) |
+     skolemFOFtoCNF_A_2 =
+     set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)),
+    inference(resolve,
+              [$cnf($equal(set_difference(skolemFOFtoCNF_A_2, empty_set),
+                      skolemFOFtoCNF_A_2))], [refute_0_97, refute_0_98])).
+
+cnf(refute_0_100, plain,
+    (skolemFOFtoCNF_A_2 =
+     set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1)),
+    inference(resolve,
+              [$cnf($equal(set_difference(skolemFOFtoCNF_A_2, empty_set),
+                      set_intersection2(skolemFOFtoCNF_A_2,
+                        skolemFOFtoCNF_B_1)))],
+              [refute_0_96, refute_0_99])).
+
+cnf(refute_0_101, plain,
+    (skolemFOFtoCNF_A_2 !=
+     set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) |
+     set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) =
+     skolemFOFtoCNF_A_2),
+    inference(subst, [],
+              [refute_0_27 :
+               [bind(X, $fot(skolemFOFtoCNF_A_2)),
+                bind(Y,
+                     $fot(set_intersection2(skolemFOFtoCNF_A_2,
+                            skolemFOFtoCNF_B_1)))]])).
+
+cnf(refute_0_102, plain,
+    (set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) =
+     skolemFOFtoCNF_A_2),
+    inference(resolve,
+              [$cnf($equal(skolemFOFtoCNF_A_2,
+                      set_intersection2(skolemFOFtoCNF_A_2,
+                        skolemFOFtoCNF_B_1)))],
+              [refute_0_100, refute_0_101])).
+
+cnf(refute_0_103, plain,
+    (set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1) !=
+     skolemFOFtoCNF_A_2 | ~ in(X_311, skolemFOFtoCNF_A_2) |
+     in(X_311, set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1))),
+    introduced(tautology,
+               [equality,
+                [$cnf(~ in(X_311,
+                        set_intersection2(skolemFOFtoCNF_A_2,
+                          skolemFOFtoCNF_B_1))), [1],
+                 $fot(skolemFOFtoCNF_A_2)]])).
+
+cnf(refute_0_104, plain,
+    (~ in(X_311, skolemFOFtoCNF_A_2) |
+     in(X_311, set_intersection2(skolemFOFtoCNF_A_2, skolemFOFtoCNF_B_1))),
+    inference(resolve,
+              [$cnf($equal(set_intersection2(skolemFOFtoCNF_A_2,
+                        skolemFOFtoCNF_B_1), skolemFOFtoCNF_A_2))],
+              [refute_0_102, refute_0_103])).
+
+cnf(refute_0_105, plain,
+    (~ in(X_311, skolemFOFtoCNF_A_2) | in(X_311, skolemFOFtoCNF_B_1)),
+    inference(resolve,
+              [$cnf(in(X_311,
+                      set_intersection2(skolemFOFtoCNF_A_2,
+                        skolemFOFtoCNF_B_1)))],
+              [refute_0_104, refute_0_8])).
+
+cnf(refute_0_106, plain,
+    (~ in(skolemFOFtoCNF_C_2(A, skolemFOFtoCNF_A_2), skolemFOFtoCNF_A_2) |
+     in(skolemFOFtoCNF_C_2(A, skolemFOFtoCNF_A_2), skolemFOFtoCNF_B_1)),
+    inference(subst, [],
+              [refute_0_105 :
+               [bind(X_311,
+                     $fot(skolemFOFtoCNF_C_2(A, skolemFOFtoCNF_A_2)))]])).
+
+cnf(refute_0_107, plain,
+    (disjoint(A, skolemFOFtoCNF_A_2) |
+     in(skolemFOFtoCNF_C_2(A, skolemFOFtoCNF_A_2), skolemFOFtoCNF_B_1)),
+    inference(resolve,
+              [$cnf(in(skolemFOFtoCNF_C_2(A, skolemFOFtoCNF_A_2),
+                      skolemFOFtoCNF_A_2))], [refute_0_3, refute_0_106])).
+
+cnf(refute_0_108, plain,
+    (disjoint(skolemFOFtoCNF_C_4, skolemFOFtoCNF_A_2) |
+     in(skolemFOFtoCNF_C_2(skolemFOFtoCNF_C_4, skolemFOFtoCNF_A_2),
+       skolemFOFtoCNF_B_1)),
+    inference(subst, [],
+              [refute_0_107 : [bind(A, $fot(skolemFOFtoCNF_C_4))]])).
+
+cnf(refute_0_109, plain,
+    (disjoint(A, B) | in(skolemFOFtoCNF_C_2(A, B), A)),
+    inference(canonicalize, [], [normalize_0_28])).
+
+cnf(refute_0_110, plain,
+    (disjoint(skolemFOFtoCNF_C_4, B) |
+     in(skolemFOFtoCNF_C_2(skolemFOFtoCNF_C_4, B), skolemFOFtoCNF_C_4)),
+    inference(subst, [],
+              [refute_0_109 : [bind(A, $fot(skolemFOFtoCNF_C_4))]])).
+
+cnf(refute_0_111, plain,
+    (C != set_difference(A, B) | ~ in(D, B) | ~ in(D, C)),
+    inference(canonicalize, [], [normalize_0_32])).
+
+cnf(refute_0_112, plain,
+    (set_difference(A, B) != set_difference(A, B) | ~ in(D, B) |
+     ~ in(D, set_difference(A, B))),
+    inference(subst, [],
+              [refute_0_111 : [bind(C, $fot(set_difference(A, B)))]])).
+
+cnf(refute_0_113, plain, (set_difference(A, B) = set_difference(A, B)),
+    introduced(tautology, [refl, [$fot(set_difference(A, B))]])).
+
+cnf(refute_0_114, plain, (~ in(D, B) | ~ in(D, set_difference(A, B))),
+    inference(resolve,
+              [$cnf($equal(set_difference(A, B), set_difference(A, B)))],
+              [refute_0_113, refute_0_112])).
+
+cnf(refute_0_115, plain,
+    (~ in(X_332, set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4)) |
+     ~ in(X_332, skolemFOFtoCNF_C_4)),
+    inference(subst, [],
+              [refute_0_114 :
+               [bind(A, $fot(skolemFOFtoCNF_B_1)),
+                bind(B, $fot(skolemFOFtoCNF_C_4)),
+                bind(D, $fot(X_332))]])).
+
+cnf(refute_0_116, plain,
+    (set_union2(set_difference(X_62, B),
+       set_difference(X_62, set_difference(X_62, B))) =
+     set_union2(set_difference(X_62, B), X_62)),
+    inference(subst, [],
+              [refute_0_13 :
+               [bind(A, $fot(set_difference(X_62, B))),
+                bind(B, $fot(X_62))]])).
+
+cnf(refute_0_117, plain,
+    (set_difference(X_62, set_difference(X_62, B)) =
+     set_intersection2(X_62, B)),
+    inference(subst, [], [refute_0_9 : [bind(A, $fot(X_62))]])).
+
+cnf(refute_0_118, plain,
+    (set_difference(X_62, set_difference(X_62, B)) !=
+     set_intersection2(X_62, B) |
+     set_union2(set_difference(X_62, B),
+       set_difference(X_62, set_difference(X_62, B))) !=
+     set_union2(set_difference(X_62, B), X_62) |
+     set_union2(set_difference(X_62, B), set_intersection2(X_62, B)) =
+     set_union2(set_difference(X_62, B), X_62)),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_union2(set_difference(X_62, B),
+                          set_difference(X_62, set_difference(X_62, B))),
+                        set_union2(set_difference(X_62, B), X_62))),
+                 [0, 1], $fot(set_intersection2(X_62, B))]])).
+
+cnf(refute_0_119, plain,
+    (set_union2(set_difference(X_62, B),
+       set_difference(X_62, set_difference(X_62, B))) !=
+     set_union2(set_difference(X_62, B), X_62) |
+     set_union2(set_difference(X_62, B), set_intersection2(X_62, B)) =
+     set_union2(set_difference(X_62, B), X_62)),
+    inference(resolve,
+              [$cnf($equal(set_difference(X_62, set_difference(X_62, B)),
+                      set_intersection2(X_62, B)))],
+              [refute_0_117, refute_0_118])).
+
+cnf(refute_0_120, plain,
+    (set_union2(set_difference(X_62, B), set_intersection2(X_62, B)) =
+     set_union2(set_difference(X_62, B), X_62)),
+    inference(resolve,
+              [$cnf($equal(set_union2(set_difference(X_62, B),
+                        set_difference(X_62, set_difference(X_62, B))),
+                      set_union2(set_difference(X_62, B), X_62)))],
+              [refute_0_116, refute_0_119])).
+
+cnf(refute_0_121, plain,
+    (set_union2(set_difference(X_62, B), X_62) =
+     set_union2(X_62, set_difference(X_62, B))),
+    inference(subst, [],
+              [refute_0_35 :
+               [bind(A, $fot(X_62)),
+                bind(B, $fot(set_difference(X_62, B)))]])).
+
+cnf(refute_0_122, plain,
+    (set_union2(set_difference(X_62, B), X_62) !=
+     set_union2(X_62, set_difference(X_62, B)) |
+     set_union2(set_difference(X_62, B), set_intersection2(X_62, B)) !=
+     set_union2(set_difference(X_62, B), X_62) |
+     set_union2(set_difference(X_62, B), set_intersection2(X_62, B)) =
+     set_union2(X_62, set_difference(X_62, B))),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_union2(set_difference(X_62, B),
+                          set_intersection2(X_62, B)),
+                        set_union2(set_difference(X_62, B), X_62))), [1],
+                 $fot(set_union2(X_62, set_difference(X_62, B)))]])).
+
+cnf(refute_0_123, plain,
+    (set_union2(set_difference(X_62, B), set_intersection2(X_62, B)) !=
+     set_union2(set_difference(X_62, B), X_62) |
+     set_union2(set_difference(X_62, B), set_intersection2(X_62, B)) =
+     set_union2(X_62, set_difference(X_62, B))),
+    inference(resolve,
+              [$cnf($equal(set_union2(set_difference(X_62, B), X_62),
+                      set_union2(X_62, set_difference(X_62, B))))],
+              [refute_0_121, refute_0_122])).
+
+cnf(refute_0_124, plain,
+    (set_union2(set_difference(X_62, B), set_intersection2(X_62, B)) =
+     set_union2(X_62, set_difference(X_62, B))),
+    inference(resolve,
+              [$cnf($equal(set_union2(set_difference(X_62, B),
+                        set_intersection2(X_62, B)),
+                      set_union2(set_difference(X_62, B), X_62)))],
+              [refute_0_120, refute_0_123])).
+
+cnf(refute_0_125, plain, (subset(set_difference(A, B), A)),
+    inference(canonicalize, [], [normalize_0_34])).
+
+cnf(refute_0_126, plain, (subset(set_difference(X_113, B), X_113)),
+    inference(subst, [], [refute_0_125 : [bind(A, $fot(X_113))]])).
+
+cnf(refute_0_127, plain,
+    (~ subset(set_difference(X_113, B), X_113) |
+     set_union2(set_difference(X_113, B), X_113) = X_113),
+    inference(subst, [],
+              [refute_0_86 :
+               [bind(A, $fot(set_difference(X_113, B))),
+                bind(B, $fot(X_113))]])).
+
+cnf(refute_0_128, plain,
+    (set_union2(set_difference(X_113, B), X_113) = X_113),
+    inference(resolve, [$cnf(subset(set_difference(X_113, B), X_113))],
+              [refute_0_126, refute_0_127])).
+
+cnf(refute_0_129, plain,
+    (set_union2(set_difference(X_113, B), X_113) =
+     set_union2(X_113, set_difference(X_113, B))),
+    inference(subst, [],
+              [refute_0_35 :
+               [bind(A, $fot(X_113)),
+                bind(B, $fot(set_difference(X_113, B)))]])).
+
+cnf(refute_0_130, plain,
+    (set_union2(set_difference(X_113, B), X_113) != X_113 |
+     set_union2(set_difference(X_113, B), X_113) !=
+     set_union2(X_113, set_difference(X_113, B)) |
+     set_union2(X_113, set_difference(X_113, B)) = X_113),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_union2(set_difference(X_113, B), X_113),
+                        X_113)), [0],
+                 $fot(set_union2(X_113, set_difference(X_113, B)))]])).
+
+cnf(refute_0_131, plain,
+    (set_union2(set_difference(X_113, B), X_113) != X_113 |
+     set_union2(X_113, set_difference(X_113, B)) = X_113),
+    inference(resolve,
+              [$cnf($equal(set_union2(set_difference(X_113, B), X_113),
+                      set_union2(X_113, set_difference(X_113, B))))],
+              [refute_0_129, refute_0_130])).
+
+cnf(refute_0_132, plain,
+    (set_union2(X_113, set_difference(X_113, B)) = X_113),
+    inference(resolve,
+              [$cnf($equal(set_union2(set_difference(X_113, B), X_113),
+                      X_113))], [refute_0_128, refute_0_131])).
+
+cnf(refute_0_133, plain,
+    (set_union2(X_62, set_difference(X_62, B)) = X_62),
+    inference(subst, [], [refute_0_132 : [bind(X_113, $fot(X_62))]])).
+
+cnf(refute_0_134, plain,
+    (set_union2(X_62, set_difference(X_62, B)) != X_62 |
+     set_union2(set_difference(X_62, B), set_intersection2(X_62, B)) !=
+     set_union2(X_62, set_difference(X_62, B)) |
+     set_union2(set_difference(X_62, B), set_intersection2(X_62, B)) =
+     X_62),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_union2(set_difference(X_62, B),
+                          set_intersection2(X_62, B)),
+                        set_union2(X_62, set_difference(X_62, B)))), [1],
+                 $fot(X_62)]])).
+
+cnf(refute_0_135, plain,
+    (set_union2(set_difference(X_62, B), set_intersection2(X_62, B)) !=
+     set_union2(X_62, set_difference(X_62, B)) |
+     set_union2(set_difference(X_62, B), set_intersection2(X_62, B)) =
+     X_62),
+    inference(resolve,
+              [$cnf($equal(set_union2(X_62, set_difference(X_62, B)),
+                      X_62))], [refute_0_133, refute_0_134])).
+
+cnf(refute_0_136, plain,
+    (set_union2(set_difference(X_62, B), set_intersection2(X_62, B)) =
+     X_62),
+    inference(resolve,
+              [$cnf($equal(set_union2(set_difference(X_62, B),
+                        set_intersection2(X_62, B)),
+                      set_union2(X_62, set_difference(X_62, B))))],
+              [refute_0_124, refute_0_135])).
+
+cnf(refute_0_137, plain,
+    (set_union2(set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4),
+       set_intersection2(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4)) =
+     skolemFOFtoCNF_B_1),
+    inference(subst, [],
+              [refute_0_136 :
+               [bind(B, $fot(skolemFOFtoCNF_C_4)),
+                bind(X_62, $fot(skolemFOFtoCNF_B_1))]])).
+
+cnf(refute_0_138, plain,
+    (disjoint(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4)),
+    inference(canonicalize, [], [normalize_0_35])).
+
+cnf(refute_0_139, plain,
+    (~ disjoint(A, B) | set_intersection2(A, B) = empty_set),
+    inference(canonicalize, [], [normalize_0_39])).
+
+cnf(refute_0_140, plain,
+    (~ disjoint(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4) |
+     set_intersection2(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4) =
+     empty_set),
+    inference(subst, [],
+              [refute_0_139 :
+               [bind(A, $fot(skolemFOFtoCNF_B_1)),
+                bind(B, $fot(skolemFOFtoCNF_C_4))]])).
+
+cnf(refute_0_141, plain,
+    (set_intersection2(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4) =
+     empty_set),
+    inference(resolve,
+              [$cnf(disjoint(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4))],
+              [refute_0_138, refute_0_140])).
+
+cnf(refute_0_142, plain,
+    (set_intersection2(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4) !=
+     empty_set |
+     set_union2(set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4),
+       set_intersection2(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4)) !=
+     skolemFOFtoCNF_B_1 |
+     set_union2(set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4),
+       empty_set) = skolemFOFtoCNF_B_1),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_union2(set_difference(skolemFOFtoCNF_B_1,
+                            skolemFOFtoCNF_C_4),
+                          set_intersection2(skolemFOFtoCNF_B_1,
+                            skolemFOFtoCNF_C_4)), skolemFOFtoCNF_B_1)),
+                 [0, 1], $fot(empty_set)]])).
+
+cnf(refute_0_143, plain,
+    (set_union2(set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4),
+       set_intersection2(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4)) !=
+     skolemFOFtoCNF_B_1 |
+     set_union2(set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4),
+       empty_set) = skolemFOFtoCNF_B_1),
+    inference(resolve,
+              [$cnf($equal(set_intersection2(skolemFOFtoCNF_B_1,
+                        skolemFOFtoCNF_C_4), empty_set))],
+              [refute_0_141, refute_0_142])).
+
+cnf(refute_0_144, plain,
+    (set_union2(set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4),
+       empty_set) = skolemFOFtoCNF_B_1),
+    inference(resolve,
+              [$cnf($equal(set_union2(set_difference(skolemFOFtoCNF_B_1,
+                          skolemFOFtoCNF_C_4),
+                        set_intersection2(skolemFOFtoCNF_B_1,
+                          skolemFOFtoCNF_C_4)), skolemFOFtoCNF_B_1))],
+              [refute_0_137, refute_0_143])).
+
+cnf(refute_0_145, plain, (set_union2(A, empty_set) = A),
+    inference(canonicalize, [], [normalize_0_41])).
+
+cnf(refute_0_146, plain,
+    (set_union2(set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4),
+       empty_set) =
+     set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4)),
+    inference(subst, [],
+              [refute_0_145 :
+               [bind(A,
+                     $fot(set_difference(skolemFOFtoCNF_B_1,
+                            skolemFOFtoCNF_C_4)))]])).
+
+cnf(refute_0_147, plain,
+    (set_union2(set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4),
+       empty_set) !=
+     set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4) |
+     set_union2(set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4),
+       empty_set) != skolemFOFtoCNF_B_1 |
+     set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4) =
+     skolemFOFtoCNF_B_1),
+    introduced(tautology,
+               [equality,
+                [$cnf($equal(set_union2(set_difference(skolemFOFtoCNF_B_1,
+                            skolemFOFtoCNF_C_4), empty_set),
+                        skolemFOFtoCNF_B_1)), [0],
+                 $fot(set_difference(skolemFOFtoCNF_B_1,
+                        skolemFOFtoCNF_C_4))]])).
+
+cnf(refute_0_148, plain,
+    (set_union2(set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4),
+       empty_set) != skolemFOFtoCNF_B_1 |
+     set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4) =
+     skolemFOFtoCNF_B_1),
+    inference(resolve,
+              [$cnf($equal(set_union2(set_difference(skolemFOFtoCNF_B_1,
+                          skolemFOFtoCNF_C_4), empty_set),
+                      set_difference(skolemFOFtoCNF_B_1,
+                        skolemFOFtoCNF_C_4)))],
+              [refute_0_146, refute_0_147])).
+
+cnf(refute_0_149, plain,
+    (set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4) =
+     skolemFOFtoCNF_B_1),
+    inference(resolve,
+              [$cnf($equal(set_union2(set_difference(skolemFOFtoCNF_B_1,
+                          skolemFOFtoCNF_C_4), empty_set),
+                      skolemFOFtoCNF_B_1))],
+              [refute_0_144, refute_0_148])).
+
+cnf(refute_0_150, plain,
+    (set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4) !=
+     skolemFOFtoCNF_B_1 | ~ in(X_332, skolemFOFtoCNF_B_1) |
+     in(X_332, set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4))),
+    introduced(tautology,
+               [equality,
+                [$cnf(~ in(X_332,
+                        set_difference(skolemFOFtoCNF_B_1,
+                          skolemFOFtoCNF_C_4))), [1],
+                 $fot(skolemFOFtoCNF_B_1)]])).
+
+cnf(refute_0_151, plain,
+    (~ in(X_332, skolemFOFtoCNF_B_1) |
+     in(X_332, set_difference(skolemFOFtoCNF_B_1, skolemFOFtoCNF_C_4))),
+    inference(resolve,
+              [$cnf($equal(set_difference(skolemFOFtoCNF_B_1,
+                        skolemFOFtoCNF_C_4), skolemFOFtoCNF_B_1))],
+              [refute_0_149, refute_0_150])).
+
+cnf(refute_0_152, plain,
+    (~ in(X_332, skolemFOFtoCNF_B_1) | ~ in(X_332, skolemFOFtoCNF_C_4)),
+    inference(resolve,
+              [$cnf(in(X_332,
+                      set_difference(skolemFOFtoCNF_B_1,
+                        skolemFOFtoCNF_C_4)))],
+              [refute_0_151, refute_0_115])).
+
+cnf(refute_0_153, plain,
+    (~ in(skolemFOFtoCNF_C_2(skolemFOFtoCNF_C_4, B), skolemFOFtoCNF_B_1) |
+     ~ in(skolemFOFtoCNF_C_2(skolemFOFtoCNF_C_4, B), skolemFOFtoCNF_C_4)),
+    inference(subst, [],
+              [refute_0_152 :
+               [bind(X_332,
+                     $fot(skolemFOFtoCNF_C_2(skolemFOFtoCNF_C_4, B)))]])).
+
+cnf(refute_0_154, plain,
+    (~ in(skolemFOFtoCNF_C_2(skolemFOFtoCNF_C_4, B), skolemFOFtoCNF_B_1) |
+     disjoint(skolemFOFtoCNF_C_4, B)),
+    inference(resolve,
+              [$cnf(in(skolemFOFtoCNF_C_2(skolemFOFtoCNF_C_4, B),
+                      skolemFOFtoCNF_C_4))],
+              [refute_0_110, refute_0_153])).
+
+cnf(refute_0_155, plain,
+    (~
+       in(skolemFOFtoCNF_C_2(skolemFOFtoCNF_C_4, skolemFOFtoCNF_A_2),
+         skolemFOFtoCNF_B_1) |
+     disjoint(skolemFOFtoCNF_C_4, skolemFOFtoCNF_A_2)),
+    inference(subst, [],
+              [refute_0_154 : [bind(B, $fot(skolemFOFtoCNF_A_2))]])).
+
+cnf(refute_0_156, plain,
+    (disjoint(skolemFOFtoCNF_C_4, skolemFOFtoCNF_A_2)),
+    inference(resolve,
+              [$cnf(in(skolemFOFtoCNF_C_2(skolemFOFtoCNF_C_4,
+                        skolemFOFtoCNF_A_2), skolemFOFtoCNF_B_1))],
+              [refute_0_108, refute_0_155])).
+
+cnf(refute_0_157, plain,
+    (disjoint(skolemFOFtoCNF_A_2, skolemFOFtoCNF_C_4)),
+    inference(resolve,
+              [$cnf(disjoint(skolemFOFtoCNF_C_4, skolemFOFtoCNF_A_2))],
+              [refute_0_156, refute_0_1])).
+
+cnf(refute_0_158, plain,
+    (~ disjoint(skolemFOFtoCNF_A_2, skolemFOFtoCNF_C_4)),
+    inference(canonicalize, [], [normalize_0_42])).
+
+cnf(refute_0_159, plain, ($false),
+    inference(resolve,
+              [$cnf(disjoint(skolemFOFtoCNF_A_2, skolemFOFtoCNF_C_4))],
+              [refute_0_157, refute_0_158])).
+SZS output end CNFRefutation for data/problems/all/SEU140+2.tptp
+
