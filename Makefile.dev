@@ -6,6 +6,19 @@
 .PRECIOUS: bin/mlton/%.sml bin/mlton/%.mlb bin/polyml/%.sml
 
 ###############################################################################
+# Uncomment your default compiler.
+###############################################################################
+
+METIS = bin/mlton/metis
+PROBLEMS2TPTP = bin/mlton/problems2tptp
+
+#METIS = bin/polyml/metis
+#PROBLEMS2TPTP = bin/polyml/problems2tptp
+
+#METIS = bin/mosml/metis
+#PROBLEMS2TPTP = bin/mosml/problems2tptp
+
+###############################################################################
 # Cleaning temporary files.
 ###############################################################################
 
@@ -19,8 +32,8 @@ TEMP += \
 # The ML preprocessor.
 ###############################################################################
 
-#MLPP_OPTS += -r 'MetisDebug'
-MLPP_OPTS += -r 'BasicDebug|MetisDebug'
+MLPP_OPTS += -r 'MetisDebug'
+#MLPP_OPTS += -r 'BasicDebug|MetisDebug'
 #MLPP_OPTS += -r 'BasicDebug|MetisDebug|MetisTrace[0-9]'
 
 ###############################################################################
@@ -31,9 +44,9 @@ MOSML_DEP = scripts/mosml_dep
 
 bin/mosml/Makefile.src: Makefile Makefile.dev $(MOSML_DEP) $(MLPP)
 	@echo
-	@echo '****************************************************'
-	@echo '* Regenerating the Moscow ML makefile dependencies *'
-	@echo '****************************************************'
+	@echo '+--------------------------------------------------+'
+	@echo '| Regenerating the Moscow ML makefile dependencies |'
+	@echo '+--------------------------------------------------+'
 	@echo
 	@$(MOSML_DEP) $(MOSML_SRC) $(MOSML_TARGETS) > $@
 
@@ -42,7 +55,7 @@ bin/mosml/Makefile.src: Makefile Makefile.dev $(MOSML_DEP) $(MLPP)
 ###############################################################################
 
 MLTON_OPTS += -verbose 1 -keep ssa -keep ssa2
-MLTON_OPTS += -const 'Exn.keepHistory true'
+#MLTON_OPTS += -const 'Exn.keepHistory true'
 #MLTON_OPTS += -show-basis basis.sml
 #MLTON_OPTS += -inline 100000
 #MLTON_OPTS += -const 'MLton.safe false' -const 'MLton.detectOverflow false'
@@ -51,42 +64,56 @@ MLTON_OPTS += -const 'Exn.keepHistory true'
 # Moving source files around.
 ###############################################################################
 
-src/ElementSet.sig: ../basic/src/ElementSet.sig $(COPY) ; @$(COPY) $< $@
-src/ElementSet.sml: ../basic/src/ElementSet.sml $(COPY) ; @$(COPY) $< $@
-src/Heap.sig: ../basic/src/Heap.sig $(COPY) ; @$(COPY) $< $@
-src/Heap.sml: ../basic/src/Heap.sml $(COPY) ; @$(COPY) $< $@
-src/KeyMap.sig: ../basic/src/KeyMap.sig $(COPY) ; @$(COPY) $< $@
-src/KeyMap.sml: ../basic/src/KeyMap.sml $(COPY) ; @$(COPY) $< $@
-src/Lazy.sig: ../basic/src/Lazy.sig $(COPY) ; @$(COPY) $< $@
-src/Lazy.sml: ../basic/src/Lazy.sml $(COPY) ; @$(COPY) $< $@
-src/Map.sig: ../basic/src/Map.sig $(COPY) ; @$(COPY) $< $@
-src/Map.sml: ../basic/src/Map.sml $(COPY) ; @$(COPY) $< $@
-src/Options.sig: ../basic/src/Options.sig $(COPY) ; @$(COPY) $< $@
-src/Options.sml: ../basic/src/Options.sml $(COPY) ; @$(COPY) $< $@
-src/Ordered.sig: ../basic/src/Ordered.sig $(COPY) ; @$(COPY) $< $@
-src/Ordered.sml: ../basic/src/Ordered.sml $(COPY) ; @$(COPY) $< $@
-src/Parse.sig: ../basic/src/Parse.sig $(COPY) ; @$(COPY) $< $@
-src/Parse.sml: ../basic/src/Parse.sml $(COPY) ; @$(COPY) $< $@
-src/Portable.sig: ../basic/src/Portable.sig $(COPY) ; @$(COPY) $< $@
-src/PortableMosml.sml: ../basic/src/PortableMosml.sml $(COPY) ; @$(COPY) $< $@
-src/PortableMlton.sml: ../basic/src/PortableMlton.sml $(COPY) ; @$(COPY) $< $@
-src/PortablePolyml.sml: ../basic/src/PortablePolyml.sml $(COPY) ; @$(COPY) $< $@
-src/Print.sig: ../basic/src/Print.sig $(COPY) ; @$(COPY) $< $@
-src/Print.sml: ../basic/src/Print.sml $(COPY) ; @$(COPY) $< $@
-src/Random.sig: ../basic/src/Random.sig $(COPY) ; @$(COPY) $< $@
-src/Random.sml: ../basic/src/Random.sml $(COPY) ; @$(COPY) $< $@
-src/Set.sig: ../basic/src/Set.sig $(COPY) ; @$(COPY) $< $@
-src/Set.sml: ../basic/src/Set.sml $(COPY) ; @$(COPY) $< $@
-src/Sharing.sig: ../basic/src/Sharing.sig $(COPY) ; @$(COPY) $< $@
-src/Sharing.sml: ../basic/src/Sharing.sml $(COPY) ; @$(COPY) $< $@
-src/Stream.sig: ../basic/src/Stream.sig $(COPY) ; @$(COPY) $< $@
-src/Stream.sml: ../basic/src/Stream.sml $(COPY) ; @$(COPY) $< $@
-src/Useful.sig: ../basic/src/Useful.sig $(COPY) ; @$(COPY) $< $@
-src/Useful.sml: ../basic/src/Useful.sml $(COPY) ; @$(COPY) $< $@
+COPY = cp -v
 
-src/selftest.sml: test/test.sml $(COPY) ; @$(COPY) $< $@
+src/selftest.sml: test/test.sml ; @$(COPY) $< $@
 
-src/benchmark.sml: src/metis.sml $(COPY) ; @$(COPY) $< $@
+src/benchmark.sml: src/metis.sml ; @$(COPY) $< $@
+
+###############################################################################
+# Importing the basic library.
+###############################################################################
+
+BASIC_LIBRARY = ../basic
+
+.PHONY: import-basic
+import-basic:
+	@$(COPY) $(BASIC_LIBRARY)/scripts/ml_lines $(LINES)
+	@$(COPY) $(BASIC_LIBRARY)/scripts/mlpp $(MLPP)
+	@$(COPY) $(BASIC_LIBRARY)/scripts/mosml_dep $(MOSML_DEP)
+	@$(COPY) $(BASIC_LIBRARY)/scripts/release_stamp $(RELEASE_STAMP)
+	@$(COPY) $(BASIC_LIBRARY)/src/ElementSet.sig src/ElementSet.sig
+	@$(COPY) $(BASIC_LIBRARY)/src/ElementSet.sml src/ElementSet.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/Heap.sig src/Heap.sig
+	@$(COPY) $(BASIC_LIBRARY)/src/Heap.sml src/Heap.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/KeyMap.sig src/KeyMap.sig
+	@$(COPY) $(BASIC_LIBRARY)/src/KeyMap.sml src/KeyMap.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/Lazy.sig src/Lazy.sig
+	@$(COPY) $(BASIC_LIBRARY)/src/Lazy.sml src/Lazy.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/Map.sig src/Map.sig
+	@$(COPY) $(BASIC_LIBRARY)/src/Map.sml src/Map.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/Options.sig src/Options.sig
+	@$(COPY) $(BASIC_LIBRARY)/src/Options.sml src/Options.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/Ordered.sig src/Ordered.sig
+	@$(COPY) $(BASIC_LIBRARY)/src/Ordered.sml src/Ordered.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/Parse.sig src/Parse.sig
+	@$(COPY) $(BASIC_LIBRARY)/src/Parse.sml src/Parse.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/Portable.sig src/Portable.sig
+	@$(COPY) $(BASIC_LIBRARY)/src/PortableMosml.sml src/PortableMosml.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/PortableMlton.sml src/PortableMlton.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/PortablePolyml.sml src/PortablePolyml.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/Print.sig src/Print.sig
+	@$(COPY) $(BASIC_LIBRARY)/src/Print.sml src/Print.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/Random.sig src/Random.sig
+	@$(COPY) $(BASIC_LIBRARY)/src/Random.sml src/Random.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/Set.sig src/Set.sig
+	@$(COPY) $(BASIC_LIBRARY)/src/Set.sml src/Set.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/Sharing.sig src/Sharing.sig
+	@$(COPY) $(BASIC_LIBRARY)/src/Sharing.sml src/Sharing.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/Stream.sig src/Stream.sig
+	@$(COPY) $(BASIC_LIBRARY)/src/Stream.sml src/Stream.sml
+	@$(COPY) $(BASIC_LIBRARY)/src/Useful.sig src/Useful.sig
+	@$(COPY) $(BASIC_LIBRARY)/src/Useful.sml src/Useful.sml
 
 ###############################################################################
 # Generating the problem sets.
@@ -247,9 +274,9 @@ tests: status-test std-test
 .PHONY: init
 init:
 	@echo
-	@echo '*************************************************'
-	@echo '* Initialize this development snapshot of Metis *'
-	@echo '*************************************************'
+	@echo '+-----------------------------------------------+'
+	@echo '| Initialize this development snapshot of Metis |'
+	@echo '+-----------------------------------------------+'
 	@echo
 	$(MAKE) problems
 
@@ -348,34 +375,13 @@ release: release-stamp mosml mlton polyml status-test documentation $(STD_BENCHM
 	rm -f $(RELEASE_DIR)/*.html $(RELEASE_DIR)/*.jpg $(RELEASE_DIR)/*.txt
 	cp -v doc/*.html doc/*.jpg doc/*.txt $(RELEASE_DIR)/
 	cp -v doc/favicon.ico $(RELEASE_DIR)/
-	cp -v doc/MIT-LICENSE $(RELEASE_DIR)/
-	cp -v $(METIS) $(RELEASE_DIR)/
+	cp -v LICENSE $(RELEASE_DIR)/MIT-LICENSE
 	$(MAKE) tarball
 	rsync -azv --delete --checksum --size-only --exclude=.gitignore -e ssh $(RELEASE_DIR)/ gilith@login.gilith.com:public_html/software/metis
 	ssh gilith@login.gilith.com '/bin/bash -l bin/install_metis'
+	@if GIT_PAGER='' git grep '[*][*][*]' ; then echo "WARNING: TODO comments discovered" ; fi
 	echo Completed release
 
 .PHONY: hol-release
 hol-release: mosml
 	scripts/export_hol -d $(HOL_RELEASE_DIR) $(MOSML_OBJ)
-
-###############################################################################
-# The build scripts.
-###############################################################################
-
-COPY = scripts/copy_src
-
-$(COPY): ../basic/scripts/copy_src
-	@cp -fv $< $@
-	@chmod -w $@
-
-$(MLPP): ../basic/scripts/mlpp $(COPY) ; @$(COPY) $< $@
-
-$(MOSML_DEP): ../basic/scripts/mosml_dep $(COPY) ; @$(COPY) $< $@
-
-$(LINES): ../basic/scripts/ml_lines $(COPY) ; @$(COPY) $< $@
-
-$(RELEASE_STAMP): ../basic/scripts/release_stamp $(COPY) ; @$(COPY) $< $@
-
-.PHONY: build-scripts
-build-scripts: $(COPY) $(MLPP) $(MOSML_DEP) $(LINES) $(RELEASE_STAMP)
