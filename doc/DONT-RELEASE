@@ -4,16 +4,14 @@ metis/LICENSE
 metis/Makefile.dev
 metis/README.md
 metis/doc/DONT-RELEASE
-metis/doc/TODO
 metis/release
 metis/scripts/compare
 metis/scripts/copy_problem
-metis/scripts/copy_src
 metis/scripts/export_hol
 metis/scripts/extract_proof
 metis/scripts/graph
+metis/scripts/ml_lines
 metis/scripts/mosml_dep
 metis/scripts/release_stamp
 metis/scripts/summarize
-metis/scripts/unproved
 metis/src/benchmark.sml
