@@ -23,10 +23,9 @@ PROBLEMS2TPTP = bin/mlton/problems2tptp
 ###############################################################################
 
 TEMP += \
-  cnf_*.tptp saturation.tptp \
   bin/mlton/*.ssa bin/mlton/*.ssa2 bin/mlton/basis.sml \
   bin/mlton/benchmark mlmon.out profile-* \
-  $(STD_BENCHMARK) std-log
+  cnf_*.tptp saturation.tptp std-log
 
 ###############################################################################
 # The ML preprocessor.
