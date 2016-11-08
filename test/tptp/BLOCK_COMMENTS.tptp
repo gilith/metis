@@ -1,18 +1,28 @@
 % -----------------------------------------------------------------------------
-% Name: AGATHA
+% Name: BLOCK COMMENTS
 %
-% Collection: equality
-% Description: Equality problems from various sources
-%
-% An equality version of the Agatha puzzle. [JRH]
-%
-% TPTP file created by unknown at 20:05:31 on 19/12/2008.
+% Check parsing of TPTP block comments.
 % -----------------------------------------------------------------------------
 
-cnf(kill_hate_assumption, axiom,
+/* Single-line block comment */
+
+/* Block comment containing ' single quote */
+
+/* Block comment containing % line comment opener */
+
+/* Block comment containing /* block comment opener */
+
+/* Multi-line
+   block
+   comment */
+
+/* Multi-line block comment containing awkward
+% line comment opener */
+
+cnf('formula name containing % line comment opener', axiom,
     (~killed(X, Y) | hates(X, Y))).
 
-fof(assumptions, axiom,
+fof('formula name containing /* block comment opener', axiom,
     (? [X] : (lives(X) & killed(X, agatha)) &
      (lives(agatha) & lives(butler) & lives(charles)) &
      ! [X] : (lives(X) => (X = agatha | X = butler | X = charles)) &

@@ -2054,46 +2054,79 @@ in
 end;
 
 local
-  datatype blockComment =
-      OutsideBlockComment
+  datatype comment =
+      NoComment
+    | EnteringLineComment
+    | InsideLineComment
     | EnteringBlockComment
     | InsideBlockComment
-    | LeavingBlockComment;
+    | LeavingBlockComment
+    | InsideSingleQuoteComment
+    | EscapedSingleQuoteComment;
 
-  fun stripLineComments acc strm =
+  fun stripInitialLineComments acc strm =
       case strm of
         Stream.Nil => (List.rev acc, Stream.Nil)
       | Stream.Cons (line,rest) =>
         case total destLineComment line of
-          SOME s => stripLineComments (s :: acc) (rest ())
-        | NONE => (List.rev acc, Stream.filter (not o isLineComment) strm);
+          SOME s => stripInitialLineComments (s :: acc) (rest ())
+        | NONE => (List.rev acc, strm);
 
-  fun advanceBlockComment c state =
+  fun advanceComment c state =
       case state of
-        OutsideBlockComment =>
-        if c = #"/" then (Stream.Nil, EnteringBlockComment)
-        else (Stream.singleton c, OutsideBlockComment)
+        NoComment =>
+        (case c of
+           #"\n" => (Stream.Nil, EnteringLineComment)
+         | #"/" => (Stream.Nil, EnteringBlockComment)
+         | #"'" => (Stream.singleton #"'", InsideSingleQuoteComment)
+         | _ => (Stream.singleton c, NoComment))
+      | EnteringLineComment =>
+        (case c of
+           #"%" => (Stream.singleton #"\n", InsideLineComment)
+         | #"\n" => (Stream.singleton #"\n", EnteringLineComment)
+         | #"/" => (Stream.singleton #"\n", EnteringBlockComment)
+         | #"'" => (Stream.fromList [#"\n",#"'"], InsideSingleQuoteComment)
+         | _ => (Stream.fromList [#"\n",c], NoComment))
+      | InsideLineComment =>
+        (case c of
+           #"\n" => (Stream.Nil, EnteringLineComment)
+         | _ => (Stream.Nil, InsideLineComment))
       | EnteringBlockComment =>
-        if c = #"*" then (Stream.Nil, InsideBlockComment)
-        else if c = #"/" then (Stream.singleton #"/", EnteringBlockComment)
-        else (Stream.fromList [#"/",c], OutsideBlockComment)
+        (case c of
+           #"*" => (Stream.Nil, InsideBlockComment)
+         | #"\n" => (Stream.singleton #"/", EnteringLineComment)
+         | #"/" => (Stream.singleton #"/", EnteringBlockComment)
+         | #"'" => (Stream.fromList [#"/",#"'"], InsideSingleQuoteComment)
+         | _ => (Stream.fromList [#"/",c], NoComment))
       | InsideBlockComment =>
-        if c = #"*" then (Stream.Nil, LeavingBlockComment)
-        else (Stream.Nil, InsideBlockComment)
+        (case c of
+           #"*" => (Stream.Nil, LeavingBlockComment)
+         | _ => (Stream.Nil, InsideBlockComment))
       | LeavingBlockComment =>
-        if c = #"/" then (Stream.Nil, OutsideBlockComment)
-        else if c = #"*" then (Stream.Nil, LeavingBlockComment)
-        else (Stream.Nil, InsideBlockComment);
+        (case c of
+           #"/" => (Stream.Nil, NoComment)
+         | #"*" => (Stream.Nil, LeavingBlockComment)
+         | _ => (Stream.Nil, InsideBlockComment))
+      | InsideSingleQuoteComment =>
+        (case c of
+           #"'" => (Stream.singleton #"'", NoComment)
+         | #"\\" => (Stream.singleton #"\\", EscapedSingleQuoteComment)
+         | _ => (Stream.singleton c, InsideSingleQuoteComment))
+      | EscapedSingleQuoteComment =>
+        (Stream.singleton c, InsideSingleQuoteComment);
 
-  fun eofBlockComment state =
+  fun eofComment state =
       case state of
-        OutsideBlockComment => Stream.Nil
+        NoComment => Stream.Nil
+      | EnteringLineComment => Stream.singleton #"\n"
+      | InsideLineComment => Stream.Nil
       | EnteringBlockComment => Stream.singleton #"/"
-      | _ => raise Error "EOF inside a block comment";
+      | InsideBlockComment => raise Error "EOF inside a block comment"
+      | LeavingBlockComment => raise Error "EOF inside a block comment"
+      | InsideSingleQuoteComment => raise Error "EOF inside a single quote"
+      | EscapedSingleQuoteComment => raise Error "EOF inside a single quote";
 
-  val stripBlockComments =
-      Stream.mapsConcat advanceBlockComment eofBlockComment
-        OutsideBlockComment;
+  val stripComments = Stream.mapsConcat advanceComment eofComment NoComment;
 in
   fun read {mapping,filename} =
       let
@@ -2106,11 +2139,11 @@ in
         (let
            (* The character stream *)
 
-           val (comments,chars) = stripLineComments [] chars
+           val (comments,chars) = stripInitialLineComments [] chars
 
            val chars = Parse.everything Parse.any chars
 
-           val chars = stripBlockComments chars
+           val chars = stripComments chars
 
            (* The declaration stream *)
 

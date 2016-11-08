@@ -791,7 +791,8 @@ six = $$times_int 2 3 ==> six = 6
 
 parsing QUOTED_TERMS... ok
 p a /\ (!X. quoted predicate X) /\ quoted proposition /\
-p (quoted function a) /\ p quoted constant ==> p quoted constant
+p (quoted function a) /\ p quoted constant /\
+p quoted constant with escaped \'\\ characters ==> p quoted constant
 
 parsing QUOTED_TERMS_IDENTITY... ok
 p ==> p
