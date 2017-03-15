@@ -367,6 +367,16 @@ F
 
 T
 
+~p /\ (~q <=> ~r) /\ (~p <=> ~q <=> r)
+
+~p <=> ~q
+
+~p <=> ~q <=> r
+
+~p <=> ~q <=> ~r <=> ~s
+
+~p <=> ~q <=> ~r <=> ~s <=> t
+
 --------------------------------------------------------------------------
 Conjunctive normal form
 
@@ -401,21 +411,21 @@ Finite models
 
 Model{8}
 
-0 + $x = $x                   | random sampling = 12% | exhaustive = 12%
-~$x + $x = 0                  | random sampling = 41% | exhaustive = 38%
-$x + $y + $z = $x + ($y + $z) | random sampling = 20% | exhaustive = 21%
-$x + 0 = $x                   | random sampling = 25% | exhaustive = 25%
-$x + ~$x = 0                  | random sampling = 6%  | exhaustive = 12%
+0 + $x = $x                   | random sampling = 0%  | exhaustive = 12%
+~$x + $x = 0                  | random sampling = 13% | exhaustive = 12%
+$x + $y + $z = $x + ($y + $z) | random sampling = 2%  | exhaustive = 13%
+$x + 0 = $x                   | random sampling = 0%  | exhaustive = 0%
+$x + ~$x = 0                  | random sampling = 25% | exhaustive = 25%
 ~~$x = $x                     | random sampling = 0%  | exhaustive = 0%
 
 Model{8}
 
-0 + $x = $x                   | random sampling = 100% | exhaustive = 100%
-~$x + $x = 0                  | random sampling = 86%  | exhaustive = 88%
-$x + $y + $z = $x + ($y + $z) | random sampling = 46%  | exhaustive = 49%
-$x + 0 = $x                   | random sampling = 44%  | exhaustive = 50%
-$x + ~$x = 0                  | random sampling = 27%  | exhaustive = 25%
-~~$x = $x                     | random sampling = 32%  | exhaustive = 25%
+0 + $x = $x                   | random sampling = 100% | exhaustive = 75%
+~$x + $x = 0                  | random sampling = 88%  | exhaustive = 88%
+$x + $y + $z = $x + ($y + $z) | random sampling = 50%  | exhaustive = 27%
+$x + 0 = $x                   | random sampling = 0%   | exhaustive = 12%
+$x + ~$x = 0                  | random sampling = 38%  | exhaustive = 38%
+~~$x = $x                     | random sampling = 50%  | exhaustive = 25%
 
 Model{8}
 

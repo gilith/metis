@@ -500,6 +500,11 @@ val nnf = Normalize.nnf;
 val _ = pvFm (nnf (F`p /\ ~p`));
 val _ = pvFm (nnf (F`(!x. P x) ==> ((?y. Q y) <=> (?z. P z /\ Q z))`));
 val _ = pvFm (nnf (F`~(~(p <=> q) <=> r) <=> ~(p <=> ~(q <=> r))`));
+val _ = pvFm (nnf (F`~((((p <=> q) <=> r) /\ (q <=> r)) ==> p)`));
+val _ = pvFm (nnf (F`p <=> q`));
+val _ = pvFm (nnf (F`p <=> q <=> r`));
+val _ = pvFm (nnf (F`p <=> q <=> r <=> s`));
+val _ = pvFm (nnf (F`p <=> q <=> r <=> s <=> t`));
 
 (* ------------------------------------------------------------------------- *)
 val () = SAY "Conjunctive normal form";
