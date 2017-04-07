@@ -10,7 +10,7 @@ This software is released under the [MIT License][].
 Install
 -------
 
-Installing Metis requires the [MLton][], [Poly/ML][] or [Moscow ML][] compiler, as well as standard system tools including GNU Make and Perl.</p>
+Installing Metis requires the [MLton][], [Poly/ML][] or [Moscow ML][] compiler, as well as standard system tools including GNU Make and Perl.
 
 Clone this repo and initialize the development version:
 
