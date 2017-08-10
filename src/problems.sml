@@ -218,7 +218,7 @@ p /\ (q ==> r) ==> s <=> (~p \/ q \/ s) /\ (~p \/ ~r \/ s)`},
 {name = "SPLIT_NOT_IFF",
  comments = ["A way to split a goal that looks like ~(p <=> q)"],
  goal = `
-~(p <=> q) <=> (p ==> ~q) /\ (q ==> ~p)`},
+~(p <=> q) <=> (p ==> ~q) /\ (~q ==> p)`},
 
 (* ------------------------------------------------------------------------- *)
 (* Monadic Predicate Logic.                                                  *)
