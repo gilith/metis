@@ -13,7 +13,7 @@ val PROGRAM = "metis";
 
 val VERSION = "2.3";
 
-val versionString = PROGRAM^" "^VERSION^" (release 20170810)"^"\n";
+val versionString = PROGRAM^" "^VERSION^" (release 20170822)"^"\n";
 
 (* ------------------------------------------------------------------------- *)
 (* Program options.                                                          *)

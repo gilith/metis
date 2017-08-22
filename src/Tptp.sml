@@ -1326,7 +1326,7 @@ local
       (fn ((),((),s)) => "$$" ^ s);
 
   val nameParser =
-      (stringParser || numberParser || quoteParser) >> FormulaName;
+      (lowerParser || numberParser || quoteParser) >> FormulaName;
 
   val roleParser = lowerParser >> fromStringRole;
 
