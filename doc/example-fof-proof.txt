@@ -1,4 +1,4 @@
----------------------------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Problem: data/problems/all/SYN075+1.tptp
 
 Goal:
@@ -18,9 +18,9 @@ Clauses:
 (~big_f $X (skolemFOFtoCNF_Y $W) \/ $X = skolemFOFtoCNF_Z_1 $W \/
  skolemFOFtoCNF_Y $W = $W)
 
-SZS status Theorem for data/problems/all/SYN075+1.tptp
+% SZS status Theorem for data/problems/all/SYN075+1.tptp
 
-SZS output start CNFRefutation for data/problems/all/SYN075+1.tptp
+% SZS output start CNFRefutation for data/problems/all/SYN075+1.tptp
 fof(pel52_1, axiom,
     (? [Z, W] : ! [X, Y] : (big_f(X, Y) <=> (X = Z & Y = W)))).
 
@@ -411,9 +411,9 @@ cnf(refute_0_43, plain, (big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_W)),
 cnf(refute_0_44, plain, ($false),
     inference(resolve, [$cnf(big_f(skolemFOFtoCNF_Z, skolemFOFtoCNF_W))],
               [refute_0_43, refute_0_39])).
-SZS output end CNFRefutation for data/problems/all/SYN075+1.tptp
+% SZS output end CNFRefutation for data/problems/all/SYN075+1.tptp
 
----------------------------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Problem: data/problems/all/SEU140+2.tptp
 
 Goal:
@@ -560,9 +560,9 @@ set_difference empty_set $A = empty_set /\
 disjoint skolemFOFtoCNF_B_1 skolemFOFtoCNF_C_4 /\
 subset skolemFOFtoCNF_A_2 skolemFOFtoCNF_B_1
 
-SZS status Theorem for data/problems/all/SEU140+2.tptp
+% SZS status Theorem for data/problems/all/SEU140+2.tptp
 
-SZS output start CNFRefutation for data/problems/all/SEU140+2.tptp
+% SZS output start CNFRefutation for data/problems/all/SEU140+2.tptp
 fof(commutativity_k2_xboole_0, axiom,
     (! [A, B] : set_union2(A, B) = set_union2(B, A))).
 
@@ -2096,5 +2096,5 @@ cnf(refute_0_159, plain, ($false),
     inference(resolve,
               [$cnf(disjoint(skolemFOFtoCNF_A_2, skolemFOFtoCNF_C_4))],
               [refute_0_157, refute_0_158])).
-SZS output end CNFRefutation for data/problems/all/SEU140+2.tptp
+% SZS output end CNFRefutation for data/problems/all/SEU140+2.tptp
 

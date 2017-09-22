@@ -1,4 +1,4 @@
----------------------------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Problem: data/problems/all/SYN075-1.tptp
 
 Clauses:
@@ -15,9 +15,9 @@ Clauses:
 (~(f $X = $X) \/ h $X $Z = $Z \/ big_f (h $X $Z) (f $X)) /\
 (~(f $X = $X) \/ ~(h $X $Z = $Z) \/ ~big_f (h $X $Z) (f $X))
 
-SZS status Unsatisfiable for data/problems/all/SYN075-1.tptp
+% SZS status Unsatisfiable for data/problems/all/SYN075-1.tptp
 
-SZS output start CNFRefutation for data/problems/all/SYN075-1.tptp
+% SZS output start CNFRefutation for data/problems/all/SYN075-1.tptp
 cnf(clause_1, axiom, (~ big_f(X, Y) | X = a)).
 
 cnf(clause_3, axiom, (X != a | Y != b | big_f(X, Y))).
@@ -170,5 +170,5 @@ cnf(refute_0_36, plain, (~ big_f(a, b)),
 
 cnf(refute_0_37, plain, ($false),
     inference(resolve, [$cnf(big_f(a, b))], [refute_0_4, refute_0_36])).
-SZS output end CNFRefutation for data/problems/all/SYN075-1.tptp
+% SZS output end CNFRefutation for data/problems/all/SYN075-1.tptp
 

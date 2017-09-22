@@ -40,7 +40,7 @@ while (my $line = <STDIN>) {
         print STDERR "$line\n";
     }
 
-    if ($line =~ /^------------+$/) {
+    if ($line =~ /^%%%%%%%%%%%%+$/) {
         ($state eq 'init') or die "bad state: \"$state\"";
         $state = 'name';
         $status = 'Unknown';
@@ -52,32 +52,32 @@ while (my $line = <STDIN>) {
         $state = 'status';
     }
 
-    if ($line =~ /^SZS output start Saturation for (.*)$/) {
+    if ($line =~ /SZS output start Saturation for (.*)$/) {
         ($1 eq $name) or die;
         ($1 eq $name) or die;
         ($state eq 'status' or $state eq 'time') or die;
         $state = 'saturation.' . $state;
     }
 
-    if ($line =~ /^SZS output end Saturation for (.*)$/) {
+    if ($line =~ /SZS output end Saturation for (.*)$/) {
         ($1 eq $name) or die;
         ($state =~ /^saturation\.([[:alpha:]]+)$/) or die;
         $state = $1;
     }
 
-    if ($line =~ /^SZS output start CNFRefutation for (.*)$/) {
+    if ($line =~ /SZS output start CNFRefutation for (.*)$/) {
         ($1 eq $name) or die;
         ($state eq 'status' or $state eq 'time') or die;
         $state = 'proof.' . $state;
     }
 
-    if ($line =~ /^SZS output end CNFRefutation for (.*)$/) {
+    if ($line =~ /SZS output end CNFRefutation for (.*)$/) {
         ($1 eq $name) or die;
         ($state =~ /^proof\.([[:alpha:]]+)$/) or die;
         $state = $1;
     }
 
-    if ($line =~ /^SZS status ([[:alpha:]]+) for (.*)$/) {
+    if ($line =~ /SZS status ([[:alpha:]]+) for (.*)$/) {
         $status = $1;
         ($2 eq $name) or die;
         ($state eq 'status') or die;
