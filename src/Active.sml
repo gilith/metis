@@ -154,7 +154,7 @@ local
             case Clause.simplify cl of
               NONE => true  (* tautology case *)
             | SOME cl =>
-              Subsume.isStrictlySubsumed subsume (Clause.literals cl) orelse
+              Subsume.isSubsumed subsume (Clause.literals cl) orelse
               let
                 val cl' = cl
                 val cl' = Clause.reduce reduce cl'

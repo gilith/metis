@@ -1070,16 +1070,26 @@ val cl = pvCl (LcpCL[`~($y <= (2 + (2 * $x + pow $x 2)) / 2)`, `~(0 <= $x)`,
                      `$y <= exp $x`]);
 val _ = pvLits (Clause.largestLiterals cl);
 
-(* Bug discovered by Michael Farber *)
+(* Bugs discovered by Michael Farber *)
 
-val th = pvThm (AX[`c4 (c5 (c6 c7 c8) $y) $z = c3`,
-                   `c4 (c5 (c6 c7 c8) $t) $u = c3`]);
-val _ = pvThms (List.map Clause.thm (#conjecture (snd (Active.new Active.default {axioms = [], conjecture = [th]}))));
+local
+  fun activeFactor th =
+      let
+        val (_,{axioms,conjecture}) =
+            Active.new Active.default {axioms = [], conjecture = [th]}
+      in
+        List.map Clause.thm (axioms @ conjecture)
+      end;
+in
+  val th = pvThm (AX[`c4 (c5 (c6 c7 c8) $y) $z = c3`,
+                     `c4 (c5 (c6 c7 c8) $t) $u = c3`]);
+  val _ = pvThms (activeFactor th);
 
-val th = pvThm (AX[`~(c4 (c5 (c6 c7 c8) c28) c29 = c4 (c5 (c6 c7 c8) c28) $x)`,
-                   `c4 (c5 (c6 c7 c8) $y) $z = c3`,
-                   `c4 (c5 (c6 c7 c8) $t) $u = c3`]);
-val _ = pvThms (List.map Clause.thm (#conjecture (snd (Active.new Active.default {axioms = [], conjecture = [th]}))));
+  val th = pvThm (AX[`~(c4 (c5 (c6 c7 c8) c28) c29 = c4 (c5 (c6 c7 c8) c28) $x)`,
+                     `c4 (c5 (c6 c7 c8) $y) $z = c3`,
+                     `c4 (c5 (c6 c7 c8) $t) $u = c3`]);
+  val _ = pvThms (activeFactor th);
+end;
 
 (* ------------------------------------------------------------------------- *)
 val () = SAY "Syntax checking the problem sets";
