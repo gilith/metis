@@ -65,6 +65,7 @@ and pvPo = printval (Print.ppMap partialOrderToString Print.ppString)
 and pvFm = printval Formula.pp
 and pvFms = printval (Print.ppList Formula.pp)
 and pvThm = printval Thm.pp
+and pvThms = printval (Print.ppList Thm.pp)
 and pvEqn : Rule.equation -> Rule.equation = printval (Print.ppMap snd Thm.pp)
 and pvNet = printval (LiteralNet.pp Print.ppInt)
 and pvRw = printval Rewrite.pp
@@ -1068,6 +1069,17 @@ end;
 val cl = pvCl (LcpCL[`~($y <= (2 + (2 * $x + pow $x 2)) / 2)`, `~(0 <= $x)`,
                      `$y <= exp $x`]);
 val _ = pvLits (Clause.largestLiterals cl);
+
+(* Bug discovered by Michael Farber *)
+
+val th = pvThm (AX[`c4 (c5 (c6 c7 c8) $y) $z = c3`,
+                   `c4 (c5 (c6 c7 c8) $t) $u = c3`]);
+val _ = pvThms (List.map Clause.thm (#conjecture (snd (Active.new Active.default {axioms = [], conjecture = [th]}))));
+
+val th = pvThm (AX[`~(c4 (c5 (c6 c7 c8) c28) c29 = c4 (c5 (c6 c7 c8) c28) $x)`,
+                   `c4 (c5 (c6 c7 c8) $y) $z = c3`,
+                   `c4 (c5 (c6 c7 c8) $t) $u = c3`]);
+val _ = pvThms (List.map Clause.thm (#conjecture (snd (Active.new Active.default {axioms = [], conjecture = [th]}))));
 
 (* ------------------------------------------------------------------------- *)
 val () = SAY "Syntax checking the problem sets";

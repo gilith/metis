@@ -778,7 +778,7 @@ end;
 
 fun factor th =
     let
-      fun fact sub = removeSym (Thm.subst sub th)
+      fun fact sub = removeIrrefl (removeSym (Thm.subst sub th))
     in
       List.map fact (factor' (Thm.clause th))
     end;
