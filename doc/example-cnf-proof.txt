@@ -111,14 +111,13 @@ cnf(refute_0_21, plain, (X = X), introduced(tautology, [refl, [$fot(X)]])).
 cnf(refute_0_22, plain, (h(X, Z) != Z | ~ big_f(Z, X)),
     inference(resolve, [$cnf($equal(X, X))], [refute_0_21, refute_0_20])).
 
-cnf(refute_0_23, plain, (h(X_16, a) != a | ~ big_f(a, X_16)),
-    inference(subst, [],
-              [refute_0_22 : [bind(X, $fot(X_16)), bind(Z, $fot(a))]])).
+cnf(refute_0_23, plain, (h(X, a) != a | ~ big_f(a, X)),
+    inference(subst, [], [refute_0_22 : [bind(Z, $fot(a))]])).
 
-cnf(refute_0_24, plain, (~ big_f(h(X_7, X_8), X_7) | h(X_7, X_8) = a),
+cnf(refute_0_24, plain, (~ big_f(h(X_9, X_10), X_9) | h(X_9, X_10) = a),
     inference(subst, [],
               [clause_1 :
-               [bind(X, $fot(h(X_7, X_8))), bind(Y, $fot(X_7))]])).
+               [bind(X, $fot(h(X_9, X_10))), bind(Y, $fot(X_9))]])).
 
 cnf(refute_0_25, plain,
     (f(X) != X | ~ big_f(h(X, Z), f(X)) | big_f(h(X, Z), X)),
@@ -136,37 +135,35 @@ cnf(refute_0_27, plain, (X != X | h(X, Z) = Z | big_f(h(X, Z), X)),
 cnf(refute_0_28, plain, (h(X, Z) = Z | big_f(h(X, Z), X)),
     inference(resolve, [$cnf($equal(X, X))], [refute_0_21, refute_0_27])).
 
-cnf(refute_0_29, plain, (h(X_7, X_8) = X_8 | big_f(h(X_7, X_8), X_7)),
+cnf(refute_0_29, plain, (h(X_9, X_10) = X_10 | big_f(h(X_9, X_10), X_9)),
     inference(subst, [],
-              [refute_0_28 : [bind(X, $fot(X_7)), bind(Z, $fot(X_8))]])).
+              [refute_0_28 : [bind(X, $fot(X_9)), bind(Z, $fot(X_10))]])).
 
-cnf(refute_0_30, plain, (h(X_7, X_8) = X_8 | h(X_7, X_8) = a),
-    inference(resolve, [$cnf(big_f(h(X_7, X_8), X_7))],
+cnf(refute_0_30, plain, (h(X_9, X_10) = X_10 | h(X_9, X_10) = a),
+    inference(resolve, [$cnf(big_f(h(X_9, X_10), X_9))],
               [refute_0_29, refute_0_24])).
 
-cnf(refute_0_31, plain, (h(X_16, a) = a),
+cnf(refute_0_31, plain, (h(X, a) = a),
     inference(subst, [],
-              [refute_0_30 :
-               [bind(X_7, $fot(X_16)), bind(X_8, $fot(a))]])).
+              [refute_0_30 : [bind(X_10, $fot(a)), bind(X_9, $fot(X))]])).
 
-cnf(refute_0_32, plain, (a != a | h(X_16, a) != a | h(X_16, a) = a),
+cnf(refute_0_32, plain, (a != a | h(X, a) != a | h(X, a) = a),
     introduced(tautology,
-               [equality,
-                [$cnf($equal(h(X_16, a), a)), [0, 1], $fot(a)]])).
+               [equality, [$cnf($equal(h(X, a), a)), [0, 1], $fot(a)]])).
 
-cnf(refute_0_33, plain, (a != a | h(X_16, a) = a),
-    inference(resolve, [$cnf($equal(h(X_16, a), a))],
+cnf(refute_0_33, plain, (a != a | h(X, a) = a),
+    inference(resolve, [$cnf($equal(h(X, a), a))],
               [refute_0_31, refute_0_32])).
 
-cnf(refute_0_34, plain, (a != a | ~ big_f(a, X_16)),
-    inference(resolve, [$cnf($equal(h(X_16, a), a))],
+cnf(refute_0_34, plain, (a != a | ~ big_f(a, X)),
+    inference(resolve, [$cnf($equal(h(X, a), a))],
               [refute_0_33, refute_0_23])).
 
-cnf(refute_0_35, plain, (~ big_f(a, X_16)),
+cnf(refute_0_35, plain, (~ big_f(a, X)),
     inference(resolve, [$cnf($equal(a, a))], [refute_0_1, refute_0_34])).
 
 cnf(refute_0_36, plain, (~ big_f(a, b)),
-    inference(subst, [], [refute_0_35 : [bind(X_16, $fot(b))]])).
+    inference(subst, [], [refute_0_35 : [bind(X, $fot(b))]])).
 
 cnf(refute_0_37, plain, ($false),
     inference(resolve, [$cnf(big_f(a, b))], [refute_0_4, refute_0_36])).
