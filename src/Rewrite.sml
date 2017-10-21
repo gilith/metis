@@ -406,12 +406,12 @@ val rewriteIdRule' = fn order => fn known => fn redexes => fn id => fn th =>
 (*MetisTrace6
       val () = Print.trace Thm.pp "Rewrite.rewriteIdRule': result" result
 *)
-      val _ = not (thmReducible order known id result) orelse
-              raise Bug "rewriteIdRule: should be normalized"
+      val () = if not (thmReducible order known id result) then ()
+               else raise Bug "Rewrite.rewriteIdRule': should be normalized"
     in
       result
     end
-    handle Error err => raise Error ("Rewrite.rewriteIdRule:\n" ^ err);
+    handle Error err => raise Error ("Rewrite.rewriteIdRule':\n" ^ err);
 *)
 
 fun rewrIdConv (Rewrite {known,redexes,...}) order =
@@ -432,6 +432,30 @@ fun rewriteLiteralsRule rewrite order =
 
 fun rewriteIdRule (Rewrite {known,redexes,...}) order =
     rewriteIdRule' order known redexes;
+
+(*MetisDebug
+val rewriteIdRule = fn rewr => fn order => fn id => fn th =>
+    let
+      val result = rewriteIdRule rewr order id th
+
+      val th' = rewriteIdRule rewr order id result
+
+      val () = if Thm.equal th' result then ()
+               else
+                 let
+                   fun trace p s = Print.trace p ("Rewrite.rewriteIdRule: "^s)
+                   val () = trace pp "rewr" rewr
+                   val () = trace Thm.pp "th" th
+                   val () = trace Thm.pp "result" result
+                   val () = trace Thm.pp "th'" th'
+                in
+                  raise Bug "Rewrite.rewriteIdRule: should be idempotent"
+                end
+    in
+      result
+    end
+    handle Error err => raise Error ("Rewrite.rewriteIdRule:\n" ^ err);
+*)
 
 fun rewriteRule rewrite order = rewriteIdRule rewrite order ~1;
 

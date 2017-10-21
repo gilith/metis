@@ -394,9 +394,11 @@ fun simplify simp units rewr subs =
 (*MetisDebug
 val simplify = fn simp => fn units => fn rewr => fn subs => fn cl =>
     let
-      fun traceCl s = Print.trace Clause.pp ("Active.simplify: " ^ s)
-(*MetisTrace4
       val ppClOpt = Print.ppOption Clause.pp
+      fun trace pp s = Print.trace pp ("Active.simplify: " ^ s)
+      val traceCl = trace Clause.pp
+      val traceClOpt = trace ppClOpt
+(*MetisTrace4
       val () = traceCl "cl" cl
 *)
       val cl' = simplify simp units rewr subs cl
@@ -416,8 +418,14 @@ val simplify = fn simp => fn units => fn rewr => fn subs => fn cl =>
               NONE => ()
             | SOME (e,f) =>
               let
+                val () = Print.trace Rewrite.pp "Active.simplify: rewr" rewr
+                val () = Print.trace Units.pp "Active.simplify: units" units
+                val () = Print.trace Subsume.pp "Active.simplify: subs" subs
                 val () = traceCl "cl" cl
                 val () = traceCl "cl'" cl'
+                val () = traceClOpt "simplify cl'" (Clause.simplify cl')
+                val () = traceCl "rewrite cl'" (Clause.rewrite rewr cl')
+                val () = traceCl "reduce cl'" (Clause.reduce units cl')
                 val () = f ()
               in
                 raise

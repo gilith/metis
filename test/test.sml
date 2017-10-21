@@ -484,6 +484,27 @@ val th = pvThm (try (Rewrite.orderedRewrite kboCmp []) ax);
 val ax = pvThm (AX [`~(a = b)`, `~(b = c)`, `~(c = d)`, `a = d`]);
 val th = pvThm (try (Rewrite.orderedRewrite kboCmp []) ax);
 
+(* Bug discovered by Michael Farber *)
+
+val eqns = [Q`f $x = c`];
+val ax = pvThm (AX [`~(f $y = g a b)`,`p (g a b)`]);
+val th = pvThm (try (Rewrite.orderedRewrite kboCmp eqns) ax);
+
+val eqns = [Q`even (numeral c) = d`,
+            Q`f (numeral c) $x = $x`];
+val ax = pvThm
+  (AX [`~(even (numeral c) = even $y)`,
+       `p (even (f (numeral c) $y))`]);
+val th = pvThm (try (Rewrite.orderedRewrite kboCmp eqns) ax);
+
+val eqns = [Q`even (numeral c) = d`,
+            Q`f (numeral c) $x = $x`,
+            Q`g a b = numeral c`];
+val ax = pvThm
+  (AX [`~(even (numeral c) = even $y)`,
+       `p (even (f (g a b) $y))`]);
+val th = pvThm (try (Rewrite.orderedRewrite kboCmp eqns) ax);
+
 (* ------------------------------------------------------------------------- *)
 val () = SAY "Unit cache";
 (* ------------------------------------------------------------------------- *)
@@ -1070,7 +1091,7 @@ val cl = pvCl (LcpCL[`~($y <= (2 + (2 * $x + pow $x 2)) / 2)`, `~(0 <= $x)`,
                      `$y <= exp $x`]);
 val _ = pvLits (Clause.largestLiterals cl);
 
-(* Bugs discovered by Michael Farber *)
+(* Bug discovered by Michael Farber *)
 
 local
   fun activeFactor th =
