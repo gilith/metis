@@ -5,12 +5,12 @@ Metis Theorem Prover (Development Version)
 
 Cloning this repo will install a [development version][MetisDevelopment], which includes active debugging code and regression scripts. The latest official release of Metis without any extra development cruft [lives here][MetisRelease].
 
-This software is released under the [MIT License][].
+This software is released under the [MIT License][MITLicense].
 
 Install
 -------
 
-Installing Metis requires the [MLton][], [Poly/ML][] or [Moscow ML][] compiler, as well as standard system tools including GNU Make and Perl.
+Installing Metis requires the [MLton][], [Poly/ML][PolyML] or [Moscow ML][MoscowML] compiler, as well as standard system tools including GNU Make and Perl.
 
 Clone this repo and initialize the development version:
 
@@ -18,7 +18,7 @@ Clone this repo and initialize the development version:
     cd metis
     make init
 
-By default the initialization step requires the [MLton compiler][Mlton], but you can change it to [Poly/ML][] or [Moscow ML][] by editing the top of `Makefile.dev`.
+By default the initialization step requires the [MLton compiler][Mlton], but you can change it to [Poly/ML][PolyML] or [Moscow ML][MoscowML] by editing the top of `Makefile.dev`.
 
 Build
 -----
@@ -35,7 +35,7 @@ The Metis executable can then be found at
 
 ### Using the Poly/ML compiler
 
-Use the [Poly/ML compiler][Poly/ML] to build from source and run the test suite by executing
+Use the [Poly/ML compiler][PolyML] to build from source and run the test suite by executing
 
     make polyml
 
@@ -45,7 +45,7 @@ The Metis executable can then be found at
 
 ### Using the Moscow ML compiler
 
-Use the [Moscow ML compiler][Moscow ML] to build from source and run the test suite by executing
+Use the [Moscow ML compiler][MoscowML] to build from source and run the test suite by executing
 
     make mosml
 
@@ -80,7 +80,7 @@ To report a bug or request an enhancement, please file an issue at [GitHub][Meti
 [MetisIssues]: https://github.com/gilith/metis/issues "Metis Issues"
 [MetisRelease]: http://www.gilith.com/software/metis/ "Metis Release"
 [MLton]: http://www.mlton.org/ "MLton compiler"
-[Poly/ML]: http://www.polyml.org/ "Poly/ML compiler"
-[Moscow ML]: http://www.dina.dk/~sestoft/mosml.html "Moscow ML compiler"
-[MIT License]: https://github.com/gilith/metis/blob/master/LICENSE "MIT License"
+[PolyML]: http://www.polyml.org/ "Poly/ML compiler"
+[MoscowML]: http://www.dina.dk/~sestoft/mosml.html "Moscow ML compiler"
+[MITLicense]: https://github.com/gilith/metis/blob/master/LICENSE "MIT License"
 [TPTP]: http://www.tptp.org "TPTP"
