@@ -3,7 +3,7 @@ Metis Theorem Prover (Development Version)
 
 [Metis][] is an automatic theorem prover for first order logic with equality. It accepts problems in [TPTP format][TPTP].
 
-Cloning this repo will install a development version, which includes active debugging code and regression scripts. The latest official release of Metis without any extra development cruft [lives here][Metis].
+Cloning this repo will install a [development version][MetisDevelopment], which includes active debugging code and regression scripts. The latest official release of Metis without any extra development cruft [lives here][MetisRelease].
 
 This software is released under the [MIT License][].
 
@@ -73,11 +73,14 @@ You can use
 
 to clean out any object files.
 
-To report bugs or obtain help, please email <metis-users@gilith.com>
+To report a bug or request an enhancement, please file an issue at [GitHub][MetisIssues].
 
-[Metis]: http://www.gilith.com/software/metis/ "Metis Theorem Prover"
-[MLton]: http://www.mlton.org/ "The MLton compiler"
-[Poly/ML]: http://www.polyml.org/ "The Poly/ML compiler"
-[Moscow ML]: http://www.dina.dk/~sestoft/mosml.html "The Moscow ML compiler"
+[Metis]: http://www.gilith.com/metis/ "Metis Theorem Prover"
+[MetisDevelopment]: https://github.com/gilith/metis "Metis Development"
+[MetisIssues]: https://github.com/gilith/metis/issues "Metis Issues"
+[MetisRelease]: http://www.gilith.com/software/metis/ "Metis Release"
+[MLton]: http://www.mlton.org/ "MLton compiler"
+[Poly/ML]: http://www.polyml.org/ "Poly/ML compiler"
+[Moscow ML]: http://www.dina.dk/~sestoft/mosml.html "Moscow ML compiler"
 [MIT License]: https://github.com/gilith/metis/blob/master/LICENSE "MIT License"
 [TPTP]: http://www.tptp.org "TPTP"

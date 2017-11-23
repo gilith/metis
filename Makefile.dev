@@ -53,8 +53,9 @@ bin/mosml/Makefile.src: Makefile Makefile.dev $(MOSML_DEP) $(MLPP)
 # The MLton compiler.
 ###############################################################################
 
-MLTON_OPTS += -verbose 1 -keep ssa -keep ssa2
+MLTON_OPTS += -verbose 1
 #MLTON_OPTS += -const 'Exn.keepHistory true'
+#MLTON_OPTS += -keep ssa -keep ssa2
 #MLTON_OPTS += -show-basis basis.sml
 #MLTON_OPTS += -inline 100000
 #MLTON_OPTS += -const 'MLton.safe false' -const 'MLton.detectOverflow false'
@@ -381,8 +382,8 @@ release: release-stamp mosml mlton polyml status-test documentation $(STD_BENCHM
 	cp -v doc/favicon.ico $(RELEASE_DIR)/
 	cp -v doc/MIT-LICENSE $(RELEASE_DIR)/
 	$(MAKE) tarball
-	rsync -azv --delete --checksum --size-only --exclude=.gitignore -e ssh $(RELEASE_DIR)/ gilith@login.gilith.com:public_html/software/metis
-	ssh gilith@login.gilith.com '/bin/bash -l bin/install_metis'
+	rsync -azv --delete --checksum --size-only --exclude=.gitignore -e ssh $(RELEASE_DIR)/ joe@laurelin.gilith.com:www/gilith/software/metis
+	ssh joe@laurelin.gilith.com '/bin/bash -l bin/install-metis'
 	@if GIT_PAGER='' git grep '[*][*][*]' ; then echo "WARNING: TODO comments discovered" ; fi
 	echo Completed release
 
