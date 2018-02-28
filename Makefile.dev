@@ -375,6 +375,15 @@ tarball: doc/DONT-RELEASE Makefile.dev
 	$(MAKE) clean
 	cd .. ; COPYFILE_DISABLE=true tar cvzhf metis/release/metis.tar.gz --exclude-from metis/doc/DONT-RELEASE metis
 
+.PHONY: release-instructions
+release-instructions:
+	@echo "Completed release, now do the following:"
+	@echo "1. git add and commit all changes"
+	@perl -ne 'if ($$_ =~ /^Metis ([0-9.]+) \(release ([0-9]+)\),$$/) { print "2. git tag -a -s v$$1.$$2 -m \"Version $$1 (release $$2)\"\n"; }' doc/download.html
+	@echo "3. git push --tags"
+	@echo "4. Browse to github > metis > releases > Latest release"
+	@echo "5. Add the release name and tarball"
+
 .PHONY: release
 release: release-stamp mosml mlton polyml status-test documentation $(STD_BENCHMARK)
 	rm -f $(RELEASE_DIR)/*.html $(RELEASE_DIR)/*.jpg $(RELEASE_DIR)/*.txt
@@ -385,7 +394,7 @@ release: release-stamp mosml mlton polyml status-test documentation $(STD_BENCHM
 	rsync -azv --delete --checksum --size-only --exclude=.gitignore -e ssh $(RELEASE_DIR)/ joe@laurelin.gilith.com:www/gilith/software/metis
 	ssh joe@laurelin.gilith.com '/bin/bash -l bin/install-metis'
 	@if GIT_PAGER='' git grep '[*][*][*]' ; then echo "WARNING: TODO comments discovered" ; fi
-	echo Completed release
+	$(MAKE) release-instructions
 
 .PHONY: hol-release
 hol-release: mosml
