@@ -377,12 +377,14 @@ tarball: doc/DONT-RELEASE Makefile.dev
 
 .PHONY: release-instructions
 release-instructions:
+	@echo "*************************************************************"
 	@echo "Completed release, now do the following:"
-	@echo "1. git add and commit all changes"
+	@echo "1. git add, commit and push all changes"
 	@perl -ne 'if ($$_ =~ /^Metis ([0-9.]+) \(release ([0-9]+)\),$$/) { print "2. git tag -a -s v$$1.$$2 -m \"Version $$1 (release $$2)\"\n"; }' doc/download.html
 	@echo "3. git push --tags"
 	@echo "4. Browse to github > metis > releases > Latest release"
 	@echo "5. Add the release name and tarball"
+	@echo "*************************************************************"
 
 .PHONY: release
 release: release-stamp mosml mlton polyml status-test documentation $(STD_BENCHMARK)
