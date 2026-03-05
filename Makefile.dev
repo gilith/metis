@@ -382,7 +382,7 @@ release-instructions:
 	@echo "1. git add, commit and push all changes"
 	@perl -ne 'if ($$_ =~ /^Metis ([0-9.]+) \(release ([0-9]+)\),$$/) { print "2. git tag -a -s v$$1.$$2 -m \"Version $$1 (release $$2)\"\n"; }' doc/download.html
 	@echo "3. git push --tags"
-	@echo "4. Browse to github > metis > releases > Latest release"
+	@echo "4. Browse to github > metis > tags > Latest tag > Create release from tag"
 	@echo "5. Add the release name and tarball"
 	@echo "==============================================================="
 
