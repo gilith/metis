@@ -6,7 +6,7 @@
 
 fof('A quoted formula name',axiom,p(a)).
 
-fof(a,axiom,'quoted predicate'(X)).
+fof(a,axiom, ! [X] : 'quoted predicate'(X)).
 
 fof(b,axiom,'quoted proposition').
 

@@ -85,7 +85,9 @@ while (my $line = <STDIN>) {
     }
 
 #    if ($line eq 'Command terminated abnormally.') {
-    if ($line =~ /Killed.*metis/) {
+    if (($line =~ /Killed.*metis/) or
+        ($line =~ /Cputime limit exceeded/))
+    {
         ($state eq 'status') or ($state eq 'time') or
         ($state =~ /^proof\./) or ($state =~ /^saturation\./) or die;
         $status = 'ResourceOut';
