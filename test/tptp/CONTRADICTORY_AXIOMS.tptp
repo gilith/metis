@@ -1,0 +1,11 @@
+% -----------------------------------------------------------------------------
+% Name: CONTRADICTORY AXIOMS
+%
+% FOF problem with contradictory axioms
+% -----------------------------------------------------------------------------
+
+fof(p_true, axiom, p).
+
+fof(p_false, axiom, ~ p).
+
+fof(q_true, conjecture, q).
