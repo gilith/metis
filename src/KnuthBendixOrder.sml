@@ -79,17 +79,18 @@ fun weightSubtract w1 w2 = weightAdd w1 (weightNeg w2);
 
 fun weightTerm weight =
     let
-      fun wt m c [] = Weight (m,c)
-        | wt m c (Term.Var v :: tms) =
+      fun wt m c [] [] = Weight (m,c)
+        | wt m c [] (tms :: tmsl) = wt m c tms tmsl
+        | wt m c (Term.Var v :: tms) tmsl =
           let
             val n = Option.getOpt (NameMap.peek m v, 0)
           in
-            wt (NameMap.insert m (v, n + 1)) (c + 1) tms
+            wt (NameMap.insert m (v, n + 1)) (c + 1) tms tmsl
           end
-        | wt m c (Term.Fn (f,a) :: tms) =
-          wt m (c + weight (f, length a)) (a @ tms)
+        | wt m c (Term.Fn (f,a) :: tms) tmsl =
+          wt m (c + weight (f, length a)) a (tms :: tmsl)
     in
-      fn tm => wt weightEmpty ~1 [tm]
+      fn tm => wt weightEmpty ~1 [tm] []
     end;
 
 fun weightLowerBound (w as Weight (m,c)) =
