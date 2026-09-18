@@ -429,16 +429,16 @@ Finite models
 Model{8}
 
 0 + $x = $x                   | random sampling = 0%  | exhaustive = 0%
-~$x + $x = 0                  | random sampling = 13% | exhaustive = 12%
+~$x + $x = 0                  | random sampling = 13% | exhaustive = 13%
 $x + $y + $z = $x + ($y + $z) | random sampling = 50% | exhaustive = 10%
 $x + 0 = $x                   | random sampling = 0%  | exhaustive = 0%
-$x + ~$x = 0                  | random sampling = 12% | exhaustive = 12%
+$x + ~$x = 0                  | random sampling = 12% | exhaustive = 13%
 ~~$x = $x                     | random sampling = 0%  | exhaustive = 0%
 
 Model{8}
 
-0 + $x = $x                   | random sampling = 50%  | exhaustive = 62%
-~$x + $x = 0                  | random sampling = 62%  | exhaustive = 62%
+0 + $x = $x                   | random sampling = 50%  | exhaustive = 63%
+~$x + $x = 0                  | random sampling = 62%  | exhaustive = 63%
 $x + $y + $z = $x + ($y + $z) | random sampling = 100% | exhaustive = 29%
 $x + 0 = $x                   | random sampling = 0%   | exhaustive = 38%
 $x + ~$x = 0                  | random sampling = 38%  | exhaustive = 38%
@@ -836,10 +836,10 @@ parsing QUOTED_TERMS_IDENTITY... ok
 p ==> p
 
 parsing QUOTED_TERMS_DIFFERENT... ok
-p 1 ==> p 1
+p a ==> p a
 
 parsing QUOTED_TERMS_SPECIAL... ok
-$times_int 2 3 = 6 ==> $times_int 2 3 = 6
+$times_int a b = c ==> $times_int a b = c
 
 parsing RENAMING_VARIABLES... ok
 !V_X Y. ?Z. p V_X \/ p Y ==> p Z
