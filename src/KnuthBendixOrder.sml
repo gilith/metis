@@ -77,21 +77,70 @@ end;
 
 fun weightSubtract w1 w2 = weightAdd w1 (weightNeg w2);
 
+(* ------------------------------------------------------------------------- *)
+(* 2026-09-18: Martin Desharnais-Schafer proposed optimizing weightTerm as   *)
+(* below to reduce the amount of memory allocation by Metis in Isabelle:     *)
+(*                                                                           *)
+(* "This was based on a test of 2180 problems handed from Isabelle to        *)
+(* Resolution.new, exported with Tptp.write and replayed under Poly/ML's     *)
+(* allocation profiler, one process per problem, 60s limit. The optimized    *)
+(* version uses 12.7% less memory allocation than the reference version. For *)
+(* scale, weightTerm is 1.8–2.2% of Metis's total allocation on this corpus, *)
+(* against 6.8% for the single largest consumer: Literal.subst."             *)
+(* ------------------------------------------------------------------------- *)
+
 fun weightTerm weight =
     let
-      fun wt m c [] [] = Weight (m,c)
-        | wt m c [] (tms :: tmsl) = wt m c tms tmsl
-        | wt m c (Term.Var v :: tms) tmsl =
+      fun wt m c (Term.Var v) tms pending =
           let
             val n = Option.getOpt (NameMap.peek m v, 0)
           in
-            wt (NameMap.insert m (v, n + 1)) (c + 1) tms tmsl
+            next (NameMap.insert m (v, n + 1)) (c + 1) tms pending
           end
-        | wt m c (Term.Fn (f,a) :: tms) tmsl =
-          wt m (c + weight (f, length a)) a (tms :: tmsl)
+        | wt m c (Term.Fn (f,a)) tms pending =
+          let
+            val c = c + weight (f, length a)
+          in
+            case a of
+              [] => next m c tms pending
+            | [tm] => wt m c tm tms pending
+            | tm :: args =>
+                (case tms of
+                   [] => wt m c tm args pending
+                 | _ :: _ => wt m c tm args (tms :: pending))
+          end
+      and next m c (tm :: tms) pending = wt m c tm tms pending
+        | next m c [] (tms :: pending) = next m c tms pending
+        | next m c [] [] = Weight (m,c)
     in
-      fn tm => wt weightEmpty ~1 [tm] []
+      fn tm => wt weightEmpty ~1 tm [] []
     end;
+
+(*MetisDebug
+fun weightTermRef weight =
+    let
+      fun wt m c [] = Weight (m,c)
+        | wt m c (Term.Var v :: tms) =
+          let
+            val n = Option.getOpt (NameMap.peek m v, 0)
+          in
+            wt (NameMap.insert m (v, n + 1)) (c + 1) tms
+          end
+        | wt m c (Term.Fn (f,a) :: tms) =
+          wt m (c + weight (f, length a)) (a @ tms)
+    in
+      fn tm => wt weightEmpty ~1 [tm]
+    end;
+
+val weightTerm = fn weight => fn tm =>
+    let
+      val w1 = weightTerm weight tm
+      val w2 = weightTermRef weight tm
+    in
+      if weightIsZero (weightSubtract w1 w2) then w1
+      else raise Useful.Bug "KnuthBendixOrdering.weightTerm: doesn't match reference"
+    end;
+*)
 
 fun weightLowerBound (w as Weight (m,c)) =
     if NameMap.exists (fn (_,n) => n < 0) m then NONE else SOME c;
