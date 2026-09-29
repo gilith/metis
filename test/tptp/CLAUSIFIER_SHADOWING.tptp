@@ -1,0 +1,10 @@
+% MetiTarski 2.4 clausifier soundness issue (variable shadowing in Normalize.subst).
+% The axiom is satisfiable (e.g. domain {a,b}, p = {(a,a)}: X=a,Y=a gives p(a,a),
+% and the inner X=b gives ~p(b,a)). The conjecture q is unrelated and unprovable.
+% Expected: CounterSatisfiable / GaveUp.  MetiTarski 2.4 reports: Theorem.
+%
+% Reported by Ethan Lew on 2026-09-28
+
+fof(a, axiom, ? [X,Y] : (p(X,Y) & (? [X] : ~p(X,Y)))).
+
+fof(goal, conjecture, q).

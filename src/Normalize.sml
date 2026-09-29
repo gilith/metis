@@ -562,7 +562,7 @@ local
         let
           val fv = NameSet.difference fv domain
           val fv = NameSet.union fv (subst_fv fvSub domain)
-          val lit = Literal.subst sub lit
+          val lit = Literal.subst (Subst.restrict sub domain) lit
         in
           Literal (fv,lit)
         end
@@ -578,6 +578,7 @@ local
 
   and subst_quant quant sub domain fvSub (fv,c,bv,fm) =
       let
+        val domain = NameSet.difference domain bv
         val sub_fv = subst_fv fvSub domain
         val fv = NameSet.union sub_fv (NameSet.difference fv domain)
         val captured = NameSet.intersect bv sub_fv
